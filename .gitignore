@@ -1,0 +1,59 @@
+# =========================
+# Backend (.NET / Visual Studio)
+# =========================
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local secrets / env
+appsettings.Development.json
+
+# Rider / JetBrains
+.idea/
+
+# VS Code
+.vscode/
+
+# NuGet packages
+*.nupkg
+
+# Coverage / tests
+TestResults/
+coverage/
+
+# (Optional) ASP.NET local HTTPS certs / dev files
+*.pfx
+
+# =========================
+# Frontend (Node / React / Vite)
+# =========================
+node_modules/
+dist/
+build/
+.vite/
+.cache/
+
+# Env files (NEVER commit secrets)
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript build info (if TS)
+*.tsbuildinfo
