@@ -18,6 +18,8 @@ namespace beef_and_chicken.Infrastructure.Data
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
         public DbSet<User> Users => Set<User>();
         public DbSet<UserAllergen> UserAllergens => Set<UserAllergen>();
+
+
         
 
 

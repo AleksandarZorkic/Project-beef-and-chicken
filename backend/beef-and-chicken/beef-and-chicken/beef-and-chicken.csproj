@@ -19,12 +19,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\Exceptions\" />
-    <Folder Include="Application\Mapping\" />
-    <Folder Include="Infrastructure\Services\" />
+    <Folder Include="Domain\Exceptions\" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿using beef_and_chicken.Domain.Exceptions;
+﻿using beef_and_chicken.Application.Exceptions;
 using System.Diagnostics;
 using System.Net;
 using System.Text.Json;

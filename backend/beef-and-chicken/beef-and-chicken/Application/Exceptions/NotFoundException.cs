@@ -1,4 +1,4 @@
-﻿namespace beef_and_chicken.Domain.Exceptions
+﻿namespace beef_and_chicken.Application.Exceptions
 {
     public class NotFoundException : Exception
     {
