@@ -3,6 +3,8 @@ using beef_and_chicken.Application.Interfaces.Services;
 using beef_and_chicken.Application.DTOs;
 using beef_and_chicken.Application.Mapping;
 using beef_and_chicken.Application.Exceptions;
+using System.Runtime.CompilerServices;
+using AutoMapper;
 
 namespace beef_and_chicken.Application.Services
 {
@@ -10,17 +12,19 @@ namespace beef_and_chicken.Application.Services
     {
         private readonly IMenuRepository _menuRepo;
         private readonly ILogger<MenuService> _logger;
+        private readonly IMapper _mapper;
 
-        public MenuService(IMenuRepository menuRepo, ILogger<MenuService> logger)
+        public MenuService(IMenuRepository menuRepo, ILogger<MenuService> logger, IMapper mapper)
         {
             _menuRepo = menuRepo;
             _logger = logger;
+            _mapper = mapper;
         }
 
         public async Task<IEnumerable<DishMenuDto>> GetAllAsync(CancellationToken ct = default)
         {
             var menu = await _menuRepo.GetAllAsync(ct);
-            return menu.Select(MenuMappings.MapDishToMenuDto).ToList();
+            return _mapper.Map<IEnumerable<DishMenuDto>>(menu);
         }
 
         public async Task<DishMenuDto> GetByIdAsync(int id, CancellationToken ct = default)
@@ -30,10 +34,10 @@ namespace beef_and_chicken.Application.Services
             if (dish == null)
             {
                 _logger.LogInformation("Dish not found. Id={DishId}", id);
-                throw new NotFoundException($"Jelo sa ID={id} nije pronađeno.");
+                throw new NotFoundException($"Jelo sa ID-{id} nije pronađeno.");
             }
 
-            return MenuMappings.MapDishToMenuDto(dish);
+            return _mapper.Map<DishMenuDto>(dish);
         }
     }
 }

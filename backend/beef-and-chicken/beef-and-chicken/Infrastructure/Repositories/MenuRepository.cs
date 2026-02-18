@@ -33,5 +33,12 @@ namespace beef_and_chicken.Infrastructure.Repositories
                     .ThenInclude(da => da.Allergen)
                 .FirstOrDefaultAsync(d => d.Id == id && d.IsActive && d.Category.IsActive, ct);
         }
+
+        public async Task<IEnumerable<Dish>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default)
+        {
+            return await _context.Dishes
+                .Where(d => ids.Contains(d.Id) && d.IsActive && d.Category.IsActive)
+                .ToListAsync(ct);
+        }
     }
 }

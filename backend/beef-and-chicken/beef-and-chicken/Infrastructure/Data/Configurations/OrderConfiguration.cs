@@ -29,8 +29,7 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
 
                 a.Property(p => p.PostalCode)
                     .HasColumnName("DeliveryPostalCode")
-                    .HasMaxLength(20)
-                    .IsRequired();
+                    .HasMaxLength(20);
 
                 a.Property(p => p.City)
                     .HasColumnName("DeliveryCity")
