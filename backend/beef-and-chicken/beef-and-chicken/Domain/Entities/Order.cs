@@ -20,7 +20,9 @@ namespace beef_and_chicken.Domain.Entities
 
         // Addresa dostave u trenutku porudzbine
         public OrderAddressSnapshot DeliveryAddress { get; set; } = new();
- 
+
+        public string? Notes { get; set; } = null;
+
         public decimal Subtotal { get; set; }
         public decimal DeliveryFee { get; set; }
         public decimal TotalAmount { get; set; }

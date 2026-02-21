@@ -9,12 +9,16 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Order> builder)
         {
-            // 1) Precision za decimal (novac)
+            // 1) Ograničenje dužine stringova
+            builder.Property(o => o.Notes)
+                .HasMaxLength(500);
+
+            // 2) Precision za decimal (novac)
             builder.Property(o => o.Subtotal).HasPrecision(12, 2);
             builder.Property(o => o.DeliveryFee).HasPrecision(12, 2);
             builder.Property(o => o.TotalAmount).HasPrecision(12, 2);
 
-            // 2) Snapshot adrese = Owned Entity
+            // 3) Snapshot adrese = Owned Entity
             builder.OwnsOne(o => o.DeliveryAddress, a =>
             {
                 a.Property(p => p.Street)

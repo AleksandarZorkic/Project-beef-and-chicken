@@ -37,6 +37,7 @@ namespace beef_and_chicken.Infrastructure.Repositories
         public async Task<IEnumerable<Dish>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default)
         {
             return await _context.Dishes
+                .AsNoTracking()
                 .Where(d => ids.Contains(d.Id) && d.IsActive && d.Category.IsActive)
                 .ToListAsync(ct);
         }

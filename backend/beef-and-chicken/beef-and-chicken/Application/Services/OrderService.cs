@@ -13,18 +13,19 @@ namespace beef_and_chicken.Application.Services
     {
         private readonly IOrderRepository _orderRepo;
         private readonly IMenuRepository _menuRepo;
+        private readonly IAddressRepository _addressRepo;
         private readonly ILogger<OrderService> _logger;
         private readonly IMapper _mapper;
 
 
-        public OrderService(IOrderRepository orderRepo, IMenuRepository menuRepo, ILogger<OrderService> logger, IMapper mapper )
+        public OrderService(IOrderRepository orderRepo, IMenuRepository menuRepo, IAddressRepository addressRepo, ILogger<OrderService> logger, IMapper mapper )
         {
             _orderRepo = orderRepo;
             _menuRepo = menuRepo;
+            _addressRepo = addressRepo;
             _logger = logger; 
             _mapper = mapper;
         }
-
 
         public async Task<IEnumerable<OrderDetailsDto>> GetAllOrders(CancellationToken ct = default)
         {
@@ -51,24 +52,81 @@ namespace beef_and_chicken.Application.Services
             if (orderDto.Items is null || !orderDto.Items.Any())
                 throw new ValidationException("Porudžbina mora imati bar jednu stavku.");
 
-            if (orderDto.CustomerAddressId == 0)
+            if (orderDto.Items.Any(i => i.DishId <= 0))
+                throw new ValidationException("Svaka stavka mora imati validan DishId.");
+
+            if (orderDto.Items.Any(i => i.Quantity <= 0))
+                throw new ValidationException("Količina mora biti veća od 0.");
+
+            if (orderDto.CustomerAddressId <= 0)
                 throw new ValidationException("Addresa za dostavu je obavezna.");
 
-            const int deliveryFee = 200;
+            const decimal deliveryFee = 200;
 
-            var order = _mapper.Map<Order>(orderDto);
-            List<Dish> dishes = _menuRepo.GetByIdsAsync(orderDto.Items);
+            // Ovo bi trebalo da se dobije iz konteksta autentifikacije, hardkodirano za primer
+            int customerId = 1;            
 
+            // Validacija adrese
+            var address = await _addressRepo.GetCustomerAddressAsync(orderDto.CustomerAddressId, customerId, ct);
+            if (address == null)
+                throw new NotFoundException($"Adresa sa ID-jem {orderDto.CustomerAddressId} nije pronađena za korisnika sa ID-jem {customerId}.");
 
-            order.Subtotal = order.OrderItems.Sum(i => i.UnitPrice * i.Quantity);
-            order.DeliveryFee = deliveryFee;
+            // Izvlacenje svih DishId i povlacenje jela iz baze
+            var dishIds = orderDto.Items.Select(x => x.DishId).Distinct().ToList();
+            var dishes = (await _menuRepo.GetByIdsAsync(dishIds, ct)).ToList();
+
+            if (dishes.Count != dishIds.Count)
+            {
+                var foundIds = dishes.Select(d => d.Id).ToHashSet();
+                var missingIds = dishIds.Where(id => !foundIds.Contains(id)).ToList();
+                throw new NotFoundException($"Neka jela ne postoje ili nisu aktivna. Missing DishId: {string.Join(", ", missingIds)}");
+            }
+
+            // Brz lookup jela po ID
+            var dishById = dishes.ToDictionary(d => d.Id);
+
+            // Napravi order * snapshot adresa
+            var order = new Order
+            {
+                CustomerId = customerId,
+                CustomerAddressId = orderDto.CustomerAddressId,
+                CreatedAt = DateTime.UtcNow,
+                DeliveryAddress = new OrderAddressSnapshot
+                {
+                    Street = address.Street,
+                    HouseNumber = address.HouseNumber,
+                    PostalCode = address.PostalCode,
+                    City = address.City,
+                },
+                Status = OrderStatus.Na_Cekanju,
+                DeliveryFee = deliveryFee
+            };
+
+            // Napravi OrderItems iz requesta * cena iz baze (dish.Price)
+            order.OrderItems = orderDto.Items.Select(i =>
+            {
+                var dish = dishById[i.DishId];
+                return new OrderItem
+                {
+                    DishId = i.DishId,
+                    Quantity = i.Quantity,
+                    UnitPrice = dish.Price
+                };
+            }).ToList();
+
+            // Totals
+            order.Subtotal = order.OrderItems.Sum(x => x.UnitPrice * x.Quantity);
             order.TotalAmount = order.Subtotal + order.DeliveryFee;
-            order.Status = OrderStatus.Na_Cekanju;
 
+            // Snimi
             var createdOrder = await _orderRepo.CreateOrder(order, ct);
+            var fullOrder = await _orderRepo.GetOrderById(createdOrder.Id, ct);
+            if (fullOrder == null)
+                throw new NotFoundException($"Porudžbina sa ID-jem {createdOrder.Id} nije pronađena nakon kreiranja.");
+
             _logger.LogInformation("Porudžbina sa ID-jem {OrderId} je uspešno kreirana.", createdOrder.Id);
 
-            return _mapper.Map<OrderDetailsDto>(createdOrder);
+            return _mapper.Map<OrderDetailsDto>(fullOrder);
         }
 
         public Task AcceptOrderAsync(int id, CancellationToken ct = default)
