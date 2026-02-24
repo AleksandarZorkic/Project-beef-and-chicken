@@ -10,6 +10,5 @@ namespace beef_and_chicken.Application.Interfaces.Services
         Task AcceptOrderAsync(int id, CancellationToken ct = default);
         Task RejectOrderAsync(int id, CancellationToken ct = default);
         Task<IEnumerable<OrderDetailsDto>> GetPendingOrdersAsync(CancellationToken ct = default);
-
     }
 }

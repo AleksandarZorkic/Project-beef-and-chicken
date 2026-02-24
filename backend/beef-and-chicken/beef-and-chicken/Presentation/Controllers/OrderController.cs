@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace beef_and_chicken.Presentation.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -30,7 +30,8 @@ namespace beef_and_chicken.Presentation.Controllers
         public async Task<ActionResult<OrderDetailsDto>> CreateOrder(CreateOrderRequestDto dto, CancellationToken ct = default)
         {
             var newOrder = await _orderService.CreateOrderAsync(dto, ct);
-            return Ok(newOrder);
+            
+            return CreatedAtAction(nameof(GetOrderById), new { id = newOrder.Id }, newOrder);
         }
 
         [HttpPatch("{id:int}/accept")]
