@@ -97,6 +97,8 @@ namespace beef_and_chicken.Application.Services
                     HouseNumber = address.HouseNumber,
                     PostalCode = address.PostalCode,
                     City = address.City,
+                    Label = address.Label,
+                    Note = address.Note,
                 },
                 Status = OrderStatus.Na_Cekanju,
                 DeliveryFee = deliveryFee

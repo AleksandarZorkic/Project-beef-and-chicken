@@ -16,7 +16,7 @@ export default function App() {
             <Route path="/menu" element={<MenuPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/success/ :orderId" element={<OrderSuccessPage />} />
+            <Route path="/success/:orderId" element={<OrderSuccessPage />} />
           </Routes>
         </AppLayout>
       </CartProvider>

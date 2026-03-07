@@ -35,28 +35,29 @@ export default function MenuPage() {
           gridTemplateColumns: "repeat(2, 1fr)",
           gap: 12,
         }}
-      ></div>
-      {data.map((d) => (
-        <div
-          key={d.id}
-          style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}
-        >
-          <div style={{ fontWeight: 700 }}>{d.name}</div>
-          <div>{d.description}</div>
-          <div style={{ marginTop: 8 }}>{d.price} RSD</div>
-          <button
-            style={{ marginTop: 8 }}
-            onClick={() =>
-              dispatch({
-                type: "ADD-ITEM",
-                payload: { dishId: d.id, name: d.name, unitPrice: d.price },
-              })
-            }
+      >
+        {data.map((d) => (
+          <div
+            key={d.id}
+            style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}
           >
-            Dodaj u korpu
-          </button>
-        </div>
-      ))}
+            <div style={{ fontWeight: 700 }}>{d.name}</div>
+            <div>{d.description}</div>
+            <div style={{ marginTop: 8 }}>{d.price} RSD</div>
+            <button
+              style={{ marginTop: 8 }}
+              onClick={() =>
+                dispatch({
+                  type: "ADD-ITEM",
+                  payload: { dishId: d.id, name: d.name, unitPrice: d.price },
+                })
+              }
+            >
+              Dodaj u korpu
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

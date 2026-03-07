@@ -13,6 +13,7 @@ namespace beef_and_chicken.Domain.Entities
         // Collections
         public ICollection<UserAllergen> UserAllergens { get; set; } = new List<UserAllergen>();
         public ICollection<EmployeeWorkTime> EmployeeWorkTimes { get; set; } = new List<EmployeeWorkTime>();
+        public ICollection<Address> Addresses { get; set; } = new List<Address>();
 
     }
 }

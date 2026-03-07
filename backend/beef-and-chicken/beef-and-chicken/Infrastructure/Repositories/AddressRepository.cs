@@ -11,6 +11,14 @@ namespace beef_and_chicken.Infrastructure.Repositories
 
         public AddressRepository(AppDbContext context) => _context = context;
 
+        public async Task<List<Address>> GetAllCustomerAddressesAsync(int customerId, CancellationToken ct = default)
+        {
+            return await _context.Addresses
+                .AsNoTracking()
+                .Where(a => a.CustomerId == customerId)
+                .ToListAsync(ct);
+        }
+
         public async Task<Address?> GetCustomerAddressAsync(int addressId, int customerId, CancellationToken ct = default)
         {
             return await _context.Addresses

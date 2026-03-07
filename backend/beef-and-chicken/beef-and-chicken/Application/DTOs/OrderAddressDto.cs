@@ -11,5 +11,8 @@ namespace beef_and_chicken.Application.DTOs
         public string PostalCode { get; set; } = string.Empty;
         [Required]
         public string City { get; set; } = string.Empty;
+        public string? Label { get; set; }
+        public string? Note { get; set; }
+        public bool IsDefault { get; set; }
     }
 }
