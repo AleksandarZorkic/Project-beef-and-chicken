@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using beef_and_chicken.Domain.Entities;
+using beef_and_chicken.Application.Interfaces.Services;
 
 namespace beef_and_chicken.Infrastructure.Data
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : DbContext, IUnitOfWork
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -20,7 +21,6 @@ namespace beef_and_chicken.Infrastructure.Data
         public DbSet<UserAllergen> UserAllergens => Set<UserAllergen>();
 
 
-        
 
 
         protected override void OnModelCreating(ModelBuilder builder)

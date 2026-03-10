@@ -55,11 +55,11 @@ namespace beef_and_chicken.Application.Services
             if (orderDto.Items.Any(i => i.DishId <= 0))
                 throw new ValidationException("Svaka stavka mora imati validan DishId.");
 
-            if (orderDto.Items.Any(i => i.Quantity <= 0))
+            if (orderDto.Items.Any(i => i.Quantity <= 0)) 
                 throw new ValidationException("Količina mora biti veća od 0.");
 
             if (orderDto.CustomerAddressId <= 0)
-                throw new ValidationException("Addresa za dostavu je obavezna.");
+                throw new ValidationException("Adresa za dostavu je obavezna.");
 
             const decimal deliveryFee = 200;
 

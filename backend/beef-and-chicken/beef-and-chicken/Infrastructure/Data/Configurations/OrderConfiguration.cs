@@ -39,6 +39,14 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
                     .HasColumnName("DeliveryCity")
                     .HasMaxLength(50)
                     .IsRequired();
+
+                a.Property(p => p.Label)
+                    .HasColumnName("DeliveryLabel")
+                    .HasMaxLength(50);
+
+                a.Property(p => p.Note)
+                .HasColumnName("DeliveryNote")
+                    .HasMaxLength(200);
             });
 
             builder.Navigation(o => o.DeliveryAddress).IsRequired();
