@@ -25,7 +25,7 @@ namespace beef_and_chicken.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<Order?> GetOrderById(int id, CancellationToken ct = default)
+        public async Task<IEnumerable<Order>> GetAllCustomerOrders(int userId, CancellationToken ct = default)
         {
             return await _context.Orders
                 .AsNoTracking()
@@ -34,7 +34,33 @@ namespace beef_and_chicken.Infrastructure.Repositories
                 .Include(o => o.DeliveryAddress)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Dish)
-                .FirstOrDefaultAsync(o => o.Id == id, ct);
+                .Where(o => o.CustomerId == userId)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync(ct);
+        }
+
+        public async Task<Order?> GetCustomerOrderById(int userId, int orderId, CancellationToken ct = default)
+        {
+            return await _context.Orders
+                .AsNoTracking()
+                .Include(o => o.Customer)
+                .Include(o => o.Courier)
+                .Include(o => o.DeliveryAddress)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Dish)
+                .FirstOrDefaultAsync(o => o.Id == orderId && o.CustomerId == userId, ct);
+        }
+
+        public async Task<Order?> GetOrderById(int orderId, CancellationToken ct = default)
+        {
+            return await _context.Orders
+                .AsNoTracking()
+                .Include(o => o.Customer)
+                .Include(o => o.Courier)
+                .Include(o => o.DeliveryAddress)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Dish)
+                .FirstOrDefaultAsync(o => o.Id == orderId, ct);
         }
 
         public async Task<IEnumerable<Order>> GetPendingOrders(CancellationToken ct = default)
@@ -51,7 +77,6 @@ namespace beef_and_chicken.Infrastructure.Repositories
         public async Task<Order> CreateOrder(Order order, CancellationToken ct  = default)
         {
             await _context.Orders.AddAsync(order, ct);
-            await _context.SaveChangesAsync(ct);
             return order;
         }
 
@@ -64,7 +89,6 @@ namespace beef_and_chicken.Infrastructure.Repositories
 
             order.Status = dto.Status;
 
-            await _context.SaveChangesAsync(ct);
             return order;
         }
 
@@ -76,7 +100,6 @@ namespace beef_and_chicken.Infrastructure.Repositories
                 return false;
 
             _context.Orders.Remove(order);
-            await _context.SaveChangesAsync(ct);
             return true;
         }  
     }

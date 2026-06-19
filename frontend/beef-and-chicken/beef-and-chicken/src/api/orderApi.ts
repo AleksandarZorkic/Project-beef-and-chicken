@@ -1,4 +1,5 @@
 import api from "../api/http";
+import type { AddressDto } from "./addressApi";
 
 export type OrderStatus =
   | "Na_Cekanju"
@@ -7,13 +8,6 @@ export type OrderStatus =
   | "Preuzimanje_u_toku"
   | "Dostava_u_toku"
   | "Dostavljena";
-
-export interface OrderAddressDto {
-  street: string;
-  houseNumber: string;
-  postalCode: string;
-  city: string;
-}
 
 export interface OrderItemDto {
   id: number;
@@ -38,7 +32,7 @@ export interface OrderDetailsDto {
   id: number;
   customerId: number;
   courierId?: number;
-  deliveryAddress: OrderAddressDto;
+  deliveryAddress: AddressDto;
   notes?: string;
   subtotal: number;
   deliveryFee: number;

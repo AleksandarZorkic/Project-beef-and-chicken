@@ -24,21 +24,21 @@ namespace beef_and_chicken.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<Dish?> GetByIdAsync(int id, CancellationToken ct = default) 
+        public async Task<Dish?> GetByIdAsync(int dishId, CancellationToken ct = default) 
         {
             return await _context.Dishes
                 .AsNoTracking()
                 .Include(d => d.Category)
                 .Include(d => d.DishAllergens)
                     .ThenInclude(da => da.Allergen)
-                .FirstOrDefaultAsync(d => d.Id == id && d.IsActive && d.Category.IsActive, ct);
+                .FirstOrDefaultAsync(d => d.Id == dishId && d.IsActive && d.Category.IsActive, ct);
         }
 
-        public async Task<IEnumerable<Dish>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default)
+        public async Task<IEnumerable<Dish>> GetByIdsAsync(IEnumerable<int> dishIds, CancellationToken ct = default)
         {
             return await _context.Dishes
                 .AsNoTracking()
-                .Where(d => ids.Contains(d.Id) && d.IsActive && d.Category.IsActive)
+                .Where(d => dishIds.Contains(d.Id) && d.IsActive && d.Category.IsActive)
                 .ToListAsync(ct);
         }
     }

@@ -8,7 +8,6 @@ namespace beef_and_chicken.Domain.Entities
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string? ProfilePicture { get; set; }
-        public Role Role { get; set; } = Role.Guest;
 
         // Collections
         public ICollection<UserAllergen> UserAllergens { get; set; } = new List<UserAllergen>();

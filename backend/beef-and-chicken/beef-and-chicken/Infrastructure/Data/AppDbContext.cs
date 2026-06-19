@@ -1,10 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using beef_and_chicken.Application.Interfaces.Services;
 using beef_and_chicken.Domain.Entities;
-using beef_and_chicken.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace beef_and_chicken.Infrastructure.Data
 {
-    public class AppDbContext : DbContext, IUnitOfWork
+    public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int >, IUnitOfWork
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -17,11 +19,7 @@ namespace beef_and_chicken.Infrastructure.Data
         public DbSet<FastFoodWorkTime> FastFoodWorkTimes => Set<FastFoodWorkTime>();
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
-        public DbSet<User> Users => Set<User>();
         public DbSet<UserAllergen> UserAllergens => Set<UserAllergen>();
-
-
-
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

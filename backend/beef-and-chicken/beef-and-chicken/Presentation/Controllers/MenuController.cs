@@ -18,10 +18,10 @@ namespace beef_and_chicken.Presentation.Controllers
             return Ok(menu);
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetDishById(int id, CancellationToken ct = default)
+        [HttpGet("{dishId:int}")]
+        public async Task<IActionResult> GetDishById(int dishId, CancellationToken ct = default)
         {
-            var dish = await _menuService.GetByIdAsync(id, ct);
+            var dish = await _menuService.GetByIdAsync(dishId, ct);
             return Ok(dish);
         }
     }

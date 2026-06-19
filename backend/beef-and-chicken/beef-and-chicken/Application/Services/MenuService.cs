@@ -27,14 +27,14 @@ namespace beef_and_chicken.Application.Services
             return _mapper.Map<IEnumerable<DishMenuDto>>(menu);
         }
 
-        public async Task<DishMenuDto> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<DishMenuDto> GetByIdAsync(int dishId, CancellationToken ct = default)
         {
-            var dish = await _menuRepo.GetByIdAsync(id, ct);
+            var dish = await _menuRepo.GetByIdAsync(dishId, ct);
 
             if (dish == null)
             {
-                _logger.LogInformation("Dish not found. Id={DishId}", id);
-                throw new NotFoundException($"Jelo sa ID-{id} nije pronađeno.");
+                _logger.LogInformation("Dish not found. Id={DishId}", dishId);
+                throw new NotFoundException($"Jelo sa ID-{dishId} nije pronađeno.");
             }
 
             return _mapper.Map<DishMenuDto>(dish);

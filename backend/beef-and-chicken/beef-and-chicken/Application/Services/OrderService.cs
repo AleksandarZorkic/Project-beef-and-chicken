@@ -16,36 +16,53 @@ namespace beef_and_chicken.Application.Services
         private readonly IAddressRepository _addressRepo;
         private readonly ILogger<OrderService> _logger;
         private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
 
 
-        public OrderService(IOrderRepository orderRepo, IMenuRepository menuRepo, IAddressRepository addressRepo, ILogger<OrderService> logger, IMapper mapper )
+        public OrderService(IOrderRepository orderRepo, IMenuRepository menuRepo, IAddressRepository addressRepo, ILogger<OrderService> logger, IMapper mapper, IUnitOfWork unitOfWork)
         {
             _orderRepo = orderRepo;
             _menuRepo = menuRepo;
             _addressRepo = addressRepo;
             _logger = logger; 
             _mapper = mapper;
+            _unitOfWork = unitOfWork;
         }
 
-        public async Task<IEnumerable<OrderDetailsDto>> GetAllOrders(CancellationToken ct = default)
+        public async Task<IEnumerable<OrderDetailsDto>> GetCustomerOrders(int userId, CancellationToken ct = default)
         {
-            var orders = await _orderRepo.GetAllOrders(ct);
+            var orders = await _orderRepo.GetAllCustomerOrders(userId, ct);
             return _mapper.Map<IEnumerable<OrderDetailsDto>>(orders);
         }
 
-        public async Task<OrderDetailsDto> GetOrderById(int id, CancellationToken ct  = default)
+        /// OBAVEZNO: Vratiti se ovde pogledati metodu i prepraviti je
+        public async Task<Order?> GetCustomerOrderById(int userId, int orderId, CancellationToken ct = default)
         {
-            var order = await _orderRepo.GetOrderById(id, ct);
+            var order = await _orderRepo.GetCustomerOrderById(userId, orderId, ct);
+
             if (order == null)
             {
-                _logger.LogInformation("Porudžbina sa ID-jem {OrderId} ne postoji!", id);
-                throw new NotFoundException($"Porudžbina sa ID-jem {id} nije pronađena.");
+                _logger.LogInformation("Porudžbina sa ID-jem {OrderId} ne postoji!", orderId);
+                throw new NotFoundException($"Porudžbina sa ID-jem {orderId} nije pronađena.");
+            }
+
+            return _mapper.Map<Order>(order);
+        }
+
+        public async Task<OrderDetailsDto> GetOrderById(int userId, int orderId, CancellationToken ct  = default)
+        {
+            var order = await _orderRepo.GetCustomerOrderById(userId, orderId, ct);
+             
+            if (order == null)
+            {
+                _logger.LogInformation("Porudžbina sa ID-jem {OrderId} ne postoji!", orderId);
+                throw new NotFoundException($"Porudžbina sa ID-jem {orderId} nije pronađena.");
             }
 
             return _mapper.Map<OrderDetailsDto>(order);
         }
 
-        public async Task<OrderDetailsDto> CreateOrderAsync(CreateOrderRequestDto orderDto, CancellationToken ct = default)
+        public async Task<OrderDetailsDto> CreateOrderAsync(int userId, CreateOrderRequestDto orderDto, CancellationToken ct = default)
         {
             if (orderDto is null) throw new ArgumentNullException(nameof(orderDto));
 
@@ -61,15 +78,12 @@ namespace beef_and_chicken.Application.Services
             if (orderDto.CustomerAddressId <= 0)
                 throw new ValidationException("Adresa za dostavu je obavezna.");
 
-            const decimal deliveryFee = 200;
-
-            // Ovo bi trebalo da se dobije iz konteksta autentifikacije, hardkodirano za primer
-            int customerId = 1;            
+            const decimal deliveryFee = 200;          
 
             // Validacija adrese
-            var address = await _addressRepo.GetCustomerAddressAsync(orderDto.CustomerAddressId, customerId, ct);
+            var address = await _addressRepo.GetCustomerAddressAsync(userId, orderDto.CustomerAddressId, ct);
             if (address == null)
-                throw new NotFoundException($"Adresa sa ID-jem {orderDto.CustomerAddressId} nije pronađena za korisnika sa ID-jem {customerId}.");
+                throw new NotFoundException($"Adresa sa ID-jem {orderDto.CustomerAddressId} nije pronađena za korisnika sa ID-jem {userId}.");
 
             // Izvlacenje svih DishId i povlacenje jela iz baze
             var dishIds = orderDto.Items.Select(x => x.DishId).Distinct().ToList();
@@ -88,7 +102,7 @@ namespace beef_and_chicken.Application.Services
             // Napravi order * snapshot adresa
             var order = new Order
             {
-                CustomerId = customerId,
+                CustomerId = userId,
                 CustomerAddressId = orderDto.CustomerAddressId,
                 CreatedAt = DateTime.UtcNow,
                 DeliveryAddress = new OrderAddressSnapshot
@@ -122,7 +136,9 @@ namespace beef_and_chicken.Application.Services
 
             // Snimi
             var createdOrder = await _orderRepo.CreateOrder(order, ct);
-            var fullOrder = await _orderRepo.GetOrderById(createdOrder.Id, ct);
+            await _unitOfWork.SaveChangesAsync();
+
+            var fullOrder = await _orderRepo.GetCustomerOrderById(userId, createdOrder.Id, ct);
             if (fullOrder == null)
                 throw new NotFoundException($"Porudžbina sa ID-jem {createdOrder.Id} nije pronađena nakon kreiranja.");
 
@@ -131,23 +147,25 @@ namespace beef_and_chicken.Application.Services
             return _mapper.Map<OrderDetailsDto>(fullOrder);
         }
 
-        public Task AcceptOrderAsync(int id, CancellationToken ct = default)
-            => UpdateOrderStatus(id, OrderStatus.Prihvacena, ct);
+        public Task AcceptOrderAsync(int orderId, CancellationToken ct = default)
+            => UpdateOrderStatus(orderId, OrderStatus.Prihvacena, ct);
 
-        public Task RejectOrderAsync(int id, CancellationToken ct = default)
-            => UpdateOrderStatus(id, OrderStatus.Odbijena, ct);
+        public Task RejectOrderAsync(int orderId, CancellationToken ct = default)
+            => UpdateOrderStatus(orderId, OrderStatus.Odbijena, ct);
 
-        private async Task UpdateOrderStatus(int id, OrderStatus newStatus, CancellationToken ct = default)
+        private async Task UpdateOrderStatus(int orderId, OrderStatus newStatus, CancellationToken ct = default)
         {
-            var order = await _orderRepo.GetOrderById(id, ct);
+            var order = await _orderRepo.GetOrderById(orderId, ct);
             if (order == null)
-                throw new NotFoundException($"Porudžbina sa ID-jem {id} nije pronađena.");
+                throw new NotFoundException($"Porudžbina sa ID-jem {orderId} nije pronađena.");
 
             if (order.Status != OrderStatus.Na_Cekanju)
                 throw new ValidationException("Status se može promeniti samo ako je porudžbina na čekanju.");
 
             var dto = new UpdateOrderStatusDto { Status = newStatus };
-            await _orderRepo.UpdateOrder(id, dto, ct);
+
+            await _orderRepo.UpdateOrder(orderId, dto, ct);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<OrderDetailsDto>> GetPendingOrdersAsync(CancellationToken ct = default)

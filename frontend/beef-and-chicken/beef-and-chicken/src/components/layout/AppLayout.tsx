@@ -20,6 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       >
         <Link to="/menu">Meni</Link>
         <Link to="/cart">Korpa ({count})</Link>
+        <Link to="/addresses">Adrese</Link>
         <div style={{ marginLeft: "auto" }}>Subtotal: {subtotal} RSD</div>
         <button disabled={count === 0} onClick={() => navigate("/cart")}>
           Otvori korpu

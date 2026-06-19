@@ -1,4 +1,4 @@
-import api from "../api/http";
+import api from "./http";
 
 export interface AddressDto {
   id: number;
@@ -21,40 +21,35 @@ export interface AddressUpsertDto {
   isDefault: boolean;
 }
 
-const customerAddressesResource = (customerId: number) =>
-  `/customers/${customerId}/addresses`;
+const addressesResource = "/addresses";
+const addressByIdResource = (addressId: number) => `/addresses/${addressId}`;
 
-const customerAddressByIdResource = (customerId: number, addressId: number) =>
-  `/customers/${customerId}/addresses/${addressId}`;
-
-export async function getAllAddresses(customerId: number) {
-  const res = await api.get<AddressDto>(customerAddressesResource);
+export async function getAllAddresses() {
+  const res = await api.get<AddressDto[]>(addressesResource);
   return res.data;
 }
 
-export async function getAddressById(customerId: number, addressId: number) {
-  const res = await api.get<AddressDto>(customerAddressByIdResource);
+export async function getAddressById(addressId: number) {
+  const res = await api.get<AddressDto>(addressByIdResource(addressId));
   return res.data;
 }
 
-export async function createAddress(
-  customerId: number,
-  addressDto: AddressUpsertDto,
-) {
-  const res = await api.post<AddressDto>(customerAddressesResource);
+export async function createAddress(addressDto: AddressUpsertDto) {
+  const res = await api.post<AddressDto>(addressesResource, addressDto);
   return res.data;
 }
 
 export async function updateAddress(
-  customerId: number,
   addressId: number,
   addressDto: AddressUpsertDto,
 ) {
-  const res = await api.put<AddressDto>(customerAddressByIdResource);
+  const res = await api.put<AddressDto>(
+    addressByIdResource(addressId),
+    addressDto,
+  );
   return res.data;
 }
 
-export async function deleteAddress(customerId: number, addressId: number) {
-  const res = await api.delete<AddressDto>(customerAddressByIdResource);
-  return res.data;
+export async function deleteAddress(addressId: number) {
+  await api.delete(addressByIdResource(addressId));
 }
