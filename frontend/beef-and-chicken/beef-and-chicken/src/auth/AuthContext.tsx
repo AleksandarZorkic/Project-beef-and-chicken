@@ -7,7 +7,7 @@ import type {
   RegisterRequestDto,
 } from "./auth.types";
 import { login as loginApi, register as registerApi } from "../api/authApi";
-import { setAuthToken } from "../api/http";
+import { setAuthToken } from "../api/https";
 
 type AuthContextValue = {
   user: AuthUser | null;

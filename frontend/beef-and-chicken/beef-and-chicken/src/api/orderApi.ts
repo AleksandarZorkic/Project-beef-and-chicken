@@ -1,4 +1,4 @@
-import api from "../api/http";
+import api from "./https";
 import type { AddressDto } from "./addressApi";
 
 export type OrderStatus =

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getApiErrorMessage } from "../utils/apiErrors";
 import { getApiFieldErrors } from "../utils/apiValidationErrors";
-import { validateRegister } from "../auth/auth.validation";
+import { validateRegister, getPasswordRules } from "../auth/auth.validation";
 
 type RegisterField =
   | "firstName"
@@ -31,11 +31,13 @@ export default function RegisterPage() {
   );
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [passwordRules, setPasswordRules] = useState(getPasswordRules(""));
 
   function setField<K extends keyof typeof form>(field: K, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
     setGeneralError(null);
+    setPasswordRules(getPasswordRules(form.password));
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -147,6 +149,40 @@ export default function RegisterPage() {
             value={form.password}
             onChange={(e) => setField("password", e.target.value)}
           />
+          <div style={{ fontSize: 14, marginTop: 4 }}>
+            <div
+              style={{ color: passwordRules.minLength ? "green" : "crimson" }}
+            >
+              {passwordRules.minLength ? "✓" : "✗"} Minimum 8 karaktera
+            </div>
+            <div
+              style={{
+                color: passwordRules.hasUppercase ? "green" : "crimson",
+              }}
+            >
+              {passwordRules.hasUppercase ? "✓" : "✗"} Bar jedno veliko slovo
+            </div>
+            <div
+              style={{
+                color: passwordRules.hasLowercase ? "green" : "crimson",
+              }}
+            >
+              {passwordRules.hasLowercase ? "✓" : "✗"} Bar jedno malo slovo
+            </div>
+            <div
+              style={{ color: passwordRules.hasDigit ? "green" : "crimson" }}
+            >
+              {passwordRules.hasDigit ? "✓" : "✗"} Bar jedan broj
+            </div>
+            <div
+              style={{
+                color: passwordRules.hasSpecialChar ? "green" : "crimson",
+              }}
+            >
+              {passwordRules.hasSpecialChar ? "✓" : "✗"} Bar jedan specijalni
+              znak
+            </div>
+          </div>
           {errors.password && (
             <div style={{ color: "crimson", marginTop: 4 }}>
               {errors.password}

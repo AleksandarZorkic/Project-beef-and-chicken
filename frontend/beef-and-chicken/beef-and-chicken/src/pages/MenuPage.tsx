@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useCart } from "../state/cart/CartContext";
 import { getMenu } from "../api/menuApi";
 import type { DishMenuDto } from "../api/menuApi";
-import { API_ORIGIN } from "../api/http";
+import { API_ORIGIN } from "../api/https";
 
 function resolveImageUrl(imageUrl?: string) {
   if (!imageUrl) return null;

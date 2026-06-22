@@ -12,6 +12,8 @@ import HomePage from "./pages/HomePage";
 import AddressesPage from "./components/address/AddressesPage";
 import AppLayout from "./components/layout/AppLayout";
 import { CartProvider } from "./state/cart/CartContext";
+import AllergensPage from "./pages/AllergensPage";
+import ProfileAllergensPage from "./pages/ProfileAllergensPage";
 
 function AppShell() {
   const outlet = useOutlet();
@@ -31,6 +33,11 @@ export default function App() {
             <Route element={<AppShell />}>
               <Route path="/menu" element={<MenuPage />} />
               <Route path="/cart" element={<CartPage />} />
+              <Route path="/allergens" element={<AllergensPage />} />
+              <Route
+                path="/profile/allergens"
+                element={<ProfileAllergensPage />}
+              />
 
               <Route element={<ProtectedRoute />}>
                 <Route path="/checkout" element={<CheckoutPage />} />

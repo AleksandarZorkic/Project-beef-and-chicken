@@ -1,4 +1,4 @@
-import api from "./http";
+import api from "./https";
 
 export interface AddressDto {
   id: number;

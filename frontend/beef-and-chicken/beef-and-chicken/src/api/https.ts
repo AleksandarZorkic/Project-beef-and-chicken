@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const API_BASE_URL =
-  (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:7023/api";
+  (import.meta as any).env?.VITE_API_BASE_URL || "https://localhost:7023/api";
 
 export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/i, "");
 
@@ -12,17 +12,25 @@ const api = axios.create({
 api.interceptors.request.use((cfg) => {
   try {
     const saved = localStorage.getItem("auth");
+
     if (saved) {
       const { token } = JSON.parse(saved);
-      if (token) cfg.headers.Authorization = `Bearer ${token}`;
+
+      if (token) {
+        cfg.headers.Authorization = `Bearer ${token}`;
+      }
     }
   } catch {}
+
   return cfg;
 });
 
 export default api;
 
 export function setAuthToken(token?: string) {
-  if (token) localStorage.setItem("auth", JSON.stringify({ token }));
-  else localStorage.removeItem("auth");
+  if (token) {
+    localStorage.setItem("auth", JSON.stringify({ token }));
+  } else {
+    localStorage.removeItem("auth");
+  }
 }

@@ -1,4 +1,4 @@
-import api from "./http";
+import api from "./https";
 import type {
   AuthResponseDto,
   LoginRequestDto,

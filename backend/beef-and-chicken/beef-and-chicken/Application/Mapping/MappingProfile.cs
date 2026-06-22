@@ -28,7 +28,16 @@ namespace beef_and_chicken.Application.Mapping
             CreateMap<RegistrationDto, User>()
                 .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.Username))
                 .ForMember(d => d.FirstName, opt => opt.MapFrom(s => s.FirstName))
-                .ForMember(d => d.LastName, opt => opt.MapFrom(s => s.LastName)); 
+                .ForMember(d => d.LastName, opt => opt.MapFrom(s => s.LastName));
+
+            // Allergen mappings
+            CreateMap<Allergen, AllergenDto>();
+
+            CreateMap<CreateAllergenDto, Allergen>()
+                .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Trim()));
+
+            CreateMap<UpdateAllergenDto, Allergen>()
+                .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Trim()));
         }
     }
 }

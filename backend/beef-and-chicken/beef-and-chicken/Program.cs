@@ -104,6 +104,10 @@ builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext
 builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<IAddressRepository, AddressRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAllergenRepository, AllergenRepository>();
+builder.Services.AddScoped<IAllergenService, AllergenService>();
+builder.Services.AddScoped<IUserAllergenRepository, UserAllergenRepository>();
+builder.Services.AddScoped<IUserAllergenService, UserAllergenService>();
 
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 builder.Services.AddAuthorization();
@@ -111,7 +115,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Front", p =>
-        p.WithOrigins("http://localhost:5173")
+        p.WithOrigins("http://localhost:5173", "https://localhost:5173")
          .AllowAnyHeader()
          .AllowAnyMethod());
 });

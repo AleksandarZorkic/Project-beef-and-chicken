@@ -35,7 +35,10 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      await login(form);
+      await login({
+        username: form.username.trim(),
+        password: form.password,
+      });
       navigate(redirectTo, { replace: true });
     } catch (e: any) {
       setGeneralError(getApiErrorMessage(e));

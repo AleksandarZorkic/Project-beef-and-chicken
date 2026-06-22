@@ -1,4 +1,4 @@
-import api from "./http";
+import api from "./https";
 
 // Baci pogled na Swager kako bi znao koje atribute vraca da li PascalCase ilicamelCase.
 export interface DishMenuDto {
