@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, useOutlet } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthContext";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import RoleProtectedRoute from "./auth/RoleProtectedRoute";
+import { AppRoles } from "./auth/roles";
 
 import MenuPage from "./pages/MenuPage";
 import CartPage from "./pages/CartPage";
@@ -14,6 +16,8 @@ import AppLayout from "./components/layout/AppLayout";
 import { CartProvider } from "./state/cart/CartContext";
 import AllergensPage from "./pages/AllergensPage";
 import ProfileAllergensPage from "./pages/ProfileAllergensPage";
+import AdminDishesPage from "./pages/AdminDishesPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 
 function AppShell() {
   const outlet = useOutlet();
@@ -33,19 +37,33 @@ export default function App() {
             <Route element={<AppShell />}>
               <Route path="/menu" element={<MenuPage />} />
               <Route path="/cart" element={<CartPage />} />
-              <Route path="/allergens" element={<AllergensPage />} />
-              <Route
-                path="/profile/allergens"
-                element={<ProfileAllergensPage />}
-              />
 
               <Route element={<ProtectedRoute />}>
+                <Route
+                  path="/my-allergens"
+                  element={<ProfileAllergensPage />}
+                />
+              </Route>
+
+              <Route
+                element={
+                  <RoleProtectedRoute allowedRoles={[AppRoles.Customer]} />
+                }
+              >
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/addresses" element={<AddressesPage />} />
                 <Route
                   path="/success/:orderId"
                   element={<OrderSuccessPage />}
                 />
+              </Route>
+
+              <Route
+                element={<RoleProtectedRoute allowedRoles={[AppRoles.Admin]} />}
+              >
+                <Route path="/admin/dishes" element={<AdminDishesPage />} />
+                <Route path="/admin/users" element={<AdminUsersPage />} />
+                <Route path="/allergens" element={<AllergensPage />} />
               </Route>
             </Route>
           </Routes>

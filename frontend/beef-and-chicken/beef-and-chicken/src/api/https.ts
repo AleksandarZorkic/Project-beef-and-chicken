@@ -25,6 +25,16 @@ api.interceptors.request.use((cfg) => {
   return cfg;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("auth");
+    }
+    return Promise.reject(error);
+  },
+);
+
 export default api;
 
 export function setAuthToken(token?: string) {

@@ -10,8 +10,14 @@ namespace beef_and_chicken.Application.Mapping
         public MappingProfile()
         {
             // Menu mappings
-            CreateMap<Dish, DishMenuDto>();
-            CreateMap<DishAllergen, DishAllergenDto>();
+            CreateMap<Dish, DishMenuDto>()
+                .ForMember(d => d.CategoryName, opt => opt.MapFrom(s => s.Category.Name))
+                .ForMember(d => d.Allergens, opt => opt.MapFrom(s => s.DishAllergens));
+
+            CreateMap<DishAllergen, DishAllergenDto>()
+                .ForMember(d => d.AllergenId, opt => opt.MapFrom(s => s.Allergen.Id))
+                .ForMember(d => d.AllergenName, opt => opt.MapFrom(s => s.Allergen.Name))
+                .ForMember(d => d.IsTrace, opt => opt.MapFrom(s => s.IsTrace));
 
             // Address snapshot
             CreateMap<OrderAddressSnapshot, AddressDto>().ReverseMap();
@@ -26,7 +32,7 @@ namespace beef_and_chicken.Application.Mapping
                 .ForMember(d => d.DeliveryAddress, opt => opt.MapFrom(s => s.DeliveryAddress));
 
             CreateMap<RegistrationDto, User>()
-                .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.Username))
+                .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.UserName))
                 .ForMember(d => d.FirstName, opt => opt.MapFrom(s => s.FirstName))
                 .ForMember(d => d.LastName, opt => opt.MapFrom(s => s.LastName));
 

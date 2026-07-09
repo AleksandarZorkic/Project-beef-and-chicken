@@ -9,6 +9,11 @@ namespace beef_and_chicken.Domain.Entities
         public string LastName { get; set; } = string.Empty;
         public string? ProfilePicture { get; set; }
 
+        public bool IsAnonymized { get; set; }
+        public DateTimeOffset? AnonymizedAt { get; set; }
+        public DateTimeOffset? BlockedAt { get; set; }
+        public string? BlockReason { get; set; }
+
         // Collections
         public ICollection<UserAllergen> UserAllergens { get; set; } = new List<UserAllergen>();
         public ICollection<EmployeeWorkTime> EmployeeWorkTimes { get; set; } = new List<EmployeeWorkTime>();

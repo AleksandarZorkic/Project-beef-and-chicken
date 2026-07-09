@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useCart } from "../state/cart/CartContext";
 import { getMenu } from "../api/menuApi";
 import type { DishMenuDto } from "../api/menuApi";
 import { API_ORIGIN } from "../api/https";
+import { getMyAllergens } from "../api/userAllergenApi";
+import type { Allergen } from "../types/allergen";
 
 function resolveImageUrl(imageUrl?: string) {
   if (!imageUrl) return null;
@@ -19,21 +21,44 @@ export default function MenuPage() {
   const [data, setData] = useState<DishMenuDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [myAllergens, setMyAllergens] = useState<Allergen[]>([]);
 
   useEffect(() => {
-    (async () => {
+    async function loadMenuData() {
       try {
         setLoading(true);
+        setError(null);
+
         const menu = await getMenu();
-        console.log("MENU DATA:", menu);
         setData(menu);
+
+        try {
+          const userAllergens = await getMyAllergens();
+          setMyAllergens(userAllergens);
+        } catch {
+          setMyAllergens([]);
+        }
       } catch (e: any) {
-        setError(e?.message ?? "Greška pri učitavanju menija.");
+        setError(
+          e?.message || "Došlo je do greške prilikom učitavanja menija.",
+        );
       } finally {
         setLoading(false);
       }
-    })();
+    }
+
+    loadMenuData();
   }, []);
+
+  const myAllergenId = useMemo(() => {
+    return new Set(myAllergens.map((allergen) => allergen.id));
+  }, [myAllergens]);
+
+  function getMatchingAllergens(dish: DishMenuDto) {
+    return dish.allergens.filter((allergen) =>
+      myAllergenId.has(allergen.allergenId),
+    );
+  }
 
   if (loading) return <div>Učitavam meni...</div>;
   if (error) return <div style={{ color: "crimson" }}>{error}</div>;
@@ -50,41 +75,95 @@ export default function MenuPage() {
         }}
       >
         {data.map((d) => {
-          const imageSrc = resolveImageUrl(d.imageUrl);
+          const matchingAllergens = getMatchingAllergens(d);
+          const directAllergens = matchingAllergens.filter((a) => !a.isTrace);
+          const traceAllergens = matchingAllergens.filter((a) => a.isTrace);
+          const hasAllergyWarning = matchingAllergens.length > 0;
 
           return (
             <div
               key={d.id}
               style={{
-                border: "1px solid #ddd",
+                border: hasAllergyWarning
+                  ? "2px solid #d9534f"
+                  : "1px solid #ddd",
+                background: hasAllergyWarning ? "#fff2f2" : "white",
                 borderRadius: 8,
                 padding: 12,
+                marginBottom: 12,
               }}
             >
-              {imageSrc && (
-                <img
-                  src={imageSrc}
-                  alt={d.name}
+              <h3>{d.name}</h3>
+
+              <p>{d.description}</p>
+
+              <strong>{d.price} RSD</strong>
+
+              {hasAllergyWarning && (
+                <div
                   style={{
-                    width: "100%",
-                    height: 180,
-                    objectFit: "cover",
-                    borderRadius: 8,
-                    marginBottom: 12,
+                    marginTop: 10,
+                    padding: 10,
+                    borderRadius: 6,
+                    background: "#ffe1e1",
+                    color: "#9f1d1d",
+                    fontWeight: 600,
                   }}
-                />
+                >
+                  ⚠ Ovo jelo sadrži alergene koje ste označili na profilu.
+                  {directAllergens.length > 0 && (
+                    <div style={{ marginTop: 6 }}>
+                      Sadrži:{" "}
+                      {directAllergens
+                        .map((allergen) => allergen.allergenName)
+                        .join(", ")}
+                    </div>
+                  )}
+                  {traceAllergens.length > 0 && (
+                    <div style={{ marginTop: 6 }}>
+                      Može sadržati tragove:{" "}
+                      {traceAllergens
+                        .map((allergen) => allergen.allergenName)
+                        .join(", ")}
+                    </div>
+                  )}
+                </div>
               )}
 
-              <div style={{ fontWeight: 700 }}>{d.name}</div>
-              <div>{d.description}</div>
-              <div style={{ marginTop: 8 }}>{d.price} RSD</div>
+              {d.allergens.length > 0 && (
+                <div style={{ marginTop: 10 }}>
+                  <strong>Alergeni: </strong>
+
+                  {d.allergens.map((allergen) => (
+                    <span
+                      key={allergen.allergenId}
+                      style={{
+                        display: "inline-block",
+                        border: "1px solid #ddd",
+                        borderRadius: 999,
+                        padding: "2px 8px",
+                        marginRight: 6,
+                        marginTop: 4,
+                        fontSize: 13,
+                      }}
+                    >
+                      {allergen.allergenName}
+                      {allergen.isTrace ? " — tragovi" : ""}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               <button
                 style={{ marginTop: 8 }}
                 onClick={() =>
                   dispatch({
                     type: "ADD-ITEM",
-                    payload: { dishId: d.id, name: d.name, unitPrice: d.price },
+                    payload: {
+                      dishId: d.id,
+                      name: d.name,
+                      unitPrice: d.price,
+                    },
                   })
                 }
               >

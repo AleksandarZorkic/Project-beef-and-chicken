@@ -1,5 +1,8 @@
-﻿using beef_and_chicken.Application.Interfaces.Services;
+﻿using beef_and_chicken.Application.DTOs;
+using beef_and_chicken.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using beef_and_chicken.Domain.Entities;
 
 namespace beef_and_chicken.Presentation.Controllers
 {
@@ -11,17 +14,19 @@ namespace beef_and_chicken.Presentation.Controllers
 
         public MenuController(IMenuService menuService) => _menuService = menuService;
 
+        [AllowAnonymous]
         [HttpGet]
-        public async Task<IActionResult> GetMenu(CancellationToken ct = default)
+        public async Task<IActionResult> GetMenu(CancellationToken ct)
         {
             var menu = await _menuService.GetAllAsync(ct);
             return Ok(menu);
         }
 
-        [HttpGet("{dishId:int}")]
-        public async Task<IActionResult> GetDishById(int dishId, CancellationToken ct = default)
+        [AllowAnonymous]
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetDishById(int id, CancellationToken ct)
         {
-            var dish = await _menuService.GetByIdAsync(dishId, ct);
+            var dish = await _menuService.GetByIdAsync(id, ct);
             return Ok(dish);
         }
     }

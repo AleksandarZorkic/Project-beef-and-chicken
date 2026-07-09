@@ -1,9 +1,11 @@
 ﻿using beef_and_chicken.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 using beef_and_chicken.Application.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace beef_and_chicken.Presentation.Controllers
 {
+    [Authorize]
     [Route("api/allergens")]
     [ApiController]
     public class AllergenController : ControllerBase

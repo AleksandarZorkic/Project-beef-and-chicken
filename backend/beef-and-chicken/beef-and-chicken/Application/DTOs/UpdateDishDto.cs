@@ -1,0 +1,12 @@
+﻿namespace beef_and_chicken.Application.DTOs
+{
+    public class UpdateDishDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public decimal Price { get; set; }
+        public string? ImageUrl { get; set; }
+        public int CategoryId { get; set; }
+        public List<DishAllergenInputDto> Allergens { get; set; } = new();
+    }
+}

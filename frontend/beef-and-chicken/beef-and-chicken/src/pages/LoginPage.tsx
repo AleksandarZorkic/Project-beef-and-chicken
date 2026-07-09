@@ -36,7 +36,7 @@ export default function LoginPage() {
     try {
       setLoading(true);
       await login({
-        username: form.username.trim(),
+        userName: form.username.trim(),
         password: form.password,
       });
       navigate(redirectTo, { replace: true });

@@ -7,8 +7,18 @@ export type StoredAuth = {
 export function getStoredAuth(): StoredAuth | null {
   try {
     const raw = localStorage.getItem(AUTH_KEY);
+
     if (!raw) return null;
-    return JSON.parse(raw) as StoredAuth;
+
+    const parsed = JSON.parse(raw);
+
+    if (!parsed || typeof parsed.token !== "string" || !parsed.token.trim()) {
+      return null;
+    }
+
+    return {
+      token: parsed.token,
+    };
   } catch {
     return null;
   }

@@ -1,11 +1,5 @@
-export type AuthUser = {
-  id: number;
-  username?: string;
-  roles: string[];
-};
-
 export type LoginRequestDto = {
-  username: string;
+  userName: string;
   password: string;
 };
 
@@ -14,7 +8,7 @@ export type RegisterRequestDto = {
   password: string;
   firstName: string;
   lastName: string;
-  username: string;
+  userName: string;
   profilePicture?: string | null;
 };
 

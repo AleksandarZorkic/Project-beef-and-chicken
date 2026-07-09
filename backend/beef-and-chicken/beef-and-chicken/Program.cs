@@ -5,6 +5,7 @@ using beef_and_chicken.Application.Services;
 using beef_and_chicken.Domain.Entities;
 using beef_and_chicken.Infrastructure.Data;
 using beef_and_chicken.Infrastructure.Repositories;
+using beef_and_chicken.Infrastructure.Seed;
 using beef_and_chicken.Presentation.Middlewear;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -108,6 +109,8 @@ builder.Services.AddScoped<IAllergenRepository, AllergenRepository>();
 builder.Services.AddScoped<IAllergenService, AllergenService>();
 builder.Services.AddScoped<IUserAllergenRepository, UserAllergenRepository>();
 builder.Services.AddScoped<IUserAllergenService, UserAllergenService>();
+builder.Services.AddScoped<IAdminUserService, AdminUserService>();
+builder.Services.AddScoped<IAdminUserQueryRepository, AdminUserQueryRepository>();
 
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 builder.Services.AddAuthorization();
@@ -115,12 +118,17 @@ builder.Services.AddAuthorization();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Front", p =>
-        p.WithOrigins("http://localhost:5173", "https://localhost:5173")
+        p.WithOrigins("http://localhost:5173",
+                "https://localhost:5173",
+                "http://localhost:5174",
+                "https://localhost:5174")
          .AllowAnyHeader()
          .AllowAnyMethod());
 });
 
 var app = builder.Build();
+
+await RoleSeeder.SeedRolesAsync(app.Services);
 
 if (app.Environment.IsDevelopment())
 {
