@@ -111,3 +111,11 @@ export async function blockUser(id: number) {
 export async function unblockUser(id: number) {
   await api.patch(`${ADMIN_USERS_ENDPOINT}/${id}/unblock`);
 }
+
+export async function anonymizeUser(id: number) {
+  const response = await api.patch<AdminUserDto>(
+    `${ADMIN_USERS_ENDPOINT}/${id}/anonymize`,
+  );
+
+  return response.data;
+}

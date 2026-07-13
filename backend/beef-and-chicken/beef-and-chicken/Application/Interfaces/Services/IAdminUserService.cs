@@ -13,5 +13,6 @@ namespace beef_and_chicken.Application.Interfaces.Services
         Task BlockAsync(int userId, CancellationToken ct = default);
         Task UnblockAsync(int userId, CancellationToken ct = default);
         Task<PagedResultDto<AdminUserDto>> GetPagedAsync(AdminUsersQueryDto query, CancellationToken ct = default);
+        Task<AdminUserDto> AnonymizeAsync(int userId, CancellationToken ct = default);
     }
 }

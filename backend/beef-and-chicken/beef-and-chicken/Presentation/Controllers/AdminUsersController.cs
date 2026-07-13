@@ -66,5 +66,12 @@ namespace beef_and_chicken.Presentation.Controllers
             await _adminUserService.UnblockAsync(id, ct);
             return NoContent();
         }
+
+        [HttpPatch("{id:int}/anonymize")]
+        public async Task<IActionResult> Anonymize(int id, CancellationToken ct)
+        {
+            var user = await _adminUserService.AnonymizeAsync(id, ct);
+            return Ok(user);
+        }
     }
 }

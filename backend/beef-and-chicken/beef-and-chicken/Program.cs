@@ -1,11 +1,14 @@
 using beef_and_chicken.Application.Interfaces.Repositories;
 using beef_and_chicken.Application.Interfaces.Services;
 using beef_and_chicken.Application.Mapping;
+using beef_and_chicken.Application.Options;
 using beef_and_chicken.Application.Services;
 using beef_and_chicken.Domain.Entities;
+using beef_and_chicken.Infrastructure.BackgroundServices;
 using beef_and_chicken.Infrastructure.Data;
 using beef_and_chicken.Infrastructure.Repositories;
 using beef_and_chicken.Infrastructure.Seed;
+using beef_and_chicken.Infrastructure.Services;
 using beef_and_chicken.Presentation.Middlewear;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -111,6 +114,18 @@ builder.Services.AddScoped<IUserAllergenRepository, UserAllergenRepository>();
 builder.Services.AddScoped<IUserAllergenService, UserAllergenService>();
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<IAdminUserQueryRepository, AdminUserQueryRepository>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.Configure<UserAnonymizationOptions>(
+    builder.Configuration.GetSection("UserAnonymization")
+);
+
+builder.Services.AddScoped<IUserAnonymizationService, UserAnonymizationService>();
+builder.Services.AddScoped<IUserPersonalDataCleanupService, UserPersonalDataCleanupService>();
+
+builder.Services.AddHostedService<BlockedUsersAnonymizationBackgroundService>();
+
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 builder.Services.AddAuthorization();

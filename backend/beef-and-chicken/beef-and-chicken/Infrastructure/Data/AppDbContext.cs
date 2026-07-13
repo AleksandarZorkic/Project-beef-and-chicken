@@ -3,6 +3,7 @@ using beef_and_chicken.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using beef_and_chicken.Domain.Entities.Constants;
 
 namespace beef_and_chicken.Infrastructure.Data
 {
@@ -20,6 +21,7 @@ namespace beef_and_chicken.Infrastructure.Data
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
         public DbSet<UserAllergen> UserAllergens => Set<UserAllergen>();
+        public DbSet<AuditLog> AuditLogs {  get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

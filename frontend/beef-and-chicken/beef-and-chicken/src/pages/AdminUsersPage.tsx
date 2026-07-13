@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { AppRoles, type AppRole } from "../auth/roles";
 import { useAuth } from "../auth/AuthContext";
 import {
+  anonymizeUser,
   blockUser,
   createUserByAdmin,
   getAdminUsers,
@@ -34,6 +35,8 @@ const pageSize = 10;
 
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
+
+  const currentUserId = currentUser?.id ? Number(currentUser.id) : null;
 
   const [form, setForm] = useState<AdminUserFormState>(emptyForm);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
@@ -250,14 +253,92 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function handleAnonymize(user: AdminUserDto) {
+    const loggedInUserId = currentUser?.id ? Number(currentUser.id) : null;
+
+    if (loggedInUserId === user.id) {
+      const message = "Ne možeš anonimizovati sopstveni nalog.";
+
+      setError(message);
+      setSuccessMessage(null);
+      window.alert(message);
+
+      return;
+    }
+
+    if (user.isAnonymized) {
+      const message = "Korisnik je već anonimizovan.";
+
+      setError(message);
+      setSuccessMessage(null);
+      window.alert(message);
+
+      return;
+    }
+
+    if (!user.isBlocked) {
+      const message = "Korisnik mora biti blokiran pre anonimizacije.";
+
+      setError(message);
+      setSuccessMessage(null);
+      window.alert(message);
+
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Da li sigurno želiš da anonimizuješ korisnika "${user.userName}"?\n\nOva akcija menja lične podatke korisnika i ne treba je koristiti bez razloga.`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setError(null);
+      setSuccessMessage(null);
+
+      await anonymizeUser(user.id);
+      await reloadVisibleTables();
+
+      setSuccessMessage(`Korisnik "${user.userName}" je anonimizovan.`);
+    } catch (e) {
+      setError(getApiErrorMessage(e));
+    }
+  }
+
   async function handleBlock(user: AdminUserDto) {
-    const isCurrentUser = currentUser?.id === user.id;
+    if (currentUserId === user.id) {
+      const message = "Ne možeš blokirati sopstveni nalog.";
 
-    const message = isCurrentUser
-      ? `Blokiraš sopstveni nalog "${user.userName}". Ovo nije preporučljivo. Nastaviti?`
-      : `Da li sigurno želiš da blokiraš korisnika "${user.userName}"?`;
+      setError(message);
+      setSuccessMessage(null);
+      window.alert(message);
 
-    const confirmed = window.confirm(message);
+      return;
+    }
+
+    if (user.isAnonymized) {
+      const message = "Anonimizovan korisnik ne može biti blokiran.";
+
+      setError(message);
+      setSuccessMessage(null);
+      window.alert(message);
+
+      return;
+    }
+
+    if (user.isBlocked) {
+      const message = "Korisnik je već blokiran.";
+
+      setError(message);
+      setSuccessMessage(null);
+      window.alert(message);
+
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Da li sigurno želiš da blokiraš korisnika "${user.userName}"?`,
+    );
 
     if (!confirmed) return;
 
@@ -338,10 +419,11 @@ export default function AdminUsersPage() {
         <>
           <AdminUsersTable
             users={staffResult.items}
-            currentUserId={currentUser?.id ?? null}
+            currentUserId={currentUserId}
             onEdit={startEdit}
             onBlock={handleBlock}
             onUnblock={handleUnblock}
+            onAnonymize={handleAnonymize}
           />
 
           <PaginationControls
@@ -378,10 +460,11 @@ export default function AdminUsersPage() {
             <>
               <AdminUsersTable
                 users={customersResult.items}
-                currentUserId={currentUser?.id ?? null}
+                currentUserId={currentUserId}
                 onEdit={startEdit}
                 onBlock={handleBlock}
                 onUnblock={handleUnblock}
+                onAnonymize={handleAnonymize}
               />
 
               <PaginationControls

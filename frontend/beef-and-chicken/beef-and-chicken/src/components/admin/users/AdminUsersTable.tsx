@@ -7,6 +7,7 @@ type AdminUsersTableProps = {
   onEdit: (user: AdminUserDto) => void;
   onBlock: (user: AdminUserDto) => void;
   onUnblock: (user: AdminUserDto) => void;
+  onAnonymize: (user: AdminUserDto) => void;
 };
 
 export function AdminUsersTable({
@@ -15,6 +16,7 @@ export function AdminUsersTable({
   onEdit,
   onBlock,
   onUnblock,
+  onAnonymize,
 }: AdminUsersTableProps) {
   if (users.length === 0) {
     return <div>Nema korisnika za izabrane filtere.</div>;
@@ -94,12 +96,38 @@ export function AdminUsersTable({
                     ) : (
                       <button
                         type="button"
-                        disabled={user.isAnonymized}
+                        disabled={
+                          user.isAnonymized || currentUserId === user.id
+                        }
+                        title={
+                          user.isAnonymized
+                            ? "Anonimizovan korisnik ne može biti blokiran."
+                            : currentUserId === user.id
+                              ? "Ne možeš blokirati sopstveni nalog."
+                              : "Blokiraj korisnika."
+                        }
                         onClick={() => onBlock(user)}
                       >
                         Blokiraj
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      disabled={user.isAnonymized || !user.isBlocked}
+                      title={
+                        user.isAnonymized
+                          ? "Korisnik je već anonimizovan."
+                          : !user.isBlocked
+                            ? "Korisnik mora prvo biti blokiran."
+                            : currentUserId === user.id
+                              ? "Ne možeš anonimizovati sopstveni nalog."
+                              : "Anonimizuj korisnika."
+                      }
+                      onClick={() => onAnonymize(user)}
+                    >
+                      Anonimizuj
+                    </button>
                   </div>
                 </td>
               </tr>
