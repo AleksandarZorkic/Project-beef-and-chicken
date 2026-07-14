@@ -20,7 +20,19 @@ const emptyAddress: AddressUpsertDto = {
   isDefault: false,
 };
 
+function getErrorMessage(e: any, fallback: string) {
+  return (
+    e?.response?.data?.error ??
+    e?.response?.data?.message ??
+    e?.response?.data?.title ??
+    e?.message ??
+    fallback
+  );
+}
+
 export default function AddressesPage() {
+  const { user } = useAuth();
+
   const [addresses, setAddresses] = useState<AddressDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,15 +45,14 @@ export default function AddressesPage() {
   const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
   const [formValue, setFormValue] = useState<AddressUpsertDto>(emptyAddress);
 
-  const { user } = useAuth();
-
-  if (!user) return <div>Niste prijavljeni</div>;
-
-  const customerId = user.id;
-
   useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     loadAddresses();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!successMessage) return;
@@ -53,6 +64,10 @@ export default function AddressesPage() {
     return () => clearTimeout(timer);
   }, [successMessage]);
 
+  if (!user) {
+    return <div>Niste prijavljeni</div>;
+  }
+
   async function loadAddresses() {
     try {
       setError(null);
@@ -61,7 +76,7 @@ export default function AddressesPage() {
       const data = await getAllAddresses();
       setAddresses(data);
     } catch (e: any) {
-      setError(e?.message ?? "Greška pri učitavanju adresa.");
+      setError(getErrorMessage(e, "Greška pri učitavanju adresa."));
     } finally {
       setLoading(false);
     }
@@ -104,9 +119,41 @@ export default function AddressesPage() {
   }
 
   function validateAddress(value: AddressUpsertDto) {
-    if (!value.street.trim()) return "Ulica je obavezna.";
-    if (!value.houseNumber.trim()) return "Broj je obavezan.";
-    if (!value.city.trim()) return "Grad je obavezan.";
+    const street = value.street.trim();
+    const houseNumber = value.houseNumber.trim();
+    const postalCode = value.postalCode?.trim() ?? "";
+    const city = value.city.trim();
+    const label = value.label?.trim() ?? "";
+    const note = value.note?.trim() ?? "";
+
+    if (!street) return "Ulica je obavezna.";
+    if (!houseNumber) return "Broj je obavezan.";
+    if (!city) return "Grad je obavezan.";
+
+    if (street.length > 100) {
+      return "Naziv ulice može imati najviše 100 karaktera.";
+    }
+
+    if (houseNumber.length > 20) {
+      return "Kućni broj može imati najviše 20 karaktera.";
+    }
+
+    if (postalCode.length > 20) {
+      return "Poštanski broj može imati najviše 20 karaktera.";
+    }
+
+    if (city.length > 100) {
+      return "Naziv grada može imati najviše 100 karaktera.";
+    }
+
+    if (label.length > 50) {
+      return "Naziv adrese može imati najviše 50 karaktera.";
+    }
+
+    if (note.length > 200) {
+      return "Napomena može imati najviše 200 karaktera.";
+    }
+
     return null;
   }
 
@@ -124,46 +171,20 @@ export default function AddressesPage() {
       setSaving(true);
 
       if (editingAddressId === null) {
-        const created = await createAddress(normalizeAddress(formValue));
-
-        setAddresses((prev) => {
-          if (created.isDefault) {
-            return prev
-              .map((a) => ({ ...a, isDefault: false }))
-              .concat(created);
-          }
-          return [...prev, created];
-        });
-
+        await createAddress(normalizeAddress(formValue));
         setSuccessMessage("Adresa je uspešno dodata.");
       } else {
-        const updated = await updateAddress(
-          editingAddressId,
-          normalizeAddress(formValue),
-        );
-
-        setAddresses((prev) =>
-          prev.map((a) => {
-            if (a.id === updated.id) return updated;
-            if (updated.isDefault) return { ...a, isDefault: false };
-            return a;
-          }),
-        );
-
+        await updateAddress(editingAddressId, normalizeAddress(formValue));
         setSuccessMessage("Adresa je uspešno izmenjena.");
       }
 
+      await loadAddresses();
+
       setShowForm(false);
       setEditingAddressId(null);
+      setFormValue(emptyAddress);
     } catch (e: any) {
-      console.log("SAVE ADDRESS STATUS:", e?.response?.status);
-      console.log("SAVE ADDRESS DATA:", e?.response?.data);
-      setError(
-        e?.response?.data?.message ??
-          e?.response?.data?.title ??
-          e?.message ??
-          "Greška pri čuvanju adrese.",
-      );
+      setError(getErrorMessage(e, "Greška pri čuvanju adrese."));
     } finally {
       setSaving(false);
     }
@@ -173,6 +194,7 @@ export default function AddressesPage() {
     const confirmed = window.confirm(
       "Da li sigurno želite da obrišete ovu adresu?",
     );
+
     if (!confirmed) return;
 
     try {
@@ -181,8 +203,8 @@ export default function AddressesPage() {
       setDeletingId(addressId);
 
       await deleteAddress(addressId);
+      await loadAddresses();
 
-      setAddresses((prev) => prev.filter((a) => a.id !== addressId));
       setSuccessMessage("Adresa je uspešno obrisana.");
 
       if (editingAddressId === addressId) {
@@ -191,7 +213,7 @@ export default function AddressesPage() {
         setFormValue(emptyAddress);
       }
     } catch (e: any) {
-      setError(e?.message ?? "Greška pri brisanju adrese.");
+      setError(getErrorMessage(e, "Greška pri brisanju adrese."));
     } finally {
       setDeletingId(null);
     }
@@ -265,7 +287,7 @@ export default function AddressesPage() {
             >
               <div>
                 <div style={{ fontWeight: 700 }}>
-                  {address.label ?? "Adresa"}
+                  {address.label?.trim() ? address.label : "Adresa"}
                   {address.isDefault && (
                     <span style={{ color: "green", marginLeft: 8 }}>
                       (Podrazumevana)

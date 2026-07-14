@@ -31,14 +31,18 @@ export default function CartPage() {
 
           <input
             type="number"
-            min={0}
+            min={1}
             value={i.quantity}
-            onChange={(e) =>
+            onChange={(e) => {
+              const quantity = Number(e.target.value);
+
+              if (quantity < 1) return;
+
               dispatch({
                 type: "SET-QTY",
-                payload: { dishId: i.dishId, quantity: Number(e.target.value) },
-              })
-            }
+                payload: { dishId: i.dishId, quantity },
+              });
+            }}
             style={{ width: 70 }}
           />
           <button
@@ -68,7 +72,11 @@ export default function CartPage() {
         <div style={{ fontWeight: 800 }}>Ukupno: {total} RSD</div>
       </div>
 
-      <button style={{ marginTop: 12 }} onClick={() => navigate("/checkout")}>
+      <button
+        style={{ marginTop: 12 }}
+        disabled={state.items.length === 0}
+        onClick={() => navigate("/checkout")}
+      >
         Nastavi na checkout
       </button>
     </div>

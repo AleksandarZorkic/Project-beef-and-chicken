@@ -4,7 +4,6 @@ using beef_and_chicken.Application.Exceptions;
 using beef_and_chicken.Application.Interfaces.Repositories;
 using beef_and_chicken.Application.Interfaces.Services;
 using beef_and_chicken.Domain.Entities;
-using System.ComponentModel.DataAnnotations;
 
 namespace beef_and_chicken.Application.Services
 {
@@ -54,12 +53,18 @@ namespace beef_and_chicken.Application.Services
 
             var address = new Address
             {
-                Street = addressDto.Street,
-                HouseNumber = addressDto.HouseNumber,
-                PostalCode = addressDto.PostalCode,
-                City = addressDto.City,
-                Label = addressDto.Label,
-                Note = addressDto.Note,
+                Street = addressDto.Street.Trim(),
+                HouseNumber = addressDto.HouseNumber.Trim(),
+                PostalCode = string.IsNullOrWhiteSpace(addressDto.PostalCode)
+                    ? null
+                    : addressDto.PostalCode.Trim(),
+               City = addressDto.City.Trim(),
+               Label = string.IsNullOrWhiteSpace(addressDto.Label)
+                    ? null
+                    : addressDto.Label.Trim(),
+               Note = string.IsNullOrWhiteSpace(addressDto.Note)
+                    ? null
+                    : addressDto.Note.Trim(),
                 IsDefault = shouldBeDefault,
                 CustomerId = userId
             };
@@ -107,16 +112,34 @@ namespace beef_and_chicken.Application.Services
         private static void ValidateAddressDto(AddressUpsertDto addressDto)
         {
             if (addressDto is null)
-                throw new ArgumentNullException(nameof(addressDto));
+                throw new BadRequestException("Podaci za adresu su obavezni.");
 
             if (string.IsNullOrWhiteSpace(addressDto.Street))
-                throw new ValidationException("Adresa mora imati naziv ulice.");
+                throw new BadRequestException("Adresa mora imati naziv ulice.");
 
             if (string.IsNullOrWhiteSpace(addressDto.HouseNumber))
-                throw new ValidationException("Adresa mora imati kućni broj.");
+                throw new BadRequestException("Adresa mora imati kućni broj.");
 
             if (string.IsNullOrWhiteSpace(addressDto.City))
-                throw new ValidationException("Adresa mora imati naziv grada.");
+                throw new BadRequestException("Adresa mora imati naziv grada.");
+
+            if (addressDto.Street.Length > 100)
+                throw new BadRequestException("Naziv ulice može imati najviše 100 karaktera.");
+
+            if (addressDto.HouseNumber.Length > 20)
+                throw new BadRequestException("Kućni broj može imati najviše 20 karaktera.");
+
+            if (addressDto.PostalCode?.Length > 20)
+                throw new BadRequestException("Poštanski broj može imati najviše 20 karaktera.");
+
+            if (addressDto.City.Length > 100)
+                throw new BadRequestException("Naziv grada može imati najviše 100 karaktera.");
+
+            if (addressDto.Label?.Length > 50)
+                throw new BadRequestException("Naziv adrese može imati najviše 50 karaktera.");
+
+            if (addressDto.Note?.Length > 200)
+                throw new BadRequestException("Napomena može imati najviše 200 karaktera.");
         }
     }
 }

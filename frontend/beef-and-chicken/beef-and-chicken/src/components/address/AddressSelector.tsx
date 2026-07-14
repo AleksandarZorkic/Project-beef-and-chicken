@@ -38,7 +38,7 @@ export default function AddressSelector({
               checked={selectedAddressId === address.id}
               onChange={() => onSelect(address.id)}
             />
-            <strong>{address.label ?? "Adresa"}</strong>
+            <strong>{address.label?.trim() ? address.label : "Adresa"}</strong>
             {address.isDefault && (
               <span style={{ fontSize: 12, color: "green" }}>
                 (Podrazumevana)

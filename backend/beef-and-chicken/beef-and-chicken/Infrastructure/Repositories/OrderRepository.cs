@@ -19,7 +19,6 @@ namespace beef_and_chicken.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(o => o.Customer)
                 .Include(o => o.Courier)
-                .Include(o => o.DeliveryAddress)
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Dish)
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync(ct);
@@ -31,7 +30,6 @@ namespace beef_and_chicken.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(o => o.Customer)
                 .Include(o => o.Courier)
-                .Include(o => o.DeliveryAddress)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Dish)
                 .Where(o => o.CustomerId == userId)
@@ -45,7 +43,6 @@ namespace beef_and_chicken.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(o => o.Customer)
                 .Include(o => o.Courier)
-                .Include(o => o.DeliveryAddress)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Dish)
                 .FirstOrDefaultAsync(o => o.Id == orderId && o.CustomerId == userId, ct);
@@ -57,7 +54,6 @@ namespace beef_and_chicken.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(o => o.Customer)
                 .Include(o => o.Courier)
-                .Include(o => o.DeliveryAddress)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Dish)
                 .FirstOrDefaultAsync(o => o.Id == orderId, ct);

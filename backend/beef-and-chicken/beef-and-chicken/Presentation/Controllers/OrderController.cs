@@ -1,5 +1,6 @@
 ﻿using beef_and_chicken.Application.DTOs;
 using beef_and_chicken.Application.Interfaces.Services;
+using beef_and_chicken.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -42,7 +43,7 @@ namespace beef_and_chicken.Presentation.Controllers
             return CreatedAtAction(nameof(GetOrderById), new { orderId = newOrder.Id }, newOrder);
         }
 
-        [Authorize(Roles = "Admin,Employee")]
+        [Authorize(Roles = AppRoles.AdminOrWorker)]
         [HttpPatch("{orderId:int}/accept")]
         public async Task<ActionResult> AcceptOrder(int orderId, CancellationToken ct = default)
         {
@@ -50,7 +51,7 @@ namespace beef_and_chicken.Presentation.Controllers
             return NoContent();
         }
 
-        [Authorize(Roles = "Admin,Employee")]
+        [Authorize(Roles = AppRoles.AdminOrWorker)]
         [HttpPatch("{orderId:int}/reject")]
         public async Task<ActionResult> RejectOrder(int orderId, CancellationToken ct = default)
         {
@@ -58,7 +59,7 @@ namespace beef_and_chicken.Presentation.Controllers
             return NoContent();
         }
 
-        [Authorize(Roles = "Admin,Employee")]
+        [Authorize(Roles = AppRoles.AdminOrWorker)]
         [HttpGet("pending")]
         public async Task<ActionResult<IEnumerable<OrderDetailsDto>>> GetPendingOrders(CancellationToken ct = default)
         {

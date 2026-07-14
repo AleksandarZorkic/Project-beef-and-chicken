@@ -18,7 +18,11 @@ export default function AddressForm({
   submitLabel = "Sačuvaj adresu",
 }: AddressFormProps) {
   return (
-    <div
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
       style={{
         marginTop: 16,
         padding: 16,
@@ -33,6 +37,8 @@ export default function AddressForm({
           type="text"
           placeholder="Labela (Kuća, Posao)"
           value={value.label ?? ""}
+          maxLength={50}
+          disabled={saving}
           onChange={(e) => onChange({ ...value, label: e.target.value })}
         />
 
@@ -40,6 +46,9 @@ export default function AddressForm({
           type="text"
           placeholder="Ulica"
           value={value.street}
+          maxLength={100}
+          required
+          disabled={saving}
           onChange={(e) => onChange({ ...value, street: e.target.value })}
         />
 
@@ -47,6 +56,9 @@ export default function AddressForm({
           type="text"
           placeholder="Broj"
           value={value.houseNumber}
+          maxLength={20}
+          required
+          disabled={saving}
           onChange={(e) => onChange({ ...value, houseNumber: e.target.value })}
         />
 
@@ -54,6 +66,8 @@ export default function AddressForm({
           type="text"
           placeholder="Poštanski broj"
           value={value.postalCode ?? ""}
+          maxLength={20}
+          disabled={saving}
           onChange={(e) => onChange({ ...value, postalCode: e.target.value })}
         />
 
@@ -61,6 +75,9 @@ export default function AddressForm({
           type="text"
           placeholder="Grad"
           value={value.city}
+          maxLength={100}
+          required
+          disabled={saving}
           onChange={(e) => onChange({ ...value, city: e.target.value })}
         />
 
@@ -68,6 +85,8 @@ export default function AddressForm({
           rows={3}
           placeholder="Napomena"
           value={value.note ?? ""}
+          maxLength={200}
+          disabled={saving}
           onChange={(e) => onChange({ ...value, note: e.target.value })}
         />
 
@@ -75,6 +94,7 @@ export default function AddressForm({
           <input
             type="checkbox"
             checked={value.isDefault}
+            disabled={saving}
             onChange={(e) =>
               onChange({ ...value, isDefault: e.target.checked })
             }
@@ -82,10 +102,10 @@ export default function AddressForm({
           Postavi kao podrazumevanu adresu
         </label>
 
-        <button type="button" disabled={saving} onClick={onSubmit}>
+        <button type="submit" disabled={saving}>
           {saving ? "Čuvam adresu..." : submitLabel}
         </button>
       </div>
-    </div>
+    </form>
   );
 }

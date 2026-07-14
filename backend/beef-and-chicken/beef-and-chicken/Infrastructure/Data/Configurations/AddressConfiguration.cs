@@ -8,6 +8,8 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Address> builder)
         {
+            builder.HasKey(a => a.Id);
+
             builder.Property(a => a.Street)
                 .IsRequired()
                 .HasMaxLength(100);
@@ -33,6 +35,13 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
                 .WithMany(c => c.Addresses)
                 .HasForeignKey(a => a.CustomerId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(a => a.CustomerId);
+
+            builder.HasIndex(a => a.CustomerId)
+                .IsUnique()
+                .HasFilter("\"IsDefault\" = TRUE")
+                .HasDatabaseName("IX_Addresses_OneDefaultPerCustomer");
         }
     }
 }

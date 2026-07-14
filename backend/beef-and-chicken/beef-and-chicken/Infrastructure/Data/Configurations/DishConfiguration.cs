@@ -33,6 +33,16 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
 
             builder.Property(x => x.ImageUrl)
                 .HasMaxLength(500);
+
+            builder.HasIndex(x => new { x.CategoryId, x.Name });
+
+            builder.ToTable("Dishes", t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_Dish_Price_NonNegative",
+                    "\"Price\" >= 0"
+                );
+            });
         }
     }
 }

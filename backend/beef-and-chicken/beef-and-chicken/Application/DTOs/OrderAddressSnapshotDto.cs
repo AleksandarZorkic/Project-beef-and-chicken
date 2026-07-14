@@ -1,6 +1,6 @@
-﻿namespace beef_and_chicken.Domain.Entities
+﻿namespace beef_and_chicken.Application.DTOs
 {
-    public class OrderAddressSnapshot
+    public class OrderAddressSnapshotDto
     {
         public string Street { get; set; } = string.Empty;
         public string HouseNumber { get; set; } = string.Empty;

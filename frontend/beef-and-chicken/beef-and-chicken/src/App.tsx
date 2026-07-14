@@ -18,6 +18,7 @@ import AllergensPage from "./pages/AllergensPage";
 import ProfileAllergensPage from "./pages/ProfileAllergensPage";
 import AdminDishesPage from "./pages/AdminDishesPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminOrdersPage from "./pages/AdminOrdersPage";
 
 function AppShell() {
   const outlet = useOutlet();
@@ -64,6 +65,16 @@ export default function App() {
                 <Route path="/admin/dishes" element={<AdminDishesPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
                 <Route path="/allergens" element={<AllergensPage />} />
+              </Route>
+
+              <Route
+                element={
+                  <RoleProtectedRoute
+                    allowedRoles={[AppRoles.Admin, AppRoles.Employee]}
+                  />
+                }
+              >
+                <Route path="/admin/orders" element={<AdminOrdersPage />} />
               </Route>
             </Route>
           </Routes>

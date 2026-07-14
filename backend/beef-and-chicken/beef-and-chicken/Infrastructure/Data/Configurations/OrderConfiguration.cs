@@ -1,7 +1,7 @@
-﻿
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using beef_and_chicken.Domain.Entities;
+using beef_and_chicken.Domain.Enum;
 using Microsoft.EntityFrameworkCore;
-using beef_and_chicken.Domain.Entities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace beef_and_chicken.Infrastructure.Data.Configurations
 {
@@ -9,16 +9,46 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Order> builder)
         {
-            // 1) Ograničenje dužine stringova
+            builder.HasKey(o => o.Id);
+
+            builder.Property(o => o.CreatedAt)
+                .IsRequired();
+
             builder.Property(o => o.Notes)
                 .HasMaxLength(500);
 
-            // 2) Precision za decimal (novac)
-            builder.Property(o => o.Subtotal).HasPrecision(12, 2);
-            builder.Property(o => o.DeliveryFee).HasPrecision(12, 2);
-            builder.Property(o => o.TotalAmount).HasPrecision(12, 2);
+            builder.Property(o => o.Subtotal)
+                .IsRequired()
+                .HasPrecision(12, 2);
 
-            // 3) Snapshot adrese = Owned Entity
+            builder.Property(o => o.DeliveryFee)
+                .IsRequired()
+                .HasPrecision(12, 2);
+
+            builder.Property(o => o.TotalAmount)
+                .IsRequired()
+                .HasPrecision(12, 2);
+
+            builder.Property(o => o.Status)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            builder.HasOne(o => o.Customer)
+                .WithMany()
+                .HasForeignKey(o => o.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(o => o.Courier)
+                .WithMany()
+                .HasForeignKey(o => o.CourierId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(o => o.CustomerAddress)
+                .WithMany()
+                .HasForeignKey(o => o.CustomerAddressId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             builder.OwnsOne(o => o.DeliveryAddress, a =>
             {
                 a.Property(p => p.Street)
@@ -37,7 +67,7 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
 
                 a.Property(p => p.City)
                     .HasColumnName("DeliveryCity")
-                    .HasMaxLength(50)
+                    .HasMaxLength(100)
                     .IsRequired();
 
                 a.Property(p => p.Label)
@@ -45,11 +75,35 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
                     .HasMaxLength(50);
 
                 a.Property(p => p.Note)
-                .HasColumnName("DeliveryNote")
-                    .HasMaxLength(200);
+                    .HasColumnName("DeliveryNote")
+                    .HasMaxLength(500);
             });
 
-            builder.Navigation(o => o.DeliveryAddress).IsRequired();
+            builder.Navigation(o => o.DeliveryAddress)
+                .IsRequired();
+
+            builder.HasIndex(o => o.CustomerId);
+            builder.HasIndex(o => o.CourierId);
+            builder.HasIndex(o => o.Status);
+            builder.HasIndex(o => o.CreatedAt);
+
+            builder.ToTable("Orders", t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_Order_Subtotal_NonNegative",
+                    "\"Subtotal\" >= 0"
+                );
+
+                t.HasCheckConstraint(
+                    "CK_Order_DeliveryFee_NonNegative",
+                    "\"DeliveryFee\" >= 0"
+                );
+
+                t.HasCheckConstraint(
+                    "CK_Order_TotalAmount_NonNegative",
+                    "\"TotalAmount\" >= 0"
+                );
+            });
         }
     }
 }

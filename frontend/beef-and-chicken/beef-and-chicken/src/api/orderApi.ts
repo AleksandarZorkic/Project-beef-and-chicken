@@ -1,5 +1,4 @@
 import api from "./https";
-import type { AddressDto } from "./addressApi";
 
 export type OrderStatus =
   | "Na_Cekanju"
@@ -8,6 +7,15 @@ export type OrderStatus =
   | "Preuzimanje_u_toku"
   | "Dostava_u_toku"
   | "Dostavljena";
+
+export interface OrderAddressSnapshotDto {
+  street: string;
+  houseNumber: string;
+  postalCode?: string | null;
+  city: string;
+  label?: string | null;
+  note?: string | null;
+}
 
 export interface OrderItemDto {
   id: number;
@@ -24,16 +32,16 @@ export interface CreateOrderItemDto {
 
 export interface CreateOrderRequestDto {
   customerAddressId: number;
-  notes?: string;
+  notes?: string | null;
   items: CreateOrderItemDto[];
 }
 
 export interface OrderDetailsDto {
   id: number;
   customerId: number;
-  courierId?: number;
-  deliveryAddress: AddressDto;
-  notes?: string;
+  courierId?: number | null;
+  deliveryAddress: OrderAddressSnapshotDto;
+  notes?: string | null;
   subtotal: number;
   deliveryFee: number;
   totalAmount: number;
@@ -41,30 +49,34 @@ export interface OrderDetailsDto {
   items: OrderItemDto[];
 }
 
-export async function getAllOrders() {
-  const res = await api.get<OrderDetailsDto[]>(`/order`);
+const ORDERS_ENDPOINT = "/orders";
+
+export async function getMyOrders() {
+  const res = await api.get<OrderDetailsDto[]>(ORDERS_ENDPOINT);
   return res.data;
 }
 
 export async function getOrderById(orderId: number) {
-  const res = await api.get<OrderDetailsDto>(`/order/${orderId}`);
+  const res = await api.get<OrderDetailsDto>(`${ORDERS_ENDPOINT}/${orderId}`);
+
   return res.data;
 }
 
 export async function createOrder(newOrder: CreateOrderRequestDto) {
-  const res = await api.post<OrderDetailsDto>("/order", newOrder);
+  const res = await api.post<OrderDetailsDto>(ORDERS_ENDPOINT, newOrder);
   return res.data;
 }
 
 export async function acceptOrder(orderId: number) {
-  await api.patch(`/order/${orderId}/accept`);
+  await api.patch(`${ORDERS_ENDPOINT}/${orderId}/accept`);
 }
 
 export async function rejectOrder(orderId: number) {
-  await api.patch(`/order/${orderId}/reject`);
+  await api.patch(`${ORDERS_ENDPOINT}/${orderId}/reject`);
 }
 
 export async function getPendingOrders() {
-  const res = await api.get<OrderDetailsDto[]>(`/order/pending`);
+  const res = await api.get<OrderDetailsDto[]>(`${ORDERS_ENDPOINT}/pending`);
+
   return res.data;
 }

@@ -19,13 +19,15 @@ namespace beef_and_chicken.Application.Mapping
                 .ForMember(d => d.AllergenName, opt => opt.MapFrom(s => s.Allergen.Name))
                 .ForMember(d => d.IsTrace, opt => opt.MapFrom(s => s.IsTrace));
 
-            // Address snapshot
-            CreateMap<OrderAddressSnapshot, AddressDto>().ReverseMap();
+            // Address mappings
+            CreateMap<Address, AddressDto>();
 
-            CreateMap<Address, AddressDto>().ReverseMap();
+            // Order address snapshot
+            CreateMap<OrderAddressSnapshot, OrderAddressSnapshotDto>();
 
+            // Order item snapshot
             CreateMap<OrderItem, OrderItemDto>()
-                .ForMember(d => d.DishName, opt => opt.MapFrom(s => s.Dish.Name));
+                .ForMember(d => d.DishName, opt => opt.MapFrom(s => s.DishName));
 
             CreateMap<Order, OrderDetailsDto>()
                 .ForMember(d => d.Items, opt => opt.MapFrom(s => s.OrderItems))

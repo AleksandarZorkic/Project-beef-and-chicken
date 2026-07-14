@@ -8,7 +8,18 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<OrderItem> builder)
         {
-            builder.HasKey(x => new { x.OrderId, x.DishId });
+            builder.HasKey(x => x.Id);
+
+            builder.Property(x => x.DishName)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            builder.Property(x => x.Quantity)
+                .IsRequired();
+
+            builder.Property(x => x.UnitPrice)
+                .IsRequired()
+                .HasPrecision(12, 2);
 
             builder.HasOne(x => x.Order)
                 .WithMany(x => x.OrderItems)
@@ -17,17 +28,22 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
 
             builder.HasOne(x => x.Dish)
                 .WithMany(x => x.OrderItems)
-                .HasForeignKey(x => x.DishId);
+                .HasForeignKey(x => x.DishId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Property(x => x.Quantity).IsRequired();
-            builder.Property(x => x.UnitPrice).IsRequired().HasPrecision(12,2);
+            builder.HasIndex(x => x.OrderId);
 
-            builder.ToTable("OrderItems");
-
-            builder.ToTable(t =>
+            builder.ToTable("OrderItems", t =>
             {
-                t.HasCheckConstraint("CK_OrderItem_Quantity_Positive", "\"Quantity\" > 0");
-                t.HasCheckConstraint("CK_OrderItem_UnitPrice_NonNegative", "\"UnitPrice\" >= 0");
+                t.HasCheckConstraint(
+                    "CK_OrderItem_Quantity_Positive",
+                    "\"Quantity\" > 0"
+                );
+
+                t.HasCheckConstraint(
+                    "CK_OrderItem_UnitPrice_NonNegative",
+                    "\"UnitPrice\" >= 0"
+                );
             });
         }
     }

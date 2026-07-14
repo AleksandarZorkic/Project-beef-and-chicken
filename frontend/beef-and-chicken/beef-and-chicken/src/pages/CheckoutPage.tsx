@@ -147,6 +147,16 @@ export default function CheckoutPage() {
   }
 
   async function onSubmit() {
+    if (state.items.length === 0) {
+      setError("Korpa je prazna.");
+      return;
+    }
+
+    if (state.items.some((item) => item.quantity <= 0)) {
+      setError("Sve stavke u korpi moraju imati količinu veću od 0.");
+      return;
+    }
+
     if (!selectedAddressId) {
       setError("Morate izabrati adresu za dostavu.");
       return;
@@ -159,7 +169,7 @@ export default function CheckoutPage() {
 
       const payload = {
         customerAddressId: selectedAddressId,
-        notes: state.notes || undefined,
+        notes: state.notes.trim() || undefined,
         items: state.items.map((i) => ({
           dishId: i.dishId,
           quantity: i.quantity,
@@ -167,15 +177,21 @@ export default function CheckoutPage() {
       };
 
       const created = await createOrder(payload);
+
       dispatch({ type: "CLEAR" });
       navigate(`/success/${created.id}`);
     } catch (e: any) {
-      setError(e?.message ?? "Greška pri kreiranju porudžbine.");
+      setError(
+        e?.response?.data?.error ??
+          e?.response?.data?.message ??
+          e?.response?.data?.title ??
+          e?.message ??
+          "Greška pri kreiranju porudžbine.",
+      );
     } finally {
       setLoadingOrder(false);
     }
   }
-
   if (state.items.length === 0) return <div>Korpa je prazna</div>;
 
   return (

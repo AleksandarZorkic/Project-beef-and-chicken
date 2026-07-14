@@ -44,6 +44,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </>
         )}
 
+        {(hasRole(AppRoles.Admin) || hasRole(AppRoles.Employee)) && (
+          <Link to="/admin/orders">Porudžbine</Link>
+        )}
+
         <div style={{ marginLeft: "auto" }}>Ukupno: {subtotal} RSD</div>
 
         <button disabled={count === 0} onClick={() => navigate("/cart")}>

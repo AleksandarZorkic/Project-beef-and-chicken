@@ -17,6 +17,8 @@ namespace beef_and_chicken.Infrastructure.Repositories
             return await _context.Addresses
                 .AsNoTracking()
                 .Where(a => a.CustomerId == customerId)
+                .OrderByDescending(a => a.IsDefault)
+                .ThenBy(a => a.Id)
                 .ToListAsync(ct);
         }
 
@@ -35,41 +37,56 @@ namespace beef_and_chicken.Infrastructure.Repositories
 
         public async Task<Address?> UpdateCustomerAddressAsync(int customerId, int addressId, UpdateAddressDto dto, CancellationToken ct = default)
         {
-            var address = await _context.Addresses.FirstOrDefaultAsync(a => a.Id == addressId && a.CustomerId == customerId, ct);
+            var address = await _context.Addresses
+                .FirstOrDefaultAsync(a => a.Id == addressId && a.CustomerId == customerId, ct);
 
             if (address == null)
                 return null;
 
+            var wasDefault = address.IsDefault;
+
             if (dto.IsDefault)
             {
-                var otherAddresses = await _context.Addresses
-                    .Where(a => a.CustomerId == customerId && a.Id != addressId)
-                    .ToListAsync(ct);
-
-                foreach (var other in otherAddresses)
-                    other.IsDefault = false;
+                await ResetDefaultAddressesAsync(customerId, ct);
             }
 
-            address.Street = dto.Street;
-            address.HouseNumber = dto.HouseNumber;
-            address.PostalCode = dto.PostalCode;
-            address.City = dto.City;
-            address.Label = dto.Label;
-            address.Note = dto.Note;
-            address.IsDefault = dto.IsDefault;
+            var shouldStayDefault = wasDefault && !dto.IsDefault;
+
+            address.Street = dto.Street.Trim();
+            address.HouseNumber = dto.HouseNumber.Trim();
+            address.PostalCode = string.IsNullOrWhiteSpace(dto.PostalCode)
+                ? null
+                : dto.PostalCode.Trim();
+            address.City = dto.City.Trim();
+            address.Label = string.IsNullOrWhiteSpace(dto.Label)
+                ? null
+                : dto.Label.Trim();
+            address.Note = string.IsNullOrWhiteSpace(dto.Note)
+                ? null
+                : dto.Note.Trim();
+
+            address.IsDefault = dto.IsDefault || shouldStayDefault;
 
             return address;
         }
 
         public async Task<bool> DeleteCustomerAddressAsync(int customerId, int addressId, CancellationToken ct = default)
         {
-            var address = await _context.Addresses.FirstOrDefaultAsync(a => a.Id == addressId && a.CustomerId == customerId, ct);
+            var address = await _context.Addresses
+                .FirstOrDefaultAsync(a => a.Id == addressId && a.CustomerId == customerId, ct);
 
             if (address == null)
-                return false; 
+                return false;
 
             if (address.IsDefault)
             {
+                await _context.Addresses
+                    .Where(a => a.Id == addressId && a.CustomerId == customerId)
+                    .ExecuteUpdateAsync(
+                        setters => setters.SetProperty(a => a.IsDefault, false),
+                        ct
+                    );
+
                 var nextDefault = await _context.Addresses
                     .Where(a => a.CustomerId == customerId && a.Id != addressId)
                     .OrderBy(a => a.Id)
@@ -81,16 +98,16 @@ namespace beef_and_chicken.Infrastructure.Repositories
 
             _context.Addresses.Remove(address);
             return true;
-        } 
+        }
 
         public async Task ResetDefaultAddressesAsync(int customerId, CancellationToken ct = default)
         {
-            var addresses = await _context.Addresses
+            await _context.Addresses
                 .Where(a => a.CustomerId == customerId && a.IsDefault)
-                .ToListAsync(ct);
-
-            foreach (var address in addresses)
-                address.IsDefault = false;
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(a => a.IsDefault, false),
+                    ct
+                );
         }
     }
 }

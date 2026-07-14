@@ -118,13 +118,23 @@ namespace beef_and_chicken.Application.Services
                 DeliveryFee = deliveryFee
             };
 
+            var requestedOtems = orderDto.Items
+                .GroupBy(i => i.DishId)
+                .Select(g => new
+                {
+                    DishId = g.Key,
+                    Quantity = g.Sum(x => x.Quantity)
+                })
+                .ToList();
+
             // Napravi OrderItems iz requesta * cena iz baze (dish.Price)
-            order.OrderItems = orderDto.Items.Select(i =>
+            order.OrderItems = requestedOtems.Select(i =>
             {
                 var dish = dishById[i.DishId];
                 return new OrderItem
                 {
                     DishId = i.DishId,
+                    DishName = dish.Name,
                     Quantity = i.Quantity,
                     UnitPrice = dish.Price
                 };

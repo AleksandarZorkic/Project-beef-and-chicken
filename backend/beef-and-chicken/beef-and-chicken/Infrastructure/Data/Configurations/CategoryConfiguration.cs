@@ -8,6 +8,8 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Category> builder)
         {
+            builder.HasKey(x => x.Id);
+
             builder.Property(x => x.Name)
                 .IsRequired()
                 .HasMaxLength(100);
@@ -23,6 +25,14 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
                 .HasDefaultValue(0);
 
             builder.HasIndex(x => x.Name).IsUnique();
+
+            builder.ToTable("Categories", t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_Category_SortOrder_NonNegative",
+                    "\"SortOrder\" >= 0"
+                );
+            });
         }
     }
 }
