@@ -34,19 +34,31 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {isAuthenticated && <Link to="/my-allergens">Moji alergeni</Link>}
 
-        {hasRole(AppRoles.Customer) && <Link to="/addresses">Adrese</Link>}
+        {hasRole(AppRoles.Customer) && (
+          <>
+            <Link to="/addresses">Adrese</Link>
+            <Link to="/my-orders">Moje porudžbine</Link>
+          </>
+        )}
 
         {hasRole(AppRoles.Admin) && (
           <>
             <Link to="/admin/dishes">Admin meni</Link>
+            <Link to="/admin/dish-options">Prilozi i začini</Link>
             <Link to="/allergens">Alergeni</Link>
             <Link to="/admin/users">Korisnici</Link>
           </>
         )}
 
         {(hasRole(AppRoles.Admin) || hasRole(AppRoles.Employee)) && (
-          <Link to="/admin/orders">Porudžbine</Link>
+          <>
+            <Link to="/admin/orders">Porudžbine</Link>
+            <Link to="/admin/dashboard">Dashboard</Link>
+            <Link to="/admin/orders/history">Istorija porudžbina</Link>
+          </>
         )}
+
+        {hasRole(AppRoles.Courier) && <Link to="/courier/orders">Dostave</Link>}
 
         <div style={{ marginLeft: "auto" }}>Ukupno: {subtotal} RSD</div>
 

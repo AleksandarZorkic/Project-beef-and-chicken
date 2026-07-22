@@ -7,7 +7,7 @@
         public const string Employee = "Employee";
         public const string Courier = "Courier";
 
-        public const string AdminOrWorker = Admin + ", " + Employee;
+        public const string AdminOrEmployee = Admin + "," + Employee;
 
         public static readonly string[] All = {
             Admin,

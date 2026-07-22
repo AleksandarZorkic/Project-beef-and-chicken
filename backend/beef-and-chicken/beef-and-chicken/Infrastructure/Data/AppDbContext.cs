@@ -22,6 +22,8 @@ namespace beef_and_chicken.Infrastructure.Data
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
         public DbSet<UserAllergen> UserAllergens => Set<UserAllergen>();
         public DbSet<AuditLog> AuditLogs {  get; set; }
+        public DbSet<DishOption> DishOptions { get; set; }
+        public DbSet<OrderItemOption> OrderItemOptions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

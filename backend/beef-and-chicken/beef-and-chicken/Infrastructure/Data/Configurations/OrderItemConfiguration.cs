@@ -31,6 +31,10 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
                 .HasForeignKey(x => x.DishId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Property(x => x.OptionsTotal)
+                .IsRequired()
+                .HasPrecision(12, 2);
+
             builder.HasIndex(x => x.OrderId);
 
             builder.ToTable("OrderItems", t =>
@@ -43,6 +47,11 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
                 t.HasCheckConstraint(
                     "CK_OrderItem_UnitPrice_NonNegative",
                     "\"UnitPrice\" >= 0"
+                );
+
+                t.HasCheckConstraint(
+                    "CK_OrderItem_OptionsTotal_NonNegative",
+                    "\"OptionsTotal\" >= 0"
                 );
             });
         }

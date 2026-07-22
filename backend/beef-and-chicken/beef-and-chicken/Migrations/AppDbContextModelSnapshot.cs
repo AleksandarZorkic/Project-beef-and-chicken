@@ -197,7 +197,10 @@ namespace beef_and_chicken.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CustomerId");
+                    b.HasIndex("CustomerId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Addresses_OneDefaultPerCustomer")
+                        .HasFilter("\"IsDefault\" = TRUE");
 
                     b.ToTable("Addresses");
                 });
@@ -382,6 +385,60 @@ namespace beef_and_chicken.Migrations
                     b.ToTable("DishAllergens");
                 });
 
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.DishOption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsAlwaysPaid")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("SortOrder");
+
+                    b.HasIndex("Type");
+
+                    b.HasIndex("Type", "Name")
+                        .IsUnique();
+
+                    b.ToTable("DishOptions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DishOption_Price_NonNegative", "\"Price\" >= 0");
+
+                            t.HasCheckConstraint("CK_DishOption_SortOrder_NonNegative", "\"SortOrder\" >= 0");
+                        });
+                });
+
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.EmployeeWorkTime", b =>
                 {
                     b.Property<int>("Id")
@@ -486,6 +543,10 @@ namespace beef_and_chicken.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("OrderNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -508,6 +569,9 @@ namespace beef_and_chicken.Migrations
                     b.HasIndex("CustomerAddressId");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("OrderNumber")
+                        .IsUnique();
 
                     b.HasIndex("Status");
 
@@ -537,6 +601,10 @@ namespace beef_and_chicken.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<decimal>("OptionsTotal")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
                     b.Property<int>("OrderId")
                         .HasColumnType("integer");
 
@@ -555,9 +623,51 @@ namespace beef_and_chicken.Migrations
 
                     b.ToTable("OrderItems", null, t =>
                         {
+                            t.HasCheckConstraint("CK_OrderItem_OptionsTotal_NonNegative", "\"OptionsTotal\" >= 0");
+
                             t.HasCheckConstraint("CK_OrderItem_Quantity_Positive", "\"Quantity\" > 0");
 
                             t.HasCheckConstraint("CK_OrderItem_UnitPrice_NonNegative", "\"UnitPrice\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.OrderItemOption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("DishOptionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OptionName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("OptionType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int>("OrderItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DishOptionId");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.ToTable("OrderItemOptions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OrderItemOption_UnitPrice_NonNegative", "\"UnitPrice\" >= 0");
                         });
                 });
 
@@ -874,6 +984,24 @@ namespace beef_and_chicken.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.OrderItemOption", b =>
+                {
+                    b.HasOne("beef_and_chicken.Domain.Entities.DishOption", "DishOption")
+                        .WithMany()
+                        .HasForeignKey("DishOptionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("beef_and_chicken.Domain.Entities.OrderItem", "OrderItem")
+                        .WithMany("Options")
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DishOption");
+
+                    b.Navigation("OrderItem");
+                });
+
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.UserAllergen", b =>
                 {
                     b.HasOne("beef_and_chicken.Domain.Entities.Allergen", "Allergen")
@@ -915,6 +1043,11 @@ namespace beef_and_chicken.Migrations
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.Order", b =>
                 {
                     b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.OrderItem", b =>
+                {
+                    b.Navigation("Options");
                 });
 
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.User", b =>

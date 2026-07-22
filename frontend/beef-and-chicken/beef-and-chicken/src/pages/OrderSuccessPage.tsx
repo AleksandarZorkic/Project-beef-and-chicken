@@ -13,7 +13,7 @@ export default function OrderSuccessPage() {
 
       <div style={{ display: "flex", gap: 12 }}>
         <Link to="/menu">Nazad na meni</Link>
-        <Link to="/orders">Moje porudžbine</Link>
+        <Link to="/my-orders">Prikaži moje porudžbine</Link>
       </div>
     </div>
   );

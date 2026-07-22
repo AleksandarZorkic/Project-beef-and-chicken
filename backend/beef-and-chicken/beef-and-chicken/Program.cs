@@ -17,10 +17,18 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
+using beef_and_chicken.Presentation.Hubs;
+using beef_and_chicken.Presentation.Realtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
@@ -85,6 +93,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+
 .AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
@@ -97,6 +106,23 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         RoleClaimType = ClaimTypes.Role
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrWhiteSpace(accessToken) &&
+                path.StartsWithSegments("/hubs/orders"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -122,6 +148,11 @@ builder.Services.Configure<UserAnonymizationOptions>(
 
 builder.Services.AddScoped<IUserAnonymizationService, UserAnonymizationService>();
 builder.Services.AddScoped<IUserPersonalDataCleanupService, UserPersonalDataCleanupService>();
+builder.Services.AddScoped<IDishOptionRepository, DishOptionRepository>();
+builder.Services.AddScoped<IDishOptionService, DishOptionService>();
+
+builder.Services.AddSignalR();
+builder.Services.AddScoped<IOrderNotificationService, OrderNotificationService>();
 
 builder.Services.AddHostedService<BlockedUsersAnonymizationBackgroundService>();
 
@@ -130,15 +161,18 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 builder.Services.AddAuthorization();
 
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Front", p =>
-        p.WithOrigins("http://localhost:5173",
+        p.WithOrigins(
+                "http://localhost:5173",
                 "https://localhost:5173",
                 "http://localhost:5174",
                 "https://localhost:5174")
          .AllowAnyHeader()
-         .AllowAnyMethod());
+         .AllowAnyMethod()
+         .AllowCredentials());
 });
 
 var app = builder.Build();
@@ -159,5 +193,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<OrderHub>("/hubs/orders");
 
 app.Run();

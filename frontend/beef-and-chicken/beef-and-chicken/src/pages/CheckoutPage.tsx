@@ -173,6 +173,7 @@ export default function CheckoutPage() {
         items: state.items.map((i) => ({
           dishId: i.dishId,
           quantity: i.quantity,
+          selectedOptionIds: i.selectedOptions.map((option) => option.optionId),
         })),
       };
 

@@ -49,6 +49,12 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
                 .HasForeignKey(o => o.CustomerAddressId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            builder.Property(o => o.OrderNumber)
+                .HasMaxLength(30);
+
+            builder.HasIndex(o => o.OrderNumber)
+                .IsUnique();
+
             builder.OwnsOne(o => o.DeliveryAddress, a =>
             {
                 a.Property(p => p.Street)

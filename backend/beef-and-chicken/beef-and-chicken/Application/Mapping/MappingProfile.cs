@@ -27,7 +27,10 @@ namespace beef_and_chicken.Application.Mapping
 
             // Order item snapshot
             CreateMap<OrderItem, OrderItemDto>()
-                .ForMember(d => d.DishName, opt => opt.MapFrom(s => s.DishName));
+                .ForMember(d => d.DishName, opt => opt.MapFrom(s => s.DishName))
+                .ForMember(d => d.Options, opt => opt.MapFrom(s => s.Options));
+
+            CreateMap<OrderItemOption, OrderItemOptionDto>();
 
             CreateMap<Order, OrderDetailsDto>()
                 .ForMember(d => d.Items, opt => opt.MapFrom(s => s.OrderItems))
@@ -45,6 +48,15 @@ namespace beef_and_chicken.Application.Mapping
                 .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Trim()));
 
             CreateMap<UpdateAllergenDto, Allergen>()
+                .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Trim()));
+
+            // DishOption mappings
+            CreateMap<DishOption, DishOptionDto>();
+
+            CreateMap<CreateDishOptionDto, DishOption>()
+                .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Trim()));
+
+            CreateMap<UpdateDishOptionDto, DishOption>()
                 .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Trim()));
         }
     }

@@ -14,5 +14,9 @@
 
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
+
+        public decimal OptionsTotal { get; set; }
+
+        public ICollection<OrderItemOption> Options { get; set; } = new List<OrderItemOption>();
     }
 }

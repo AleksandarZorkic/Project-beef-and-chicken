@@ -19,6 +19,11 @@ import ProfileAllergensPage from "./pages/ProfileAllergensPage";
 import AdminDishesPage from "./pages/AdminDishesPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminOrdersPage from "./pages/AdminOrdersPage";
+import MyOrdersPage from "./pages/MyOrdersPage";
+import AdminDishOptionsPage from "./pages/AdminDishOptionsPage";
+import CourierOrdersPage from "./pages/CourierOrdersPage";
+import AdminOrdersHistoryPage from "./pages/AdminOrdersHistoryPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 
 function AppShell() {
   const outlet = useOutlet();
@@ -53,6 +58,7 @@ export default function App() {
               >
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/addresses" element={<AddressesPage />} />
+                <Route path="/my-orders" element={<MyOrdersPage />} />
                 <Route
                   path="/success/:orderId"
                   element={<OrderSuccessPage />}
@@ -65,6 +71,10 @@ export default function App() {
                 <Route path="/admin/dishes" element={<AdminDishesPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
                 <Route path="/allergens" element={<AllergensPage />} />
+                <Route
+                  path="/admin/dish-options"
+                  element={<AdminDishOptionsPage />}
+                />
               </Route>
 
               <Route
@@ -74,7 +84,22 @@ export default function App() {
                   />
                 }
               >
+                <Route
+                  path="/admin/dashboard"
+                  element={<AdminDashboardPage />}
+                />
                 <Route path="/admin/orders" element={<AdminOrdersPage />} />
+                <Route
+                  path="/admin/orders/history"
+                  element={<AdminOrdersHistoryPage />}
+                />
+              </Route>
+              <Route
+                element={
+                  <RoleProtectedRoute allowedRoles={[AppRoles.Courier]} />
+                }
+              >
+                <Route path="/courier/orders" element={<CourierOrdersPage />} />
               </Route>
             </Route>
           </Routes>

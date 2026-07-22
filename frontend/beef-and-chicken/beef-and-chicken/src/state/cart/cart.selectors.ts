@@ -1,5 +1,7 @@
-import { CartState } from "./cart.types";
+import type { CartState } from "./cart.types";
 
 export function cartSubtotal(state: CartState) {
-  return state.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+  return state.items.reduce((sum, item) => {
+    return sum + (item.unitPrice + item.optionsTotal) * item.quantity;
+  }, 0);
 }

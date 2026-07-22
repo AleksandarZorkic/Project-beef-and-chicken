@@ -6,6 +6,8 @@ namespace beef_and_chicken.Domain.Entities
     {
         public int Id { get; set; }
 
+        public string? OrderNumber { get; set; }
+
         public int CustomerId { get; set; }
         public User Customer { get; set; } = null!;
 
