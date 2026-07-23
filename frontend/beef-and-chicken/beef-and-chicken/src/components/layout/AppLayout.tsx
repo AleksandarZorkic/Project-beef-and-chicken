@@ -47,13 +47,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link to="/admin/dish-options">Prilozi i začini</Link>
             <Link to="/allergens">Alergeni</Link>
             <Link to="/admin/users">Korisnici</Link>
+            <Link to="/admin/dashboard">Dashboard</Link>
+            <Link to="/admin/categories">Kategorije</Link>
           </>
         )}
 
         {(hasRole(AppRoles.Admin) || hasRole(AppRoles.Employee)) && (
           <>
             <Link to="/admin/orders">Porudžbine</Link>
-            <Link to="/admin/dashboard">Dashboard</Link>
             <Link to="/admin/orders/history">Istorija porudžbina</Link>
           </>
         )}

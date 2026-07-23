@@ -151,6 +151,9 @@ builder.Services.AddScoped<IUserPersonalDataCleanupService, UserPersonalDataClea
 builder.Services.AddScoped<IDishOptionRepository, DishOptionRepository>();
 builder.Services.AddScoped<IDishOptionService, DishOptionService>();
 
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IOrderNotificationService, OrderNotificationService>();
 

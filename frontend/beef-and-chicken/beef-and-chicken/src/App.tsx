@@ -24,6 +24,7 @@ import AdminDishOptionsPage from "./pages/AdminDishOptionsPage";
 import CourierOrdersPage from "./pages/CourierOrdersPage";
 import AdminOrdersHistoryPage from "./pages/AdminOrdersHistoryPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 
 function AppShell() {
   const outlet = useOutlet();
@@ -70,6 +71,10 @@ export default function App() {
               >
                 <Route path="/admin/dishes" element={<AdminDishesPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
+                <Route
+                  path="/admin/categories"
+                  element={<AdminCategoriesPage />}
+                />
                 <Route path="/allergens" element={<AllergensPage />} />
                 <Route
                   path="/admin/dish-options"
