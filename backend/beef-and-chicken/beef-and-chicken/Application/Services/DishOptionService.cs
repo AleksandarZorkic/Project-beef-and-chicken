@@ -4,7 +4,6 @@ using beef_and_chicken.Application.Exceptions;
 using beef_and_chicken.Application.Interfaces.Repositories;
 using beef_and_chicken.Application.Interfaces.Services;
 using beef_and_chicken.Domain.Entities;
-using beef_and_chicken.Domain.Enum;
 using beef_and_chicken.Domain.Enums;
 
 namespace beef_and_chicken.Application.Services
@@ -71,6 +70,10 @@ namespace beef_and_chicken.Application.Services
             if (exists)
                 throw new ConflictException("Opcija sa istim nazivom i tipom već postoji.");
 
+            ValidateSweetAdditionRules(data.Type, data.Price);
+
+            var isAlwaysPaid = ResolveIsAlwaysPaid(data.Type, data.IsAlwaysPaid);
+
             var option = new DishOption
             {
                 Name = name,
@@ -117,6 +120,10 @@ namespace beef_and_chicken.Application.Services
 
             if (exists)
                 throw new ConflictException("Opcija sa istim nazivom i tipom već postoji.");
+
+            ValidateSweetAdditionRules(data.Type, data.Price);
+
+            var isAlwaysPaid = ResolveIsAlwaysPaid(data.Type, data.IsAlwaysPaid);
 
             option.Name = name;
             option.Type = data.Type;
@@ -220,6 +227,9 @@ namespace beef_and_chicken.Application.Services
             if (type == DishOptionType.Spice)
                 return 0;
 
+            if (type == DishOptionType.SweetAddition)
+                return price;
+
             if (!isAlwaysPaid)
                 return 0;
 
@@ -232,6 +242,30 @@ namespace beef_and_chicken.Application.Services
         {
             if (type == DishOptionType.Spice)
                 return false;
+
+            return isAlwaysPaid;
+        }
+
+        private static void ValidateSweetAdditionRules(
+            DishOptionType type,
+            decimal price)
+        {
+            if (type == DishOptionType.SweetAddition && price <= 0)
+            {
+                throw new BadRequestException(
+                    "Slatki dodatak mora imati cenu veću od 0."
+                );
+            }
+        }
+
+        private static bool ResolveIsAlwaysPaid(
+            DishOptionType type,
+            bool isAlwaysPaid)
+        {
+            if (type == DishOptionType.SweetAddition)
+            {
+                return true;
+            }
 
             return isAlwaysPaid;
         }

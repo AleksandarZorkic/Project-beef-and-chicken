@@ -24,6 +24,18 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
             builder.Property(x => x.SortOrder)
                 .HasDefaultValue(0);
 
+            builder.Property(x => x.AllowsSideDishes)
+                .IsRequired()
+                .HasDefaultValue(true);
+
+            builder.Property(x => x.AllowsSpices)
+                .IsRequired()
+                .HasDefaultValue(true);
+
+            builder.Property(x => x.AllowsSweetAdditions)
+                .IsRequired()
+                .HasDefaultValue(false);
+
             builder.HasIndex(x => x.Name).IsUnique();
 
             builder.ToTable("Categories", t =>

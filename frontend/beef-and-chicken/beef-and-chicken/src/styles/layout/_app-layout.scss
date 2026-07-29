@@ -1,0 +1,30 @@
+@use "../abstracts/variables" as *;
+
+.app-layout {
+  min-height: 100vh;
+
+  color: $color-text;
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba($color-primary, 0.08),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 100% 20%,
+      rgba($color-accent, 0.045),
+      transparent 28rem
+    ),
+    $color-bg;
+}
+
+.app-layout__main {
+  width: 100%;
+  padding-block: $space-6 $space-9;
+}
+
+@media (max-width: $breakpoint-tablet) {
+  .app-layout__main {
+    padding-block: $space-5 $space-8;
+  }
+}

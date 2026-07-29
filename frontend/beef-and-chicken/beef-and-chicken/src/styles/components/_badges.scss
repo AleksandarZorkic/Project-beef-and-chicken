@@ -1,0 +1,133 @@
+@use "../abstracts/variables" as *;
+@use "../abstracts/mixins" as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+
+  min-height: 28px;
+  padding: 5px $space-3;
+
+  color: $color-text-soft;
+
+  font-family: $font-family-body;
+  font-size: 0.75rem;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+
+  background: $color-surface-raised;
+  border: 1px solid $color-border;
+  border-radius: $radius-pill;
+
+  // Main red brand badge
+  &--primary {
+    color: #ffb8a8;
+    background: rgba($color-primary, 0.12);
+    border-color: rgba($color-primary, 0.28);
+  }
+
+  // Yellow badge for popular items and prices
+  &--accent {
+    color: $color-accent-soft;
+    background: rgba($color-accent, 0.11);
+    border-color: rgba($color-accent, 0.24);
+  }
+
+  // Success and completed states
+  &--success {
+    color: #92e8b7;
+    background: rgba($color-success, 0.12);
+    border-color: rgba($color-success, 0.27);
+  }
+
+  // Pending and warning states
+  &--warning {
+    color: #ffd87d;
+    background: rgba($color-warning, 0.12);
+    border-color: rgba($color-warning, 0.27);
+  }
+
+  // Error, cancelled and unavailable states
+  &--danger {
+    color: #ffaaaa;
+    background: rgba($color-danger, 0.12);
+    border-color: rgba($color-danger, 0.27);
+  }
+
+  // Informational states
+  &--info {
+    color: #a9c9ff;
+    background: rgba($color-info, 0.12);
+    border-color: rgba($color-info, 0.27);
+  }
+
+  // Low-emphasis neutral badge
+  &--neutral {
+    color: $color-text-muted;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: $color-border;
+  }
+
+  // Transparent variant
+  &--outline {
+    color: $color-text-soft;
+    background: transparent;
+    border-color: $color-border-strong;
+  }
+
+  // Smaller variant
+  &--sm {
+    min-height: 22px;
+    padding: 3px $space-2;
+    font-size: 0.68rem;
+  }
+
+  // Larger variant
+  &--lg {
+    min-height: 34px;
+    padding-inline: $space-4;
+    font-size: 0.8rem;
+  }
+
+  // Small status indicator inside a badge
+  &__dot {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+
+    background: currentColor;
+    border-radius: 50%;
+  }
+}
+
+.badge-count {
+  display: inline-grid;
+  place-items: center;
+
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+
+  color: #ffffff;
+
+  font-size: 0.72rem;
+  font-weight: $font-weight-extra-bold;
+  line-height: 1;
+
+  background: $color-primary;
+  border: 2px solid $color-bg-soft;
+  border-radius: $radius-pill;
+
+  box-shadow: 0 5px 14px rgba($color-primary, 0.3);
+}
+
+.badge-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-2;
+}

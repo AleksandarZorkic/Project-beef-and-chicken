@@ -29,16 +29,63 @@ namespace beef_and_chicken.Presentation.Controllers
 
         [Authorize]
         [HttpGet("profile")]
-        public IActionResult Profile()
+        public async Task<ActionResult<UserProfileDto>> Profile(
+            CancellationToken ct = default)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var username = User.FindFirstValue(ClaimTypes.Name);
+            var userId = GetCurrentUserId();
+
+            var profile = await _authService.GetProfileAsync(userId, ct);
+
+            return Ok(profile);
+        }
+
+        [Authorize]
+        [HttpPatch("profile/phone-number")]
+        public async Task<ActionResult<UserProfileDto>> UpdatePhoneNumber(
+            [FromBody] UpdatePhoneNumberDto data,
+            CancellationToken ct = default)
+        {
+            var userId = GetCurrentUserId();
+
+            var profile = await _authService.UpdatePhoneNumberAsync(userId, data, ct);
+
+            return Ok(profile);
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(
+            [FromBody] ForgotPasswordDto data,
+            CancellationToken ct = default)
+        {
+            await _authService.ForgotPasswordAsync(data, ct);
 
             return Ok(new
             {
-                userId,
-                username,
+                message = "Ako nalog sa tom email adresom postoji, poslat je link za reset lozinke."
             });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(
+            [FromBody] ResetPasswordDto data,
+            CancellationToken ct = default)
+        {
+            await _authService.ResetPasswordAsync(data, ct);
+
+            return Ok(new
+            {
+                message = "Lozinka je uspešno promenjena."
+            });
+        }
+
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdClaim, out var userId))
+                throw new UnauthorizedAccessException("Korisnik nije autentifikovan.");
+
+            return userId;
         }
     }
 }

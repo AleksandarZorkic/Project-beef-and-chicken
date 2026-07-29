@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>beef_and_chicken</RootNamespace>
+    <UserSecretsId>3f4a5166-d61d-4efe-a0b6-737c47833c6d</UserSecretsId>
   </PropertyGroup>
 
 	<ItemGroup>

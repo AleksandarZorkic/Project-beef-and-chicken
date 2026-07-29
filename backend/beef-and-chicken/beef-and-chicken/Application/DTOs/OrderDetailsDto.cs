@@ -15,7 +15,19 @@ namespace beef_and_chicken.Application.DTOs
 
         public DateTime CreatedAt {  get; set; }
 
+        public DateTime? AcceptedAt { get; set; }
+
+        public DateTime? RejectedAt { get; set; }
+
+        public DateTime? ReadyForPickupAt { get; set; }
+
+        public DateTime? DeliveryStartedAt { get; set; }
+
+        public DateTime? DeliveredAt { get; set; }
+
         public OrderAddressSnapshot DeliveryAddress { get; set; } = new();
+
+        public string DeliveryContactPhoneNumber { get; set; } = string.Empty;
 
         public string? Notes { get; set; }
 
@@ -24,6 +36,10 @@ namespace beef_and_chicken.Application.DTOs
         public decimal DeliveryFee { get; set; }
 
         public decimal TotalAmount { get; set; }
+
+        public PaymentMethod PaymentMethod { get; set; }
+
+        public PaymentStatus PaymentStatus { get; set; }
 
         public OrderStatus Status { get; set;  }
 

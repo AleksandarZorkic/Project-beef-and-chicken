@@ -29,5 +29,26 @@ namespace beef_and_chicken.Presentation.Controllers
             var dish = await _menuService.GetByIdAsync(id, ct);
             return Ok(dish);
         }
+
+        [HttpGet("best-sellers")]
+        public async Task<ActionResult<List<HomepageDishDto>>> GetBestSellers(
+            [FromQuery] int limit = 6,
+            [FromQuery] int days = 30,
+            CancellationToken ct = default)
+        {
+            var dishes = await _menuService.GetBestSellersAsync(limit, days, ct);
+
+            return Ok(dishes);
+        }
+
+        [HttpGet("recommended")]
+        public async Task<ActionResult<List<HomepageDishDto>>> GetRecommended(
+            [FromQuery] int limit = 6,
+            CancellationToken ct = default)
+        {
+            var dishes = await _menuService.GetRecommendedDishesAsync(limit, ct);
+
+            return Ok(dishes);
+        }
     }
 }

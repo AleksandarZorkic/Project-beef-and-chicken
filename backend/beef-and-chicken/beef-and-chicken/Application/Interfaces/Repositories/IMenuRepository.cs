@@ -1,4 +1,5 @@
-﻿using beef_and_chicken.Domain.Entities;
+﻿using beef_and_chicken.Application.DTOs;
+using beef_and_chicken.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace beef_and_chicken.Application.Interfaces.Repositories
@@ -13,5 +14,15 @@ namespace beef_and_chicken.Application.Interfaces.Repositories
         Task<bool> CategoryExistsAsync(int categoryId, CancellationToken ct = default);
         Task<List<int>> GetExistingAllergenIdsAsync(IEnumerable<int> allergenIds, CancellationToken ct = default);
         Task<IEnumerable<Dish>> GetInactiveAsync(CancellationToken ct = default);
+        Task<List<HomepageDishDto>> GetBestSellersAsync(
+            int limit,
+            int days,
+            CancellationToken ct = default
+        );
+        Task<List<HomepageDishDto>> GetRecommendedDishesAsync(
+            int limit,
+            CancellationToken ct = default
+        );
+
     }
 }

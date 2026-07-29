@@ -24,6 +24,7 @@ namespace beef_and_chicken.Application.Services
         private readonly IDishOptionRepository _dishOptionRepo;
         private readonly UserManager<User> _userManager;
         private readonly IOrderNotificationService _orderNotificationService;
+        private readonly IRestaurantSettingsService _restaurantSettingsService;
 
         public OrderService(
             IOrderRepository orderRepo,
@@ -34,7 +35,8 @@ namespace beef_and_chicken.Application.Services
             ILogger<OrderService> logger,
             IMapper mapper,
             IUnitOfWork unitOfWork,
-            IOrderNotificationService orderNotificationService)
+            IOrderNotificationService orderNotificationService,
+            IRestaurantSettingsService restaurantSettingsService)
         {
             _orderRepo = orderRepo;
             _menuRepo = menuRepo;
@@ -45,6 +47,7 @@ namespace beef_and_chicken.Application.Services
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _orderNotificationService = orderNotificationService;
+            _restaurantSettingsService = restaurantSettingsService;
         }
 
         private const int FreeSideDishCount = 4;
@@ -84,9 +87,9 @@ namespace beef_and_chicken.Application.Services
         }
 
         public async Task<OrderDetailsDto> CreateOrderAsync(
-    int userId,
-    CreateOrderRequestDto orderDto,
-    CancellationToken ct = default)
+            int userId,
+            CreateOrderRequestDto orderDto,
+            CancellationToken ct = default)
         {
             if (orderDto is null)
                 throw new BadRequestException("Podaci za porudžbinu su obavezni.");
@@ -103,14 +106,24 @@ namespace beef_and_chicken.Application.Services
             if (orderDto.CustomerAddressId <= 0)
                 throw new BadRequestException("Adresa za dostavu je obavezna.");
 
+            if (!orderDto.PaymentMethod.HasValue)
+                throw new BadRequestException("Način plaćanja je obavezan.");
+
+            var restaurantSettings = await _restaurantSettingsService.GetAsync(ct);
+
+            if (!restaurantSettings.IsDeliveryEnabled)
+            {
+                throw new BadRequestException(
+                    "Dostava trenutno nije dostupna. Pokušajte kasnije."
+                );
+            }
+
             var allSelectedOptionIds = orderDto.Items
                 .SelectMany(i => i.SelectedOptionIds ?? new List<int>())
                 .ToList();
 
             if (allSelectedOptionIds.Any(id => id <= 0))
                 throw new BadRequestException("Izabrane opcije moraju imati validan ID.");
-
-            const decimal deliveryFee = 200m;
 
             var address = await _addressRepo.GetCustomerAddressAsync(
                 userId,
@@ -166,14 +179,12 @@ namespace beef_and_chicken.Application.Services
 
             var optionById = dishOptions.ToDictionary(x => x.Id);
 
+            ValidatePhoneNumber(orderDto.DeliveryContactPhoneNumber);
+
             var order = new Order
             {
                 CustomerId = userId,
-                CustomerAddressId = orderDto.CustomerAddressId,
-                CreatedAt = DateTime.UtcNow,
-                Notes = string.IsNullOrWhiteSpace(orderDto.Notes)
-                    ? null
-                    : orderDto.Notes.Trim(),
+                CustomerAddressId = address.Id,
                 DeliveryAddress = new OrderAddressSnapshot
                 {
                     Street = address.Street,
@@ -181,10 +192,15 @@ namespace beef_and_chicken.Application.Services
                     PostalCode = address.PostalCode,
                     City = address.City,
                     Label = address.Label,
-                    Note = address.Note,
+                    Note = address.Note
                 },
+                DeliveryContactPhoneNumber = NormalizePhoneNumber(orderDto.DeliveryContactPhoneNumber),
+                Notes = string.IsNullOrWhiteSpace(orderDto.Notes) ? null : orderDto.Notes.Trim(),
+
+                PaymentMethod = orderDto.PaymentMethod.Value,
+                PaymentStatus = PaymentStatus.Pending,
+
                 Status = OrderStatus.Na_Cekanju,
-                DeliveryFee = deliveryFee
             };
 
             foreach (var requestedItem in orderDto.Items)
@@ -198,6 +214,8 @@ namespace beef_and_chicken.Application.Services
                 var selectedOptions = selectedOptionIds
                     .Select(id => optionById[id])
                     .ToList();
+
+                ValidateSelectedOptionsAllowedForDish(dish, selectedOptions);
 
                 var optionSnapshots = BuildOrderItemOptions(
                     selectedOptions,
@@ -220,6 +238,18 @@ namespace beef_and_chicken.Application.Services
             order.Subtotal = order.OrderItems.Sum(x =>
                 (x.UnitPrice + x.OptionsTotal) * x.Quantity
             );
+
+            if (order.Subtotal < restaurantSettings.MinimumOrderAmount)
+            {
+                var missingAmount = restaurantSettings.MinimumOrderAmount - order.Subtotal;
+
+                throw new BadRequestException(
+                    $"Minimalna vrednost porudžbine je {restaurantSettings.MinimumOrderAmount:0.##} RSD. " +
+                    $"Dodajte još {missingAmount:0.##} RSD za poručivanje."
+                );
+            }
+
+            order.DeliveryFee = CalculateDeliveryFee(order.Subtotal, restaurantSettings);
 
             order.TotalAmount = order.Subtotal + order.DeliveryFee;
 
@@ -285,6 +315,12 @@ namespace beef_and_chicken.Application.Services
                 .ThenBy(x => x.Name)
                 .ToList();
 
+            var sweetAdditions = selectedOptions
+                .Where(x => x.Type == DishOptionType.SweetAddition)
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.Name)
+                .ToList();
+
             for (var i = 0; i < regularSideDishes.Count; i++)
             {
                 var option = regularSideDishes[i];
@@ -324,16 +360,75 @@ namespace beef_and_chicken.Application.Services
                 });
             }
 
+            foreach (var option in sweetAdditions)
+            {
+                result.Add(new OrderItemOption
+                {
+                    DishOptionId = option.Id,
+                    OptionName = option.Name,
+                    OptionType = option.Type,
+                    UnitPrice = option.Price
+                });
+            }
+
             optionsTotal = result.Sum(x => x.UnitPrice);
 
             return result;
         }
 
-        public Task AcceptOrderAsync(int orderId, CancellationToken ct = default)
-            => UpdateOrderStatus(orderId, OrderStatus.Prihvacena, ct);
+        public Task AcceptOrderAsync(
+            int orderId,
+            int changedByUserId,
+            CancellationToken ct = default)
+            => UpdateOrderStatus(orderId, OrderStatus.Prihvacena, changedByUserId, ct);
 
-        public Task RejectOrderAsync(int orderId, CancellationToken ct = default)
-            => UpdateOrderStatus(orderId, OrderStatus.Odbijena, ct);
+        public Task RejectOrderAsync(
+            int orderId,
+            int changedByUserId,
+            CancellationToken ct = default)
+            => UpdateOrderStatus(orderId, OrderStatus.Odbijena, changedByUserId, ct);
+
+        public async Task<OrderDetailsDto> CancelCustomerOrderAsync(
+            int userId,
+            int orderId,
+            CancellationToken ct = default)
+        {
+            var order = await _orderRepo.GetOrderByIdForUpdate(orderId, ct);
+
+            if (order == null)
+                throw new NotFoundException($"Porudžbina sa ID-jem {orderId} nije pronađena.");
+
+            if (order.CustomerId != userId)
+                throw new ForbiddenException("Nemate pravo da otkažete ovu porudžbinu.");
+
+            if (order.Status != OrderStatus.Na_Cekanju)
+                throw new BadRequestException(
+                    "Porudžbina se može otkazati samo dok je na čekanju."
+                );
+
+            ApplyStatusChange(
+                order,
+                OrderStatus.Otkazana,
+                userId,
+                "Kupac je otkazao porudžbinu."
+            );
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            await _orderNotificationService.NotifyOrderChangedAsync(
+                order,
+                "OrderCancelledByCustomer",
+                ct
+            );
+
+            _logger.LogInformation(
+                "Kupac {UserId} je otkazao porudžbinu {OrderId}.",
+                userId,
+                orderId
+            );
+
+            return _mapper.Map<OrderDetailsDto>(order);
+        }
 
         public async Task<IEnumerable<OrderDetailsDto>> GetPendingOrdersAsync(CancellationToken ct = default)
         {
@@ -344,6 +439,7 @@ namespace beef_and_chicken.Application.Services
         private async Task UpdateOrderStatus(
             int orderId,
             OrderStatus newStatus,
+            int changedByUserId,
             CancellationToken ct = default)
         {
             var order = await _orderRepo.GetOrderByIdForUpdate(orderId, ct);
@@ -351,9 +447,12 @@ namespace beef_and_chicken.Application.Services
             if (order == null)
                 throw new NotFoundException($"Porudžbina sa ID-jem {orderId} nije pronađena.");
 
-            EnsureValidStatusTransition(order.Status, newStatus);
-
-            order.Status = newStatus;
+            ApplyStatusChange(
+                order,
+                newStatus,
+                changedByUserId,
+                $"Status promenjen iz {order.Status} u {newStatus}."
+            );
 
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -364,9 +463,10 @@ namespace beef_and_chicken.Application.Services
             );
 
             _logger.LogInformation(
-                "Status porudžbine {OrderId} promenjen u {Status}.",
+                "Status porudžbine {OrderId} promenjen u {Status}. ChangedByUserId={ChangedByUserId}",
                 orderId,
-                newStatus
+                newStatus,
+                changedByUserId
             );
         }
 
@@ -416,19 +516,22 @@ namespace beef_and_chicken.Application.Services
             return _mapper.Map<OrderDetailsDto>(order);
         }
 
-        public async Task<OrderDetailsDto> MarkReadyForPickupAsync(int orderId, CancellationToken ct = default)
+        public async Task<OrderDetailsDto> MarkReadyForPickupAsync(
+            int orderId,
+            int changedByUserId,
+            CancellationToken ct = default)
         {
             var order = await _orderRepo.GetOrderByIdForUpdate(orderId, ct);
 
             if (order == null)
                 throw new NotFoundException($"Porudžbina sa ID-jem {orderId} nije pronađena.");
 
-            EnsureValidStatusTransition(
-                order.Status,
-                OrderStatus.Spremna_za_preuzimanje
+            ApplyStatusChange(
+                order,
+                OrderStatus.Spremna_za_preuzimanje,
+                changedByUserId,
+                "Porudžbina je označena kao spremna za preuzimanje."
             );
-
-            order.Status = OrderStatus.Spremna_za_preuzimanje;
 
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -468,13 +571,14 @@ namespace beef_and_chicken.Application.Services
             if (order == null)
                 throw new NotFoundException($"Porudžbina sa ID-jem {orderId} nije pronađena.");
 
-            EnsureValidStatusTransition(
-                order.Status,
-                OrderStatus.Dostava_u_toku
-            );
-
             order.CourierId = courierId;
-            order.Status = OrderStatus.Dostava_u_toku;
+
+            ApplyStatusChange(
+                order,
+                OrderStatus.Dostava_u_toku,
+                courierId,
+                "Kurir je pokrenuo dostavu."
+            );
 
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -534,12 +638,12 @@ namespace beef_and_chicken.Application.Services
             if (order.CourierId != courierId)
                 throw new BadRequestException("Ova porudžbina nije dodeljena ovom kuriru.");
 
-            EnsureValidStatusTransition(
-                order.Status,
-                OrderStatus.Dostavljena
+            ApplyStatusChange(
+                order,
+                OrderStatus.Dostavljena,
+                courierId,
+                "Kurir je označio porudžbinu kao dostavljenu."
             );
-
-            order.Status = OrderStatus.Dostavljena;
 
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -598,13 +702,14 @@ namespace beef_and_chicken.Application.Services
 
             foreach (var order in orders)
             {
-                EnsureValidStatusTransition(
-                    order.Status,
-                    OrderStatus.Dostava_u_toku
-                );
-
                 order.CourierId = courierId;
-                order.Status = OrderStatus.Dostava_u_toku;
+
+                ApplyStatusChange(
+                    order,
+                    OrderStatus.Dostava_u_toku,
+                    courierId,
+                    "Kurir je pokrenuo batch dostavu."
+                );
             }
 
             await _unitOfWork.SaveChangesAsync(ct);
@@ -641,7 +746,9 @@ namespace beef_and_chicken.Application.Services
             var isValid = currentStatus switch
             {
                 OrderStatus.Na_Cekanju =>
-                    newStatus is OrderStatus.Prihvacena or OrderStatus.Odbijena,
+                    newStatus is OrderStatus.Prihvacena
+                        or OrderStatus.Odbijena
+                        or OrderStatus.Otkazana,
 
                 OrderStatus.Prihvacena =>
                     newStatus is OrderStatus.Spremna_za_preuzimanje,
@@ -663,9 +770,171 @@ namespace beef_and_chicken.Application.Services
             }
         }
 
+        private static void ValidateSelectedOptionsAllowedForDish(
+            Dish dish,
+            List<DishOption> selectedOptions)
+        {
+            if (selectedOptions.Count == 0)
+                return;
+
+            if (dish.Category == null)
+            {
+                throw new BadRequestException(
+                    $"Kategorija za jelo \"{dish.Name}\" nije učitana."
+                );
+            }
+
+            var hasSideDishes = selectedOptions.Any(x => x.Type == DishOptionType.SideDish);
+            var hasSpices = selectedOptions.Any(x => x.Type == DishOptionType.Spice);
+            var hasSweetAdditions = selectedOptions.Any(x => x.Type == DishOptionType.SweetAddition);
+
+            if (hasSideDishes && !dish.Category.AllowsSideDishes)
+            {
+                throw new BadRequestException(
+                    $"Jelo \"{dish.Name}\" ne dozvoljava izbor priloga."
+                );
+            }
+
+            if (hasSpices && !dish.Category.AllowsSpices)
+            {
+                throw new BadRequestException(
+                    $"Jelo \"{dish.Name}\" ne dozvoljava izbor začina."
+                );
+            }
+
+            if (hasSweetAdditions && !dish.Category.AllowsSweetAdditions)
+            {
+                throw new BadRequestException(
+                    $"Jelo \"{dish.Name}\" ne dozvoljava izbor slatkih dodataka."
+                );
+            }
+        }
+
+        private static void ApplyStatusChange(
+            Order order,
+            OrderStatus newStatus,
+            int? changedByUserId,
+            string? note = null)
+        {
+            var oldStatus = order.Status;
+
+            EnsureValidStatusTransition(oldStatus, newStatus);
+
+            var changedAt = DateTime.UtcNow;
+
+            order.Status = newStatus;
+
+            ApplyStatusTimestamp(order, newStatus, changedAt);
+
+            ApplyPaymentStatusChange(order, newStatus);
+
+            order.StatusHistory.Add(new OrderStatusHistory
+            {
+                OldStatus = oldStatus,
+                NewStatus = newStatus,
+                ChangedByUserId = changedByUserId,
+                ChangedAt = changedAt,
+                Note = note
+            });
+        }
+
+        private static void ApplyStatusTimestamp(
+            Order order,
+            OrderStatus newStatus,
+            DateTime changedAt)
+        {
+            switch (newStatus)
+            {
+                case OrderStatus.Prihvacena:
+                    order.AcceptedAt ??= changedAt;
+                    break;
+
+                case OrderStatus.Odbijena:
+                    order.RejectedAt ??= changedAt;
+                    break;
+
+                case OrderStatus.Spremna_za_preuzimanje:
+                    order.ReadyForPickupAt ??= changedAt;
+                    break;
+
+                case OrderStatus.Dostava_u_toku:
+                    order.DeliveryStartedAt ??= changedAt;
+                    break;
+
+                case OrderStatus.Dostavljena:
+                    order.DeliveredAt ??= changedAt;
+                    break;
+            }
+        }
+
+        private static void ApplyPaymentStatusChange(
+            Order order,
+            OrderStatus newStatus)
+        {
+            if (newStatus is OrderStatus.Odbijena or OrderStatus.Otkazana)
+            {
+                order.PaymentStatus = PaymentStatus.Cancelled;
+            }
+
+            if (newStatus == OrderStatus.Dostavljena)
+            {
+                order.PaymentStatus = PaymentStatus.Paid;
+            }
+        }
+
         private static string GenerateOrderNumber(int orderId, DateTime createdAt)
         {
             return $"{createdAt:yyMMdd}-{orderId:D5}";
+        }
+
+        private static string NormalizePhoneNumber(string phoneNumber)
+        {
+            return phoneNumber.Trim();
+        }
+
+        private static void ValidatePhoneNumber(string phoneNumber)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                throw new BadRequestException("Broj telefona za dostavu je obavezan.");
+
+            var trimmed = phoneNumber.Trim();
+
+            if (trimmed.Length < 6 || trimmed.Length > 20)
+            {
+                throw new BadRequestException(
+                    "Broj telefona mora imati između 6 i 20 karaktera."
+                );
+            }
+
+            var allowedCharacters = trimmed.All(c =>
+                char.IsDigit(c) ||
+                c == '+' ||
+                c == '-' ||
+                c == '/' ||
+                c == ' ' ||
+                c == '(' ||
+                c == ')'
+            );
+
+            if (!allowedCharacters)
+            {
+                throw new BadRequestException(
+                    "Broj telefona može sadržati samo brojeve, razmake i znakove + - / ( )."
+                );
+            }
+        }
+
+        private static decimal CalculateDeliveryFee(
+            decimal subtotal,
+            RestaurantSettingsDto settings)
+        {
+            if (settings.FreeDeliveryThreshold.HasValue &&
+                subtotal >= settings.FreeDeliveryThreshold.Value)
+            {
+                return 0m;
+            }
+
+            return settings.DeliveryFee;
         }
     }
 }

@@ -3,12 +3,29 @@
     public class DishMenuDto
     {
         public int Id { get; set; }
+
         public string Name { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
+
         public decimal Price { get; set; }
+
         public string? ImageUrl { get; set; }
+
+        public bool IsRecommended { get; set; }
+
+        public int RecommendedSortOrder { get; set; }
+
         public int CategoryId { get; set; }
+
         public string CategoryName { get; set; } = string.Empty;
-        public List<DishAllergenDto> Allergens { get; set; } = new List<DishAllergenDto>();
+
+        public bool AllowsSideDishes { get; set; }
+
+        public bool AllowsSpices { get; set; }
+
+        public bool AllowsSweetAdditions { get; set; }
+
+        public List<DishAllergenDto> Allergens { get; set; } = new();
     }
 }

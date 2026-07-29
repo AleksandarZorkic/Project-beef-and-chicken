@@ -15,13 +15,15 @@ namespace beef_and_chicken.Application.Services
         private readonly ILogger<MenuService> _logger;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IFileStorageService _fileStorageService;
 
-        public MenuService(IMenuRepository menuRepo, ILogger<MenuService> logger, IMapper mapper, IUnitOfWork unitOfWork)
+        public MenuService(IMenuRepository menuRepo, ILogger<MenuService> logger, IMapper mapper, IUnitOfWork unitOfWork, IFileStorageService fileStorageService)
         {
             _menuRepo = menuRepo;
             _logger = logger;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _fileStorageService = fileStorageService;
         }
 
         public async Task<IEnumerable<DishMenuDto>> GetAllAsync(CancellationToken ct = default)
@@ -48,7 +50,7 @@ namespace beef_and_chicken.Application.Services
             if (data == null)
                 throw new BadRequestException("Podaci za jelo su obavezni.");
 
-            ValidateDish(data.Name, data.Price, data.CategoryId);
+            ValidateDish(data.Name, data.Price, data.CategoryId, data.RecommendedSortOrder);
 
             var categoryExists = await _menuRepo.CategoryExistsAsync(data.CategoryId, ct);
 
@@ -83,6 +85,8 @@ namespace beef_and_chicken.Application.Services
                 Price = data.Price,
                 ImageUrl = data.ImageUrl?.Trim(),
                 CategoryId = data.CategoryId,
+                IsRecommended = data.IsRecommended,
+                RecommendedSortOrder = data.RecommendedSortOrder,
                 IsActive = true,
                 DishAllergens = requestedAllergens
                     .Select(a => new DishAllergen
@@ -116,7 +120,7 @@ namespace beef_and_chicken.Application.Services
             if (data == null)
                 throw new BadRequestException("Podaci za jelo su obavezni.");
 
-            ValidateDish(data.Name, data.Price, data.CategoryId);
+            ValidateDish(data.Name, data.Price, data.CategoryId, data.RecommendedSortOrder);
 
             var dish = await _menuRepo.GetByIdForUpdateAsync(dishId, ct);
 
@@ -154,6 +158,8 @@ namespace beef_and_chicken.Application.Services
             dish.Price = data.Price;
             dish.ImageUrl = data.ImageUrl?.Trim();
             dish.CategoryId = data.CategoryId;
+            dish.IsRecommended = data.IsRecommended;
+            dish.RecommendedSortOrder = data.RecommendedSortOrder;
 
             SyncDishAllergens(dish, requestedAllergens);
 
@@ -178,7 +184,54 @@ namespace beef_and_chicken.Application.Services
             await DeactivateAsync(dishId, ct);
         }
 
-        private static void ValidateDish(string name, decimal price, int categoryId)
+        public async Task<UploadDishImageResponseDto> UploadDishImageAsync(
+            int dishId,
+            IFormFile image,
+            CancellationToken ct = default)
+        {
+            var dish = await _menuRepo.GetByIdForUpdateAsync(dishId, ct);
+
+            if (dish == null)
+                throw new NotFoundException($"Jelo sa ID-jem {dishId} nije pronađeno.");
+
+            var imageUrl = await _fileStorageService.SaveDishImageAsync(image, ct);
+
+            dish.ImageUrl = imageUrl;
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation(
+                "Dish image uploaded. DishId={DishId}, ImageUrl={ImageUrl}",
+                dishId,
+                imageUrl
+            );
+
+            return new UploadDishImageResponseDto
+            {
+                ImageUrl = imageUrl
+            };
+        }
+
+        public async Task<List<HomepageDishDto>> GetBestSellersAsync(
+            int limit = 6,
+            int days = 30,
+            CancellationToken ct = default)
+        {
+            return await _menuRepo.GetBestSellersAsync(limit, days, ct);
+        }
+
+        public async Task<List<HomepageDishDto>> GetRecommendedDishesAsync(
+            int limit = 6,
+            CancellationToken ct = default)
+        {
+            return await _menuRepo.GetRecommendedDishesAsync(limit, ct);
+        }
+
+        private static void ValidateDish(
+            string name,
+            decimal price,
+            int categoryId,
+            int recommendedSortOrder)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new BadRequestException("Naziv jela je obavezan.");
@@ -191,6 +244,9 @@ namespace beef_and_chicken.Application.Services
 
             if (categoryId <= 0)
                 throw new BadRequestException("Kategorija je obavezna.");
+
+            if (recommendedSortOrder < 0)
+                throw new BadRequestException("Redosled preporuke ne može biti negativan.");
         }
 
         private static void ValidateDishAllergens(List<DishAllergenInputDto> allergens)

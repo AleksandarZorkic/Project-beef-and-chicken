@@ -78,21 +78,27 @@ namespace beef_and_chicken.Presentation.Controllers
 
         [Authorize(Roles = AppRoles.AdminOrEmployee)]
         [HttpPatch("{orderId:int}/accept")]
-        public async Task<ActionResult> AcceptOrder(
+        public async Task<IActionResult> AcceptOrder(
             int orderId,
             CancellationToken ct = default)
         {
-            await _orderService.AcceptOrderAsync(orderId, ct);
+            var userId = GetCurrentUserId();
+
+            await _orderService.AcceptOrderAsync(orderId, userId, ct);
+
             return NoContent();
         }
 
         [Authorize(Roles = AppRoles.AdminOrEmployee)]
         [HttpPatch("{orderId:int}/reject")]
-        public async Task<ActionResult> RejectOrder(
+        public async Task<IActionResult> RejectOrder(
             int orderId,
             CancellationToken ct = default)
         {
-            await _orderService.RejectOrderAsync(orderId, ct);
+            var userId = GetCurrentUserId();
+
+            await _orderService.RejectOrderAsync(orderId, userId, ct);
+
             return NoContent();
         }
 
@@ -102,7 +108,10 @@ namespace beef_and_chicken.Presentation.Controllers
             int orderId,
             CancellationToken ct = default)
         {
-            var order = await _orderService.MarkReadyForPickupAsync(orderId, ct);
+            var userId = GetCurrentUserId();
+
+            var order = await _orderService.MarkReadyForPickupAsync(orderId, userId, ct);
+
             return Ok(order);
         }
 
@@ -185,6 +194,23 @@ namespace beef_and_chicken.Presentation.Controllers
             );
 
             return Ok(orders);
+        }
+
+        [Authorize(Roles = AppRoles.Customer)]
+        [HttpPatch("{orderId:int}/cancel")]
+        public async Task<ActionResult<OrderDetailsDto>> CancelOrder(
+            int orderId,
+            CancellationToken ct = default)
+        {
+            var userId = GetCurrentUserId();
+
+            var order = await _orderService.CancelCustomerOrderAsync(
+                userId,
+                orderId,
+                ct
+            );
+
+            return Ok(order);
         }
 
         private int GetCurrentUserId()

@@ -12,6 +12,12 @@
 
         public int SortOrder { get; set; }
 
+        public bool AllowsSideDishes { get; set; }
+
+        public bool AllowsSpices { get; set; }
+
+        public bool AllowsSweetAdditions { get; set; }
+
         public int DishCount { get; set; }
 
         public int ActiveDishCount { get; set; }

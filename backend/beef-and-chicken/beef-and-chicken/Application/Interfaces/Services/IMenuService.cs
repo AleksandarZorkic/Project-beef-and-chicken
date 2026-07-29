@@ -1,4 +1,5 @@
 ﻿using beef_and_chicken.Application.DTOs;
+using Microsoft.AspNetCore.Http;
 
 namespace beef_and_chicken.Application.Interfaces.Services
 {
@@ -12,5 +13,19 @@ namespace beef_and_chicken.Application.Interfaces.Services
         Task<IEnumerable<DishMenuDto>> GetInactiveAsync(CancellationToken ct = default);
         Task DeactivateAsync(int dishId, CancellationToken ct = default);
         Task<DishMenuDto> ActivateAsync(int dishId, CancellationToken ct = default);
+        Task<UploadDishImageResponseDto> UploadDishImageAsync(
+            int dishId,
+            IFormFile image,
+            CancellationToken ct = default
+        );
+        Task<List<HomepageDishDto>> GetBestSellersAsync(
+            int limit = 6,
+            int days = 30,
+            CancellationToken ct = default
+        );
+        Task<List<HomepageDishDto>> GetRecommendedDishesAsync(
+            int limit = 6,
+            CancellationToken ct = default
+        );
     }
 }

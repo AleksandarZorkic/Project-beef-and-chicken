@@ -11,13 +11,23 @@ namespace beef_and_chicken.Application.Interfaces.Services
 
         Task<OrderDetailsDto> CreateOrderAsync(int userId, CreateOrderRequestDto orderDto, CancellationToken ct = default);
 
-        Task AcceptOrderAsync(int orderId, CancellationToken ct = default);
-        Task RejectOrderAsync(int orderId, CancellationToken ct = default);
+        Task AcceptOrderAsync(
+            int orderId,
+            int changedByUserId,
+            CancellationToken ct = default);
+
+        Task RejectOrderAsync(
+            int orderId,
+            int changedByUserId,
+            CancellationToken ct = default);
 
         Task<IEnumerable<OrderDetailsDto>> GetPendingOrdersAsync(CancellationToken ct = default);
         Task<IEnumerable<OrderDetailsDto>> GetActiveOrdersAsync(CancellationToken ct = default);
 
-        Task<OrderDetailsDto> MarkReadyForPickupAsync(int orderId, CancellationToken ct = default);
+        Task<OrderDetailsDto> MarkReadyForPickupAsync(
+            int orderId,
+            int changedByUserId,
+            CancellationToken ct = default);
 
         Task<IEnumerable<OrderDetailsDto>> GetReadyForPickupOrdersAsync(CancellationToken ct = default);
         Task<IEnumerable<OrderDetailsDto>> GetCourierOrdersAsync(int courierId, CancellationToken ct = default);
@@ -39,5 +49,11 @@ namespace beef_and_chicken.Application.Interfaces.Services
         Task<OrderDashboardDto> GetDashboardAsync(
             OrderDashboardQueryDto query,
             CancellationToken ct = default);
+
+        Task<OrderDetailsDto> CancelCustomerOrderAsync(
+            int userId,
+            int orderId,
+            CancellationToken ct = default
+        );
     }
 }

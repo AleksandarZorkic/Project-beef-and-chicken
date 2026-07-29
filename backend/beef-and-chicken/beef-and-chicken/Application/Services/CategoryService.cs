@@ -72,6 +72,9 @@ namespace beef_and_chicken.Application.Services
                 Name = name,
                 Description = NormalizeOptionalText(dto.Description),
                 SortOrder = dto.SortOrder,
+                AllowsSideDishes = dto.AllowsSideDishes,
+                AllowsSpices = dto.AllowsSpices,
+                AllowsSweetAdditions = dto.AllowsSweetAdditions,
                 IsActive = true
             };
 
@@ -121,6 +124,9 @@ namespace beef_and_chicken.Application.Services
             category.Name = name;
             category.Description = NormalizeOptionalText(dto.Description);
             category.SortOrder = dto.SortOrder;
+            category.AllowsSideDishes = dto.AllowsSideDishes;
+            category.AllowsSpices = dto.AllowsSpices;
+            category.AllowsSweetAdditions = dto.AllowsSweetAdditions;
 
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -253,6 +259,9 @@ namespace beef_and_chicken.Application.Services
                 Description = category.Description,
                 IsActive = category.IsActive,
                 SortOrder = category.SortOrder,
+                AllowsSideDishes = category.AllowsSideDishes,
+                AllowsSpices = category.AllowsSpices,
+                AllowsSweetAdditions = category.AllowsSweetAdditions,
                 DishCount = category.Dishes.Count,
                 ActiveDishCount = category.Dishes.Count(d => d.IsActive)
             };

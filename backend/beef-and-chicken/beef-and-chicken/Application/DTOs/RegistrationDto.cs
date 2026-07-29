@@ -21,6 +21,9 @@ namespace beef_and_chicken.Application.DTOs
         [Required(ErrorMessage = "Korisničko ime je obavezno.")]
         public string UserName { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Broj telefona je obavezan.")]
+        public string PhoneNumber { get; set; } = string.Empty;
+
         public string? ProfilePicture { get; set; }
     }
 }

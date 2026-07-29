@@ -1,0 +1,183 @@
+@use "sass:color";
+@use "../abstracts/variables" as *;
+@use "../abstracts/mixins" as *;
+
+.btn {
+  @include flex-center;
+  @include focus-ring;
+
+  display: inline-flex;
+  gap: $space-2;
+
+  min-height: 48px;
+  padding: 0 $space-5;
+
+  font-family: $font-family-body;
+  font-size: 0.95rem;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  text-align: center;
+  text-decoration: none;
+
+  border: 1px solid transparent;
+  border-radius: $radius-md;
+
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    transform $transition-base,
+    color $transition-base,
+    background-color $transition-base,
+    border-color $transition-base,
+    box-shadow $transition-base,
+    opacity $transition-base;
+
+  &:hover:not(:disabled):not([aria-disabled="true"]) {
+    transform: translateY(-2px);
+  }
+
+  &:active:not(:disabled):not([aria-disabled="true"]) {
+    transform: translateY(0);
+  }
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  // Main conversion action
+  &--primary {
+    color: #ffffff;
+
+    background: linear-gradient(
+      135deg,
+      $color-primary 0%,
+      $color-primary-hover 100%
+    );
+
+    box-shadow: $shadow-primary;
+
+    &:hover:not(:disabled):not([aria-disabled="true"]) {
+      background: linear-gradient(
+        135deg,
+        $color-primary-hover 0%,
+        $color-primary-dark 100%
+      );
+
+      box-shadow: 0 16px 34px rgba($color-primary, 0.34);
+    }
+  }
+
+  // Yellow brand accent
+  &--accent {
+    color: $color-text-dark;
+
+    background: linear-gradient(
+      135deg,
+      $color-accent 0%,
+      $color-accent-hover 100%
+    );
+
+    box-shadow: $shadow-accent;
+
+    &:hover:not(:disabled):not([aria-disabled="true"]) {
+      background: linear-gradient(
+        135deg,
+        $color-accent-hover 0%,
+        $color-accent-soft 100%
+      );
+
+      box-shadow: 0 16px 34px rgba($color-accent, 0.28);
+    }
+  }
+
+  // Neutral filled button
+  &--secondary {
+    color: $color-text;
+    background: $color-surface-raised;
+    border-color: $color-border;
+
+    &:hover:not(:disabled):not([aria-disabled="true"]) {
+      background: $color-surface-hover;
+      border-color: $color-border-strong;
+    }
+  }
+
+  // Transparent button
+  &--ghost {
+    color: $color-text;
+    background: rgba(255, 255, 255, 0.035);
+    border-color: $color-border;
+
+    &:hover:not(:disabled):not([aria-disabled="true"]) {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: $color-border-strong;
+    }
+  }
+
+  // Destructive action
+  &--danger {
+    color: #ffffff;
+    background: $color-danger;
+
+    &:hover:not(:disabled):not([aria-disabled="true"]) {
+      background: color.adjust($color-danger, $lightness: -8%);
+      box-shadow: 0 12px 28px rgba($color-danger, 0.24);
+    }
+  }
+
+  // Sizes
+  &--sm {
+    min-height: 38px;
+    padding-inline: $space-4;
+    font-size: 0.875rem;
+    border-radius: $radius-sm;
+  }
+
+  &--lg {
+    min-height: 54px;
+    padding-inline: $space-6;
+    font-size: 1rem;
+  }
+
+  &--full {
+    width: 100%;
+  }
+
+  // Square icon button
+  &--icon {
+    width: 48px;
+    min-width: 48px;
+    padding: 0;
+  }
+}
+
+.btn-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-3;
+}
+
+@include tablet {
+  .btn-group--mobile-full {
+    width: 100%;
+
+    .btn {
+      flex: 1;
+    }
+  }
+}
+
+@include mobile {
+  .btn-group--mobile-full {
+    flex-direction: column;
+
+    .btn {
+      width: 100%;
+    }
+  }
+}

@@ -10,6 +10,7 @@ type RegisterField =
   | "lastName"
   | "email"
   | "username"
+  | "phoneNumber"
   | "password"
   | "confirmPassword";
 
@@ -22,6 +23,7 @@ export default function RegisterPage() {
     lastName: "",
     email: "",
     username: "",
+    phoneNumber: "",
     password: "",
     confirmPassword: "",
   });
@@ -37,7 +39,10 @@ export default function RegisterPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
     setGeneralError(null);
-    setPasswordRules(getPasswordRules(form.password));
+
+    if (field === "password") {
+      setPasswordRules(getPasswordRules(value));
+    }
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -59,6 +64,7 @@ export default function RegisterPage() {
         lastName: form.lastName.trim(),
         email: form.email.trim(),
         userName: form.username.trim(),
+        phoneNumber: form.phoneNumber.trim(),
         password: form.password,
         profilePicture: null,
       });
@@ -72,7 +78,8 @@ export default function RegisterPage() {
           firstName: apiFieldErrors.FirstName,
           lastName: apiFieldErrors.LastName,
           email: apiFieldErrors.Email,
-          username: apiFieldErrors.Username,
+          username: apiFieldErrors.UserName ?? apiFieldErrors.Username,
+          phoneNumber: apiFieldErrors.PhoneNumber,
           password: apiFieldErrors.Password,
         });
       } else {
@@ -125,6 +132,20 @@ export default function RegisterPage() {
           />
           {errors.email && (
             <div style={{ color: "crimson", marginTop: 4 }}>{errors.email}</div>
+          )}
+        </div>
+
+        <div>
+          <input
+            type="tel"
+            placeholder="Broj telefona"
+            value={form.phoneNumber}
+            onChange={(e) => setField("phoneNumber", e.target.value)}
+          />
+          {errors.phoneNumber && (
+            <div style={{ color: "crimson", marginTop: 4 }}>
+              {errors.phoneNumber}
+            </div>
           )}
         </div>
 

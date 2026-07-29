@@ -146,6 +146,12 @@ builder.Services.Configure<UserAnonymizationOptions>(
     builder.Configuration.GetSection("UserAnonymization")
 );
 
+builder.Services.Configure<EmailOptions>(
+    builder.Configuration.GetSection("Email")
+);
+
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+
 builder.Services.AddScoped<IUserAnonymizationService, UserAnonymizationService>();
 builder.Services.AddScoped<IUserPersonalDataCleanupService, UserPersonalDataCleanupService>();
 builder.Services.AddScoped<IDishOptionRepository, DishOptionRepository>();
@@ -154,10 +160,18 @@ builder.Services.AddScoped<IDishOptionService, DishOptionService>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 
+builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
+builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
+
+builder.Services.AddScoped<IRestaurantSettingsRepository, RestaurantSettingsRepository>();
+builder.Services.AddScoped<IRestaurantSettingsService, RestaurantSettingsService>();
+
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IOrderNotificationService, OrderNotificationService>();
 
 builder.Services.AddHostedService<BlockedUsersAnonymizationBackgroundService>();
+
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -190,6 +204,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("Front");
+app.UseStaticFiles();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseAuthentication();

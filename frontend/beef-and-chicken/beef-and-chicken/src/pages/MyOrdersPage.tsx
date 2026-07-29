@@ -7,6 +7,7 @@ import {
 } from "../api/orderApi";
 import { useAuth } from "../auth/AuthContext";
 import { useOrderRealtime } from "../realtime/useOrderRealtime";
+import { cancelMyOrder } from "../api/orderApi";
 
 const activeStatuses: OrderStatus[] = [
   "Na_Cekanju",
@@ -86,6 +87,34 @@ export default function MyOrdersPage() {
     },
   });
 
+  async function handleCancelOrder(orderId: number) {
+    const confirmed = window.confirm(
+      "Da li sigurno želite da otkažete ovu porudžbinu?",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setError(null);
+
+      const cancelledOrder = await cancelMyOrder(orderId);
+
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === cancelledOrder.id ? cancelledOrder : order,
+        ),
+      );
+    } catch (e: any) {
+      setError(
+        e?.response?.data?.error ??
+          e?.response?.data?.message ??
+          e?.response?.data?.title ??
+          e?.message ??
+          "Greška pri otkazivanju porudžbine.",
+      );
+    }
+  }
+
   return (
     <div>
       <h2>Moje aktivne porudžbine</h2>
@@ -143,7 +172,6 @@ export default function MyOrdersPage() {
                   {formatPrice(order.totalAmount)}
                 </div>
               </div>
-
               <div style={{ marginTop: 12 }}>
                 <strong>Adresa dostave:</strong>
                 <div>
@@ -163,14 +191,12 @@ export default function MyOrdersPage() {
                   </div>
                 )}
               </div>
-
               {order.notes && (
                 <div style={{ marginTop: 12 }}>
                   <strong>Napomena za porudžbinu:</strong>
                   <div>{order.notes}</div>
                 </div>
               )}
-
               <div style={{ marginTop: 12 }}>
                 <strong>Stavke:</strong>
 
@@ -194,7 +220,15 @@ export default function MyOrdersPage() {
                   ))}
                 </div>
               </div>
-
+              actions=
+              {order.status === "Na_Cekanju" ? (
+                <button
+                  type="button"
+                  onClick={() => handleCancelOrder(order.id)}
+                >
+                  Otkaži porudžbinu
+                </button>
+              ) : null}
               <div style={{ marginTop: 12 }}>
                 <div>Subtotal: {formatPrice(order.subtotal)}</div>
                 <div>Dostava: {formatPrice(order.deliveryFee)}</div>

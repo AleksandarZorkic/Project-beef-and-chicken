@@ -10,11 +10,17 @@ import {
   type DishOptionDto,
 } from "../api/dishOptionsApi";
 import type { CartSelectedOption } from "../state/cart/cart.types";
+import DishOptionsModal from "../components/menu/DishOptionsModal";
+import { Link } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
+import { AppRoles } from "../auth/roles";
+import {
+  getRestaurantSettings,
+  type RestaurantSettingsDto,
+} from "../api/restaurantSettingsApi";
+import { cartSubtotal } from "../state/cart/cart.selectors";
 
-const FREE_SIDE_DISH_COUNT = 4;
-const EXTRA_SIDE_DISH_PRICE = 50;
-
-function resolveImageUrl(imageUrl?: string) {
+function resolveImageUrl(imageUrl?: string | null) {
   if (!imageUrl) return null;
 
   if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
@@ -28,325 +34,11 @@ function formatPrice(value: number) {
   return `${value.toLocaleString("sr-RS")} RSD`;
 }
 
-function sortOptions(a: DishOptionDto, b: DishOptionDto) {
-  if (a.sortOrder !== b.sortOrder) {
-    return a.sortOrder - b.sortOrder;
-  }
-
-  return a.name.localeCompare(b.name, "sr");
-}
-
-function buildCartSelectedOptions(
-  selectedOptions: DishOptionDto[],
-): CartSelectedOption[] {
-  const regularSideDishes = selectedOptions
-    .filter((option) => option.type === "SideDish" && !option.isAlwaysPaid)
-    .sort(sortOptions);
-
-  const alwaysPaidSideDishes = selectedOptions
-    .filter((option) => option.type === "SideDish" && option.isAlwaysPaid)
-    .sort(sortOptions);
-
-  const spices = selectedOptions
-    .filter((option) => option.type === "Spice")
-    .sort(sortOptions);
-
-  const pricedRegularSideDishes = regularSideDishes.map((option, index) => ({
-    optionId: option.id,
-    name: option.name,
-    type: option.type,
-    unitPrice: index < FREE_SIDE_DISH_COUNT ? 0 : EXTRA_SIDE_DISH_PRICE,
-  }));
-
-  const pricedAlwaysPaidSideDishes = alwaysPaidSideDishes.map((option) => ({
-    optionId: option.id,
-    name: option.name,
-    type: option.type,
-    unitPrice: option.price,
-  }));
-
-  const pricedSpices = spices.map((option) => ({
-    optionId: option.id,
-    name: option.name,
-    type: option.type,
-    unitPrice: 0,
-  }));
-
-  return [
-    ...pricedRegularSideDishes,
-    ...pricedAlwaysPaidSideDishes,
-    ...pricedSpices,
-  ];
-}
-
-type DishOptionsModalProps = {
-  dish: DishMenuDto;
-  options: DishOptionDto[];
-  onClose: () => void;
-  onAddToCart: (selectedOptions: CartSelectedOption[]) => void;
-};
-
-function DishOptionsModal({
-  dish,
-  options,
-  onClose,
-  onAddToCart,
-}: DishOptionsModalProps) {
-  const [selectedOptionIds, setSelectedOptionIds] = useState<number[]>([]);
-
-  const sideDishes = useMemo(() => {
-    return options
-      .filter((option) => option.type === "SideDish")
-      .sort(sortOptions);
-  }, [options]);
-
-  const spices = useMemo(() => {
-    return options
-      .filter((option) => option.type === "Spice")
-      .sort(sortOptions);
-  }, [options]);
-
-  const selectedOptions = useMemo(() => {
-    return options.filter((option) => selectedOptionIds.includes(option.id));
-  }, [options, selectedOptionIds]);
-
-  const cartSelectedOptions = useMemo(() => {
-    return buildCartSelectedOptions(selectedOptions);
-  }, [selectedOptions]);
-
-  const optionsTotal = useMemo(() => {
-    return cartSelectedOptions.reduce(
-      (sum, option) => sum + option.unitPrice,
-      0,
-    );
-  }, [cartSelectedOptions]);
-
-  const regularSideDishCount = selectedOptions.filter(
-    (option) => option.type === "SideDish" && !option.isAlwaysPaid,
-  ).length;
-
-  const paidRegularSideDishCount = Math.max(
-    0,
-    regularSideDishCount - FREE_SIDE_DISH_COUNT,
-  );
-
-  const totalUnitPrice = dish.price + optionsTotal;
-
-  function toggleOption(optionId: number) {
-    setSelectedOptionIds((prev) => {
-      if (prev.includes(optionId)) {
-        return prev.filter((id) => id !== optionId);
-      }
-
-      return [...prev, optionId];
-    });
-  }
-
-  function getSelectedOptionPrice(option: DishOptionDto) {
-    const pricedOption = cartSelectedOptions.find(
-      (selected) => selected.optionId === option.id,
-    );
-
-    return pricedOption?.unitPrice ?? 0;
-  }
-
-  function handleAddToCart() {
-    onAddToCart(cartSelectedOptions);
-  }
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0, 0, 0, 0.45)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000,
-        padding: 16,
-      }}
-    >
-      <div
-        style={{
-          background: "white",
-          borderRadius: 10,
-          padding: 20,
-          width: "100%",
-          maxWidth: 720,
-          maxHeight: "90vh",
-          overflow: "auto",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 12,
-            alignItems: "flex-start",
-          }}
-        >
-          <div>
-            <h3 style={{ marginTop: 0 }}>{dish.name}</h3>
-            <div>Osnovna cena: {formatPrice(dish.price)}</div>
-          </div>
-
-          <button type="button" onClick={onClose}>
-            Zatvori
-          </button>
-        </div>
-
-        <div
-          style={{
-            marginTop: 16,
-            padding: 12,
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            background: "#fafafa",
-          }}
-        >
-          <strong>Pravila za priloge</strong>
-          <div style={{ marginTop: 6 }}>
-            Prva 4 obična priloga su besplatna. Svaki sledeći običan prilog se
-            naplaćuje {formatPrice(EXTRA_SIDE_DISH_PRICE)}.
-          </div>
-          <div>
-            Začini su besplatni. Prilozi označeni kao naplativi se plaćaju
-            odmah.
-          </div>
-        </div>
-
-        <div style={{ marginTop: 18 }}>
-          <h4>Prilozi</h4>
-
-          {sideDishes.length === 0 ? (
-            <div>Nema dostupnih priloga.</div>
-          ) : (
-            <div style={{ display: "grid", gap: 8 }}>
-              {sideDishes.map((option) => {
-                const checked = selectedOptionIds.includes(option.id);
-                const selectedPrice = getSelectedOptionPrice(option);
-
-                return (
-                  <label
-                    key={option.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      border: checked ? "2px solid black" : "1px solid #ddd",
-                      borderRadius: 8,
-                      padding: 10,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span style={{ display: "flex", gap: 8 }}>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleOption(option.id)}
-                      />
-                      <span>{option.name}</span>
-                    </span>
-
-                    <span>
-                      {option.isAlwaysPaid
-                        ? `+${formatPrice(option.price)}`
-                        : checked && selectedPrice > 0
-                          ? `+${formatPrice(selectedPrice)}`
-                          : "besplatno"}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div style={{ marginTop: 18 }}>
-          <h4>Začini</h4>
-
-          {spices.length === 0 ? (
-            <div>Nema dostupnih začina.</div>
-          ) : (
-            <div style={{ display: "grid", gap: 8 }}>
-              {spices.map((option) => {
-                const checked = selectedOptionIds.includes(option.id);
-
-                return (
-                  <label
-                    key={option.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      border: checked ? "2px solid black" : "1px solid #ddd",
-                      borderRadius: 8,
-                      padding: 10,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span style={{ display: "flex", gap: 8 }}>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleOption(option.id)}
-                      />
-                      <span>{option.name}</span>
-                    </span>
-
-                    <span>besplatno</span>
-                  </label>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div
-          style={{
-            marginTop: 20,
-            padding: 14,
-            border: "1px solid #ccc",
-            borderRadius: 8,
-            background: "#f7f7f7",
-            display: "grid",
-            gap: 6,
-          }}
-        >
-          <div>Izabrano običnih priloga: {regularSideDishCount}</div>
-          <div>
-            Dodatno naplaćenih običnih priloga: {paidRegularSideDishCount}
-          </div>
-          <div>Doplata za priloge/začine: {formatPrice(optionsTotal)}</div>
-          <div style={{ fontWeight: 800 }}>
-            Cena po komadu: {formatPrice(totalUnitPrice)}
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 10,
-            marginTop: 18,
-          }}
-        >
-          <button type="button" onClick={onClose}>
-            Otkaži
-          </button>
-
-          <button type="button" onClick={handleAddToCart}>
-            Dodaj u korpu
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function MenuPage() {
-  const { dispatch } = useCart();
+  const { state, dispatch } = useCart();
+  const { isAuthenticated, hasRole } = useAuth();
+
+  const canOrder = hasRole(AppRoles.Customer);
 
   const [data, setData] = useState<DishMenuDto[]>([]);
   const [dishOptions, setDishOptions] = useState<DishOptionDto[]>([]);
@@ -356,27 +48,66 @@ export default function MenuPage() {
   const [error, setError] = useState<string | null>(null);
   const [myAllergens, setMyAllergens] = useState<Allergen[]>([]);
 
+  const [restaurantSettings, setRestaurantSettings] =
+    useState<RestaurantSettingsDto | null>(null);
+
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  const subtotal = cartSubtotal(state);
+
+  const missingForMinimum =
+    restaurantSettings && subtotal < restaurantSettings.minimumOrderAmount
+      ? restaurantSettings.minimumOrderAmount - subtotal
+      : 0;
+
+  const missingForFreeDelivery =
+    restaurantSettings?.freeDeliveryThreshold &&
+    subtotal < restaurantSettings.freeDeliveryThreshold
+      ? restaurantSettings.freeDeliveryThreshold - subtotal
+      : 0;
+
+  const canAddToCart =
+    canOrder && !!restaurantSettings?.isDeliveryEnabled && !loadingSettings;
+
   useEffect(() => {
+    let isMounted = true;
+
     async function loadMenuData() {
       try {
         setLoading(true);
+        setLoadingSettings(true);
         setError(null);
 
-        const [menu, options] = await Promise.all([
+        const [menu, options, settings] = await Promise.all([
           getMenu(),
           getActiveDishOptions(),
+          getRestaurantSettings(),
         ]);
+
+        if (!isMounted) return;
 
         setData(menu);
         setDishOptions(options);
+        setRestaurantSettings(settings);
 
-        try {
-          const userAllergens = await getMyAllergens();
-          setMyAllergens(userAllergens);
-        } catch {
+        if (canOrder) {
+          try {
+            const userAllergens = await getMyAllergens();
+
+            if (!isMounted) return;
+
+            setMyAllergens(userAllergens);
+          } catch {
+            if (!isMounted) return;
+
+            setMyAllergens([]);
+          }
+        } else {
           setMyAllergens([]);
         }
       } catch (e: any) {
+        if (!isMounted) return;
+
         setError(
           e?.response?.data?.message ??
             e?.response?.data?.title ??
@@ -384,12 +115,19 @@ export default function MenuPage() {
             "Došlo je do greške prilikom učitavanja menija.",
         );
       } finally {
+        if (!isMounted) return;
+
         setLoading(false);
+        setLoadingSettings(false);
       }
     }
 
     loadMenuData();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [canOrder]);
 
   const myAllergenId = useMemo(() => {
     return new Set(myAllergens.map((allergen) => allergen.id));
@@ -402,6 +140,7 @@ export default function MenuPage() {
   }
 
   function handleAddDishWithOptions(selectedOptions: CartSelectedOption[]) {
+    if (!canOrder) return;
     if (!selectedDish) return;
 
     const optionsTotal = selectedOptions.reduce(
@@ -423,12 +162,99 @@ export default function MenuPage() {
     setSelectedDish(null);
   }
 
+  function handleAddDishDirectly(dish: DishMenuDto) {
+    if (!canOrder) return;
+
+    dispatch({
+      type: "ADD-ITEM",
+      payload: {
+        dishId: dish.id,
+        name: dish.name,
+        unitPrice: dish.price,
+        optionsTotal: 0,
+        selectedOptions: [],
+      },
+    });
+  }
+
   if (loading) return <div>Učitavam meni...</div>;
   if (error) return <div style={{ color: "crimson" }}>{error}</div>;
 
   return (
     <div>
       <h2>Meni</h2>
+
+      {restaurantSettings && (
+        <div
+          style={{
+            border: "1px solid #ddd",
+            borderRadius: 10,
+            padding: 12,
+            marginBottom: 16,
+            background: restaurantSettings.isDeliveryEnabled
+              ? "white"
+              : "#fff2f2",
+            display: "grid",
+            gap: 6,
+          }}
+        >
+          <strong>Pravila dostave</strong>
+
+          {!restaurantSettings.isDeliveryEnabled ? (
+            <div style={{ color: "crimson", fontWeight: 700 }}>
+              Dostava trenutno nije dostupna.
+            </div>
+          ) : (
+            <>
+              <div>
+                Minimalna porudžbina:{" "}
+                <strong>
+                  {restaurantSettings.minimumOrderAmount.toLocaleString(
+                    "sr-RS",
+                  )}{" "}
+                  RSD
+                </strong>
+              </div>
+
+              <div>
+                Cena dostave:{" "}
+                <strong>
+                  {restaurantSettings.deliveryFee.toLocaleString("sr-RS")} RSD
+                </strong>
+              </div>
+
+              {restaurantSettings.freeDeliveryThreshold && (
+                <div>
+                  Besplatna dostava preko:{" "}
+                  <strong>
+                    {restaurantSettings.freeDeliveryThreshold.toLocaleString(
+                      "sr-RS",
+                    )}{" "}
+                    RSD
+                  </strong>
+                </div>
+              )}
+
+              {canOrder && missingForMinimum > 0 && subtotal > 0 && (
+                <div style={{ color: "crimson", fontWeight: 700 }}>
+                  U korpi trenutno imaš {subtotal.toLocaleString("sr-RS")} RSD.
+                  Dodaj još {missingForMinimum.toLocaleString("sr-RS")} RSD za
+                  poručivanje.
+                </div>
+              )}
+
+              {canOrder &&
+                missingForMinimum === 0 &&
+                missingForFreeDelivery > 0 && (
+                  <div style={{ color: "#8a5a00" }}>
+                    Dodaj još {missingForFreeDelivery.toLocaleString("sr-RS")}{" "}
+                    RSD za besplatnu dostavu.
+                  </div>
+                )}
+            </>
+          )}
+        </div>
+      )}
 
       <div
         style={{
@@ -532,19 +358,52 @@ export default function MenuPage() {
                 </div>
               )}
 
-              <button
-                type="button"
-                style={{ marginTop: 8 }}
-                onClick={() => setSelectedDish(d)}
-              >
-                Dodaj u korpu
-              </button>
+              {canAddToCart ? (
+                <button
+                  type="button"
+                  style={{ marginTop: 8 }}
+                  onClick={() => {
+                    if (
+                      !d.allowsSideDishes &&
+                      !d.allowsSpices &&
+                      !d.allowsSweetAdditions
+                    ) {
+                      handleAddDishDirectly(d);
+                      return;
+                    }
+
+                    setSelectedDish(d);
+                  }}
+                >
+                  Dodaj u korpu
+                </button>
+              ) : canOrder &&
+                restaurantSettings &&
+                !restaurantSettings.isDeliveryEnabled ? (
+                <div style={{ marginTop: 10, color: "crimson", fontSize: 13 }}>
+                  Dostava trenutno nije dostupna.
+                </div>
+              ) : isAuthenticated ? (
+                <div style={{ marginTop: 10, color: "#777", fontSize: 13 }}>
+                  Samo kupci mogu da dodaju jela u korpu.
+                </div>
+              ) : (
+                <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
+                  <div style={{ color: "#777", fontSize: 13 }}>
+                    Prijavi se kao kupac da bi dodao jelo u korpu.
+                  </div>
+
+                  <Link to="/login" style={{ fontWeight: 700 }}>
+                    Prijavi se
+                  </Link>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      {selectedDish && (
+      {canAddToCart && selectedDish && (
         <DishOptionsModal
           dish={selectedDish}
           options={dishOptions}

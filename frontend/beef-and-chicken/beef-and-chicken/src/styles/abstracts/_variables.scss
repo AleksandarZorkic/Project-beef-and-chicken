@@ -1,0 +1,158 @@
+// ======================================================
+// Brand colors
+// ======================================================
+
+$color-bg: #0b100c;
+$color-bg-soft: #101712;
+
+$color-surface: #171f19;
+$color-surface-raised: #1d271f;
+$color-surface-hover: #253128;
+
+$color-surface-glass: rgba(255, 255, 255, 0.05);
+$color-surface-glass-strong: rgba(255, 255, 255, 0.08);
+
+$color-primary: #f23a16;
+$color-primary-hover: #d92f10;
+$color-primary-dark: #b9250d;
+
+$color-accent: #ffc21f;
+$color-accent-hover: #ffd24f;
+$color-accent-soft: #ffda72;
+
+$color-brand-green: #17301f;
+$color-brand-green-light: #21432c;
+
+// ======================================================
+// Text colors
+// ======================================================
+
+$color-text: #fffaf2;
+$color-text-soft: #cec7bb;
+$color-text-muted: #938d84;
+$color-text-dark: #20180f;
+
+// ======================================================
+// Borders
+// ======================================================
+
+$color-border: rgba(255, 255, 255, 0.1);
+$color-border-strong: rgba(255, 255, 255, 0.18);
+$color-border-primary: rgba(242, 58, 22, 0.32);
+$color-border-accent: rgba(255, 194, 31, 0.3);
+
+// ======================================================
+// Status colors
+// ======================================================
+
+$color-success: #35b96f;
+$color-warning: #f4b740;
+$color-danger: #ef4444;
+$color-info: #3b82f6;
+
+// ======================================================
+// Typography
+// ======================================================
+
+$font-family-body:
+  "Inter",
+  system-ui,
+  -apple-system,
+  BlinkMacSystemFont,
+  "Segoe UI",
+  sans-serif;
+
+$font-family-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-extra-bold: 800;
+$font-weight-black: 900;
+
+// ======================================================
+// Spacing
+// ======================================================
+
+$space-1: 0.25rem; // 4px
+$space-2: 0.5rem; // 8px
+$space-3: 0.75rem; // 12px
+$space-4: 1rem; // 16px
+$space-5: 1.5rem; // 24px
+$space-6: 2rem; // 32px
+$space-7: 3rem; // 48px
+$space-8: 4rem; // 64px
+$space-9: 6rem; // 96px
+
+// ======================================================
+// Border radius
+// ======================================================
+
+$radius-sm: 8px;
+$radius-md: 14px;
+$radius-lg: 20px;
+$radius-xl: 28px;
+$radius-pill: 999px;
+
+// ======================================================
+// Shadows
+// ======================================================
+
+$shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.18);
+$shadow-md: 0 12px 30px rgba(0, 0, 0, 0.28);
+$shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.35);
+
+$shadow-primary: 0 12px 28px rgba(242, 58, 22, 0.28);
+$shadow-accent: 0 12px 28px rgba(255, 194, 31, 0.22);
+
+// ======================================================
+// Layout
+// ======================================================
+
+$container-width: 1240px;
+$container-padding-desktop: 20px;
+$container-padding-mobile: 14px;
+
+$header-height: 82px;
+
+// ======================================================
+// Breakpoints
+// ======================================================
+
+$breakpoint-mobile: 480px;
+$breakpoint-tablet: 760px;
+$breakpoint-laptop: 1024px;
+$breakpoint-desktop: 1200px;
+
+// ======================================================
+// Transitions
+// ======================================================
+
+$transition-fast: 150ms ease;
+$transition-base: 220ms ease;
+$transition-slow: 350ms ease;
+
+// ======================================================
+// Temporary compatibility aliases
+// Keeps the current HomePage working without rewriting it.
+// ======================================================
+
+$bg: $color-bg;
+$bg-soft: $color-bg-soft;
+
+$panel: $color-surface-glass;
+$panel-strong: $color-surface-glass-strong;
+
+$border: $color-border;
+
+$text: $color-text;
+$text-soft: $color-text-soft;
+$text-muted: $color-text-muted;
+
+$red: $color-primary-dark;
+$red-strong: $color-primary;
+$orange: $color-accent;
+$orange-soft: $color-accent-soft;
+
+$green-dark: $color-brand-green;

@@ -222,6 +222,66 @@ namespace beef_and_chicken.Migrations
                     b.ToTable("Allergens");
                 });
 
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.Announcement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsPinned")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EndsAt");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("IsPinned");
+
+                    b.HasIndex("StartsAt");
+
+                    b.HasIndex("Type");
+
+                    b.ToTable("Announcements");
+                });
+
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<int>("Id")
@@ -291,6 +351,21 @@ namespace beef_and_chicken.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("AllowsSideDishes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("AllowsSpices")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("AllowsSweetAdditions")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -333,7 +408,6 @@ namespace beef_and_chicken.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
@@ -346,6 +420,11 @@ namespace beef_and_chicken.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
+                    b.Property<bool>("IsRecommended")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -355,13 +434,24 @@ namespace beef_and_chicken.Migrations
                         .HasPrecision(12, 2)
                         .HasColumnType("numeric(12,2)");
 
+                    b.Property<int>("RecommendedSortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.HasKey("Id");
+
+                    b.HasIndex("IsRecommended");
+
+                    b.HasIndex("RecommendedSortOrder");
 
                     b.HasIndex("CategoryId", "Name");
 
                     b.ToTable("Dishes", null, t =>
                         {
                             t.HasCheckConstraint("CK_Dish_Price_NonNegative", "\"Price\" >= 0");
+
+                            t.HasCheckConstraint("CK_Dish_RecommendedSortOrder_NonNegative", "\"RecommendedSortOrder\" >= 0");
                         });
                 });
 
@@ -523,6 +613,9 @@ namespace beef_and_chicken.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("AcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int?>("CourierId")
                         .HasColumnType("integer");
 
@@ -535,9 +628,20 @@ namespace beef_and_chicken.Migrations
                     b.Property<int>("CustomerId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("DeliveredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeliveryContactPhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<decimal>("DeliveryFee")
                         .HasPrecision(12, 2)
                         .HasColumnType("numeric(12,2)");
+
+                    b.Property<DateTime?>("DeliveryStartedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
@@ -546,6 +650,22 @@ namespace beef_and_chicken.Migrations
                     b.Property<string>("OrderNumber")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("ReadyForPickupAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RejectedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -562,6 +682,8 @@ namespace beef_and_chicken.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AcceptedAt");
+
                     b.HasIndex("CourierId");
 
                     b.HasIndex("CreatedAt");
@@ -570,8 +692,20 @@ namespace beef_and_chicken.Migrations
 
                     b.HasIndex("CustomerId");
 
+                    b.HasIndex("DeliveredAt");
+
+                    b.HasIndex("DeliveryStartedAt");
+
                     b.HasIndex("OrderNumber")
                         .IsUnique();
+
+                    b.HasIndex("PaymentMethod");
+
+                    b.HasIndex("PaymentStatus");
+
+                    b.HasIndex("ReadyForPickupAt");
+
+                    b.HasIndex("RejectedAt");
 
                     b.HasIndex("Status");
 
@@ -668,6 +802,91 @@ namespace beef_and_chicken.Migrations
                     b.ToTable("OrderItemOptions", null, t =>
                         {
                             t.HasCheckConstraint("CK_OrderItemOption_UnitPrice_NonNegative", "\"UnitPrice\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.OrderStatusHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ChangedByUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NewStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("OldStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedAt");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("NewStatus");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderStatusHistories");
+                });
+
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.RestaurantSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("DeliveryFee")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(200m);
+
+                    b.Property<decimal?>("FreeDeliveryThreshold")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<bool>("IsDeliveryEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<decimal>("MinimumOrderAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(800m);
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RestaurantSettings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RestaurantSettings_DeliveryFee_NonNegative", "\"DeliveryFee\" >= 0");
+
+                            t.HasCheckConstraint("CK_RestaurantSettings_FreeDeliveryThreshold_Positive", "\"FreeDeliveryThreshold\" IS NULL OR \"FreeDeliveryThreshold\" > 0");
+
+                            t.HasCheckConstraint("CK_RestaurantSettings_MinimumOrderAmount_NonNegative", "\"MinimumOrderAmount\" >= 0");
                         });
                 });
 
@@ -1002,6 +1221,24 @@ namespace beef_and_chicken.Migrations
                     b.Navigation("OrderItem");
                 });
 
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.OrderStatusHistory", b =>
+                {
+                    b.HasOne("beef_and_chicken.Domain.Entities.User", "ChangedByUser")
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("beef_and_chicken.Domain.Entities.Order", "Order")
+                        .WithMany("StatusHistory")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChangedByUser");
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.UserAllergen", b =>
                 {
                     b.HasOne("beef_and_chicken.Domain.Entities.Allergen", "Allergen")
@@ -1043,6 +1280,8 @@ namespace beef_and_chicken.Migrations
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.Order", b =>
                 {
                     b.Navigation("OrderItems");
+
+                    b.Navigation("StatusHistory");
                 });
 
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.OrderItem", b =>

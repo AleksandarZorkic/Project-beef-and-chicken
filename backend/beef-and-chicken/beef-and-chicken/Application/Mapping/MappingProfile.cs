@@ -12,7 +12,13 @@ namespace beef_and_chicken.Application.Mapping
             // Menu mappings
             CreateMap<Dish, DishMenuDto>()
                 .ForMember(d => d.CategoryName, opt => opt.MapFrom(s => s.Category.Name))
-                .ForMember(d => d.Allergens, opt => opt.MapFrom(s => s.DishAllergens));
+                .ForMember(d => d.Allergens, opt => opt.MapFrom(s => s.DishAllergens))
+                .ForMember(dest => dest.AllowsSideDishes, opt => opt.MapFrom(src => src.Category.AllowsSideDishes))
+                .ForMember(dest => dest.AllowsSpices, opt => opt.MapFrom(src => src.Category.AllowsSpices))
+                .ForMember(dest => dest.AllowsSweetAdditions, opt => opt.MapFrom(src => src.Category.AllowsSweetAdditions))
+                .ForMember(dest => dest.IsRecommended, opt => opt.MapFrom(src => src.IsRecommended))
+                .ForMember(dest => dest.RecommendedSortOrder, opt => opt.MapFrom(src => src.RecommendedSortOrder));
+
 
             CreateMap<DishAllergen, DishAllergenDto>()
                 .ForMember(d => d.AllergenId, opt => opt.MapFrom(s => s.Allergen.Id))
@@ -58,6 +64,9 @@ namespace beef_and_chicken.Application.Mapping
 
             CreateMap<UpdateDishOptionDto, DishOption>()
                 .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Trim()));
+
+            // Announcment mapping
+            CreateMap<Announcement, AnnouncementDto>();
         }
     }
 }

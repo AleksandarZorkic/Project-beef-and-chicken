@@ -212,8 +212,9 @@ namespace beef_and_chicken.Infrastructure.Repositories
             {
                 ordersQuery = ordersQuery.Where(o =>
                     o.Status == OrderStatus.Dostavljena ||
-                    o.Status == OrderStatus.Odbijena
-                );
+                    o.Status == OrderStatus.Odbijena ||
+                    o.Status == OrderStatus.Otkazana
+);
             }
 
             if (query.From.HasValue)

@@ -46,6 +46,18 @@ namespace beef_and_chicken.Presentation.Controllers
             return Ok(dish);
         }
 
+        [HttpPost("{id:int}/image")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<UploadDishImageResponseDto>> UploadImage(
+            int id,
+            IFormFile image,
+            CancellationToken ct = default)
+        {
+            var result = await _menuService.UploadDishImageAsync(id, image, ct);
+
+            return Ok(result);
+        }
+
         [HttpPatch("{id:int}/deactivate")]
         public async Task<IActionResult> Deactivate(int id, CancellationToken ct = default)
         {

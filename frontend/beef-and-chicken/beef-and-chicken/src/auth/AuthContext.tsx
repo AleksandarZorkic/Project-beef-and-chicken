@@ -8,18 +8,27 @@ import {
 } from "react";
 import { clearStoredAuth, getStoredAuth, saveStoredAuth } from "./auth.storage";
 import { isTokenExpired, mapTokenToUser } from "./auth.jwt";
-import type { LoginRequestDto, RegisterRequestDto } from "./auth.types";
+import type {
+  LoginRequestDto,
+  RegisterRequestDto,
+  UserProfileDto,
+} from "./auth.types";
 import type { AppRole } from "./roles";
-import { login as loginApi, register as registerApi } from "../api/authApi";
+import {
+  getProfile as getProfileApi,
+  login as loginApi,
+  register as registerApi,
+} from "../api/authApi";
 import { setAuthToken } from "../api/https";
-import type { AuthUser } from "./auth.jwt";
 
 type AuthContextValue = {
-  user: AuthUser | null;
+  user: UserProfileDto | null;
   token: string | null;
   isAuthenticated: boolean;
   login: (data: LoginRequestDto) => Promise<void>;
   register: (data: RegisterRequestDto) => Promise<void>;
+  refreshProfile: () => Promise<void>;
+  setUserProfile: (profile: UserProfileDto) => void;
   logout: () => void;
   hasRole: (role: AppRole) => boolean;
   hasAnyRole: (roles: AppRole[]) => boolean;
@@ -29,7 +38,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<UserProfileDto | null>(null);
 
   const logout = useCallback(() => {
     clearStoredAuth();
@@ -38,28 +47,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const refreshProfile = useCallback(async () => {
+    const profile = await getProfileApi();
+    setUser(profile);
+  }, []);
+
+  const setUserProfile = useCallback((profile: UserProfileDto) => {
+    setUser(profile);
+  }, []);
+
   useEffect(() => {
-    const stored = getStoredAuth();
+    async function restoreAuth() {
+      const stored = getStoredAuth();
 
-    if (!stored?.token) {
-      return;
+      if (!stored?.token) {
+        return;
+      }
+
+      if (isTokenExpired(stored.token)) {
+        logout();
+        return;
+      }
+
+      const mappedUser = mapTokenToUser(stored.token);
+
+      if (!mappedUser) {
+        logout();
+        return;
+      }
+
+      setToken(stored.token);
+      setAuthToken(stored.token);
+
+      try {
+        const profile = await getProfileApi();
+        setUser(profile);
+      } catch {
+        logout();
+      }
     }
 
-    if (isTokenExpired(stored.token)) {
-      logout();
-      return;
-    }
-
-    const mappedUser = mapTokenToUser(stored.token);
-
-    if (!mappedUser) {
-      logout();
-      return;
-    }
-
-    setToken(stored.token);
-    setUser(mappedUser);
-    setAuthToken(stored.token);
+    restoreAuth();
   }, [logout]);
 
   const login = useCallback(async (data: LoginRequestDto) => {
@@ -78,7 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     saveStoredAuth(result.token);
     setAuthToken(result.token);
     setToken(result.token);
-    setUser(mappedUser);
+
+    const profile = await getProfileApi();
+    setUser(profile);
   }, []);
 
   const register = useCallback(async (data: RegisterRequestDto) => {
@@ -106,11 +136,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!token && !!user,
       login,
       register,
+      refreshProfile,
+      setUserProfile,
       logout,
       hasRole,
       hasAnyRole,
     }),
-    [user, token, login, register, logout, hasRole, hasAnyRole],
+    [
+      user,
+      token,
+      login,
+      register,
+      refreshProfile,
+      setUserProfile,
+      logout,
+      hasRole,
+      hasAnyRole,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

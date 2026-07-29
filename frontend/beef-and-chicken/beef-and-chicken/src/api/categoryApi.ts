@@ -6,6 +6,9 @@ export interface CategoryDto {
   description?: string | null;
   isActive: boolean;
   sortOrder: number;
+  allowsSideDishes: boolean;
+  allowsSpices: boolean;
+  allowsSweetAdditions: boolean;
   dishCount: number;
   activeDishCount: number;
 }
@@ -14,12 +17,18 @@ export interface CreateCategoryDto {
   name: string;
   description?: string | null;
   sortOrder: number;
+  allowsSideDishes: boolean;
+  allowsSpices: boolean;
+  allowsSweetAdditions: boolean;
 }
 
 export interface UpdateCategoryDto {
   name: string;
   description?: string | null;
   sortOrder: number;
+  allowsSideDishes: boolean;
+  allowsSpices: boolean;
+  allowsSweetAdditions: boolean;
 }
 
 const ADMIN_CATEGORIES_ENDPOINT = "/admin/categories";

@@ -4,6 +4,7 @@
     {
         Na_Cekanju,
         Odbijena,
+        Otkazana,
         Prihvacena,
         Spremna_za_preuzimanje,
         Dostava_u_toku,

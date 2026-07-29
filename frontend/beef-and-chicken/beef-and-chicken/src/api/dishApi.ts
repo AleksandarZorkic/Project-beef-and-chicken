@@ -11,11 +11,17 @@ export type CreateDishRequest = {
   description: string;
   price: number;
   imageUrl?: string | null;
+  isRecommended: boolean;
+  recommendedSortOrder: number;
   categoryId: number;
   allergens: DishAllergenInput[];
 };
 
 export type UpdateDishRequest = CreateDishRequest;
+
+export type UploadDishImageResponse = {
+  imageUrl: string;
+};
 
 const DISHES_ENDPOINT = "/admin/dishes";
 
@@ -29,16 +35,31 @@ export async function updateDish(id: number, data: UpdateDishRequest) {
   return response.data;
 }
 
+export async function uploadDishImage(id: number, image: File) {
+  const formData = new FormData();
+  formData.append("image", image);
+
+  const response = await api.post<UploadDishImageResponse>(
+    `${DISHES_ENDPOINT}/${id}/image`,
+    formData,
+  );
+
+  return response.data;
+}
+
 export async function getInactiveDishes() {
-  const response = await api.get<DishMenuDto[]>("/admin/dishes/inactive");
+  const response = await api.get<DishMenuDto[]>(`${DISHES_ENDPOINT}/inactive`);
   return response.data;
 }
 
 export async function deactivateDishAdmin(id: number) {
-  await api.patch(`/admin/dishes/${id}/deactivate`);
+  await api.patch(`${DISHES_ENDPOINT}/${id}/deactivate`);
 }
 
 export async function activateDish(id: number) {
-  const response = await api.patch<DishMenuDto>(`/admin/dishes/${id}/activate`);
+  const response = await api.patch<DishMenuDto>(
+    `${DISHES_ENDPOINT}/${id}/activate`,
+  );
+
   return response.data;
 }

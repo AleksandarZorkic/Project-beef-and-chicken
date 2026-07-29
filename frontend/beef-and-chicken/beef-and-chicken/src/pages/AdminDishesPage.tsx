@@ -9,6 +9,7 @@ import {
   deactivateDishAdmin,
   getInactiveDishes,
   updateDish,
+  uploadDishImage,
   type DishAllergenInput,
 } from "../api/dishApi";
 import { getApiErrorMessage } from "../utils/apiErrors";
@@ -18,6 +19,8 @@ type DishFormState = {
   description: string;
   price: string;
   imageUrl: string;
+  isRecommended: boolean;
+  recommendedSortOrder: string;
   categoryId: string;
   allergens: DishAllergenInput[];
 };
@@ -27,6 +30,8 @@ const emptyForm: DishFormState = {
   description: "",
   price: "",
   imageUrl: "",
+  isRecommended: false,
+  recommendedSortOrder: "0",
   categoryId: "",
   allergens: [],
 };
@@ -44,6 +49,8 @@ export default function AdminDishesPage() {
   const [dishes, setDishes] = useState<DishMenuDto[]>([]);
   const [inactiveDishes, setInactiveDishes] = useState<DishMenuDto[]>([]);
   const [allergens, setAllergens] = useState<Allergen[]>([]);
+
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
 
   const [form, setForm] = useState<DishFormState>(emptyForm);
   const [editingDishId, setEditingDishId] = useState<number | null>(null);
@@ -83,6 +90,7 @@ export default function AdminDishesPage() {
   function clearForm() {
     setForm(emptyForm);
     setEditingDishId(null);
+    setSelectedImageFile(null);
   }
 
   function resetForm() {
@@ -93,6 +101,7 @@ export default function AdminDishesPage() {
 
   function startEdit(dish: DishMenuDto) {
     setEditingDishId(dish.id);
+    setSelectedImageFile(null);
 
     setForm({
       name: dish.name,
@@ -100,6 +109,8 @@ export default function AdminDishesPage() {
       price: String(dish.price),
       imageUrl: dish.imageUrl ?? "",
       categoryId: String(dish.categoryId),
+      isRecommended: dish.isRecommended,
+      recommendedSortOrder: String(dish.recommendedSortOrder),
       allergens: dish.allergens.map((allergen) => ({
         allergenId: allergen.allergenId,
         isTrace: allergen.isTrace,
@@ -173,6 +184,12 @@ export default function AdminDishesPage() {
       return "Kategorija je obavezna.";
     }
 
+    const recommendedSortOrder = Number(form.recommendedSortOrder);
+
+    if (!Number.isInteger(recommendedSortOrder) || recommendedSortOrder < 0) {
+      return "Redosled preporuke mora biti 0 ili veći ceo broj.";
+    }
+
     return null;
   }
 
@@ -191,6 +208,8 @@ export default function AdminDishesPage() {
       description: form.description.trim(),
       price: Number(form.price),
       imageUrl: form.imageUrl.trim() || null,
+      isRecommended: form.isRecommended,
+      recommendedSortOrder: Number(form.recommendedSortOrder),
       categoryId: Number(form.categoryId),
       allergens: form.allergens,
     };
@@ -200,13 +219,19 @@ export default function AdminDishesPage() {
       setError(null);
       setSuccessMessage(null);
 
-      if (editingDishId) {
-        await updateDish(editingDishId, payload);
-        setSuccessMessage("Jelo je uspešno izmenjeno.");
-      } else {
-        await createDish(payload);
-        setSuccessMessage("Jelo je uspešno dodato.");
+      const savedDish = editingDishId
+        ? await updateDish(editingDishId, payload)
+        : await createDish(payload);
+
+      if (selectedImageFile) {
+        await uploadDishImage(savedDish.id, selectedImageFile);
       }
+
+      setSuccessMessage(
+        editingDishId
+          ? "Jelo je uspešno izmenjeno."
+          : "Jelo je uspešno dodato.",
+      );
 
       resetForm();
       await loadData();
@@ -215,17 +240,6 @@ export default function AdminDishesPage() {
     } finally {
       setSaving(false);
     }
-
-    if (editingDishId) {
-      await updateDish(editingDishId, payload);
-      setSuccessMessage("Jelo je uspešno izmenjeno.");
-    } else {
-      await createDish(payload);
-      setSuccessMessage("Jelo je uspešno dodato.");
-    }
-
-    clearForm();
-    await loadData();
   }
 
   async function handleDeactivate(dish: DishMenuDto) {
@@ -346,15 +360,77 @@ export default function AdminDishesPage() {
           />
         </label>
 
+        <div
+          style={{
+            display: "grid",
+            gap: 8,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            padding: 12,
+            background: "white",
+          }}
+        >
+          <strong>Preporuka kuće</strong>
+
+          <label>
+            <input
+              type="checkbox"
+              checked={form.isRecommended}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  isRecommended: e.target.checked,
+                }))
+              }
+            />{" "}
+            Prikaži ovo jelo kao preporuku kuće na homepage-u
+          </label>
+
+          <label>
+            Redosled preporuke
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={form.recommendedSortOrder}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  recommendedSortOrder: e.target.value,
+                }))
+              }
+              style={{ display: "block", width: "100%", marginTop: 4 }}
+            />
+          </label>
+
+          <div style={{ color: "#777", fontSize: 13 }}>
+            Manji broj znači da će jelo biti prikazano ranije.
+          </div>
+        </div>
+
         <label>
-          Slika URL
+          URL slike:
           <input
             value={form.imageUrl}
             onChange={(e) =>
-              setForm((prev) => ({ ...prev, imageUrl: e.target.value }))
+              setForm((current) => ({
+                ...current,
+                imageUrl: e.target.value,
+              }))
             }
-            placeholder="/images/chicken-burger.jpg"
-            style={{ display: "block", width: "100%", marginTop: 4 }}
+            placeholder="https://..."
+          />
+        </label>
+
+        <label>
+          Slika sa računara:
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              setSelectedImageFile(file);
+            }}
           />
         </label>
 
@@ -508,6 +584,12 @@ export default function AdminDishesPage() {
                 ))
               )}
             </div>
+
+            {dish.isRecommended && (
+              <div style={{ color: "#d97706", fontWeight: 700 }}>
+                Preporuka kuće · Redosled: {dish.recommendedSortOrder}
+              </div>
+            )}
 
             <div style={{ display: "flex", gap: 8 }}>
               <button type="button" onClick={() => startEdit(dish)}>

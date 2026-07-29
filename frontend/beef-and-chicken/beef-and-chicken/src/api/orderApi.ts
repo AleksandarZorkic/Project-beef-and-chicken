@@ -3,12 +3,17 @@ import api from "./https";
 export type OrderStatus =
   | "Na_Cekanju"
   | "Odbijena"
+  | "Otkazana"
   | "Prihvacena"
   | "Spremna_za_preuzimanje"
   | "Dostava_u_toku"
   | "Dostavljena";
 
-export type OrderOptionType = "SideDish" | "Spice";
+export type PaymentMethod = "Cash" | "CardOnDelivery";
+
+export type PaymentStatus = "Pending" | "Paid" | "Cancelled";
+
+export type OrderOptionType = "SideDish" | "Spice" | "SweetAddition";
 
 export interface OrderAddressSnapshotDto {
   street: string;
@@ -45,6 +50,8 @@ export interface CreateOrderItemDto {
 
 export interface CreateOrderRequestDto {
   customerAddressId: number;
+  deliveryContactPhoneNumber: string;
+  paymentMethod: PaymentMethod;
   notes?: string | null;
   items: CreateOrderItemDto[];
 }
@@ -56,10 +63,13 @@ export interface OrderDetailsDto {
   customerId: number;
   courierId?: number | null;
   deliveryAddress: OrderAddressSnapshotDto;
+  deliveryContactPhoneNumber: string;
   notes?: string | null;
   subtotal: number;
   deliveryFee: number;
   totalAmount: number;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
   status: OrderStatus;
   items: OrderItemDto[];
 }
@@ -74,7 +84,7 @@ export interface PagedResultDto<T> {
   hasNextPage: boolean;
 }
 
-export type OrderHistoryStatusFilter = "Dostavljena" | "Odbijena";
+export type OrderHistoryStatusFilter = "Dostavljena" | "Odbijena" | "Otkazana";
 
 export interface OrderHistoryQueryParams {
   from?: string;
@@ -207,6 +217,14 @@ export async function getOrderDashboard(params: OrderDashboardQueryParams) {
   const res = await api.get<OrderDashboardDto>(`${ORDERS_ENDPOINT}/dashboard`, {
     params,
   });
+
+  return res.data;
+}
+
+export async function cancelMyOrder(orderId: number) {
+  const res = await api.patch<OrderDetailsDto>(
+    `${ORDERS_ENDPOINT}/${orderId}/cancel`,
+  );
 
   return res.data;
 }

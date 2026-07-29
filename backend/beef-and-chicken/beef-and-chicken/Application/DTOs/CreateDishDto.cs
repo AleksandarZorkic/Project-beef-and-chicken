@@ -6,6 +6,8 @@
         public string? Description { get; set; }
         public decimal Price { get; set; }
         public string? ImageUrl { get; set; }
+        public bool IsRecommended { get; set; } = false;
+        public int RecommendedSortOrder { get; set; } = 0;
         public int CategoryId { get; set; }
         public List<DishAllergenInputDto> Allergens { get; set; } = new();
     }

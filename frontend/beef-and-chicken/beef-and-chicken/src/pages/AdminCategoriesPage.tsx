@@ -15,12 +15,18 @@ type CategoryFormState = {
   name: string;
   description: string;
   sortOrder: string;
+  allowsSideDishes: boolean;
+  allowsSpices: boolean;
+  allowsSweetAdditions: boolean;
 };
 
 const emptyForm: CategoryFormState = {
   name: "",
   description: "",
   sortOrder: "0",
+  allowsSideDishes: true,
+  allowsSpices: true,
+  allowsSweetAdditions: false,
 };
 
 function getErrorMessage(e: any, fallback: string) {
@@ -110,6 +116,9 @@ export default function AdminCategoriesPage() {
       name: category.name,
       description: category.description ?? "",
       sortOrder: String(category.sortOrder),
+      allowsSideDishes: category.allowsSideDishes,
+      allowsSpices: category.allowsSpices,
+      allowsSweetAdditions: category.allowsSweetAdditions,
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -139,6 +148,9 @@ export default function AdminCategoriesPage() {
         name: form.name.trim(),
         description: form.description.trim() || null,
         sortOrder,
+        allowsSideDishes: form.allowsSideDishes,
+        allowsSpices: form.allowsSpices,
+        allowsSweetAdditions: form.allowsSweetAdditions,
       };
 
       if (editingCategoryId) {
@@ -314,6 +326,65 @@ export default function AdminCategoriesPage() {
           />
         </label>
 
+        <div
+          style={{
+            display: "grid",
+            gap: 8,
+            padding: 12,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            background: "white",
+          }}
+        >
+          <strong>Pravila za dodatke</strong>
+
+          <label>
+            <input
+              type="checkbox"
+              checked={form.allowsSideDishes}
+              onChange={(e) =>
+                setForm((current) => ({
+                  ...current,
+                  allowsSideDishes: e.target.checked,
+                }))
+              }
+            />{" "}
+            Dozvoljava priloge
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              checked={form.allowsSpices}
+              onChange={(e) =>
+                setForm((current) => ({
+                  ...current,
+                  allowsSpices: e.target.checked,
+                }))
+              }
+            />{" "}
+            Dozvoljava začine
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              checked={form.allowsSweetAdditions}
+              onChange={(e) =>
+                setForm((current) => ({
+                  ...current,
+                  allowsSweetAdditions: e.target.checked,
+                }))
+              }
+            />{" "}
+            Dozvoljava slatke dodatke
+          </label>
+
+          <div style={{ fontSize: 13, color: "#555" }}>
+            Primer: za kategoriju Pića obično isključi i priloge i začine.
+          </div>
+        </div>
+
         <label>
           Redosled prikaza:
           <input
@@ -440,6 +511,15 @@ export default function AdminCategoriesPage() {
                 </th>
                 <th
                   style={{
+                    textAlign: "left",
+                    borderBottom: "1px solid #ccc",
+                    padding: 8,
+                  }}
+                >
+                  Dodaci
+                </th>
+                <th
+                  style={{
                     textAlign: "right",
                     borderBottom: "1px solid #ccc",
                     padding: 8,
@@ -509,6 +589,17 @@ export default function AdminCategoriesPage() {
                       >
                         {formatStatus(category)}
                       </span>
+                    </td>
+
+                    <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>
+                      <div>
+                        Prilozi: {category.allowsSideDishes ? "Da" : "Ne"}
+                      </div>
+                      <div>Začini: {category.allowsSpices ? "Da" : "Ne"}</div>
+                      <div>
+                        Slatki dodaci:{" "}
+                        {category.allowsSweetAdditions ? "Da" : "Ne"}
+                      </div>
                     </td>
 
                     <td

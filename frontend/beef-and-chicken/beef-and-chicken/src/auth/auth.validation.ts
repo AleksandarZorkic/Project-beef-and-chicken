@@ -8,6 +8,7 @@ export type RegisterFormValues = {
   lastName: string;
   email: string;
   username: string;
+  phoneNumber: string;
   password: string;
   confirmPassword: string;
 };
@@ -32,6 +33,10 @@ function hasDigit(value: string) {
 
 function hasSpecialChar(value: string) {
   return /[^A-Za-z0-9]/.test(value);
+}
+
+function isValidPhoneNumber(phoneNumber: string) {
+  return /^[0-9+\-/() ]+$/.test(phoneNumber);
 }
 
 export function getPasswordRules(password: string) {
@@ -85,30 +90,45 @@ export function validateRegister(values: RegisterFormValues) {
     errors.username = "Korisničko ime mora imati najmanje 3 karaktera.";
   }
 
+  const phoneNumber = values.phoneNumber.trim();
+
+  if (!phoneNumber) {
+    errors.phoneNumber = "Broj telefona je obavezan.";
+  } else if (phoneNumber.length < 6 || phoneNumber.length > 20) {
+    errors.phoneNumber = "Broj telefona mora imati između 6 i 20 karaktera.";
+  } else if (!isValidPhoneNumber(phoneNumber)) {
+    errors.phoneNumber =
+      "Broj telefona može sadržati samo brojeve, razmake i znakove + - / ( ).";
+  }
+
   if (!values.password.trim()) {
-    errors.password = "Lozinka je obavezna";
+    errors.password = "Lozinka je obavezna.";
   } else {
     const passwordRules = getPasswordRules(values.password);
     const missingRules: string[] = [];
 
     if (!passwordRules.minLength) {
-      missingRules.push("Lozinka mora imati najmanje 8 karaktera");
+      missingRules.push("najmanje 8 karaktera");
     }
+
     if (!passwordRules.hasUppercase) {
-      missingRules.push("Lozinka mora imati bar jedno veliko slovo.");
+      missingRules.push("bar jedno veliko slovo");
     }
+
     if (!passwordRules.hasLowercase) {
-      missingRules.push("Lozinka mora imati bar jedno malo slovo.");
+      missingRules.push("bar jedno malo slovo");
     }
+
     if (!passwordRules.hasDigit) {
-      missingRules.push("Lozinka mora imati bar jedan broj.");
+      missingRules.push("bar jedan broj");
     }
+
     if (!passwordRules.hasSpecialChar) {
-      missingRules.push("Lozinka mora imati bar jedan specijalni znak.");
+      missingRules.push("bar jedan specijalni znak");
     }
 
     if (missingRules.length > 0) {
-      errors.password = `Lozinka mora sadržati: ${missingRules.join(", ")}`;
+      errors.password = `Lozinka mora sadržati: ${missingRules.join(", ")}.`;
     }
   }
 

@@ -1,0 +1,215 @@
+@use "../abstracts/variables" as *;
+@use "../abstracts/mixins" as *;
+
+.card {
+  position: relative;
+  overflow: hidden;
+
+  padding: $space-5;
+
+  color: $color-text;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-md;
+
+  transition:
+    transform $transition-base,
+    background-color $transition-base,
+    border-color $transition-base,
+    box-shadow $transition-base;
+
+  // Card with hover interaction
+  &--interactive {
+    cursor: pointer;
+
+    &:hover {
+      transform: translateY(-4px);
+      background: $color-surface-raised;
+      border-color: $color-border-strong;
+      box-shadow: $shadow-lg;
+    }
+
+    &:active {
+      transform: translateY(-1px);
+    }
+  }
+
+  // Transparent glass card
+  &--glass {
+    @include glass-surface;
+
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.065),
+      rgba(255, 255, 255, 0.025)
+    );
+  }
+
+  // Darker card used inside another surface
+  &--dark {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  // Highlighted brand card
+  &--highlighted {
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba($color-accent, 0.11),
+        transparent 45%
+      ),
+      $color-surface;
+
+    border-color: rgba($color-accent, 0.22);
+  }
+
+  // Remove internal padding when media fills the card
+  &--flush {
+    padding: 0;
+  }
+
+  &__media {
+    position: relative;
+    overflow: hidden;
+
+    width: 100%;
+    aspect-ratio: 16 / 10;
+
+    background: $color-surface-raised;
+    border-radius: $radius-md;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+
+      transition: transform $transition-slow;
+    }
+  }
+
+  &--interactive:hover &__media img {
+    transform: scale(1.035);
+  }
+
+  &--flush &__media {
+    border-radius: 0;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
+
+  &--flush &__body {
+    padding: $space-5;
+  }
+
+  &__eyebrow {
+    color: $color-accent;
+
+    font-size: 0.75rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    margin: 0;
+
+    color: $color-text;
+
+    font-family: $font-family-display;
+    font-size: 1.65rem;
+    font-weight: $font-weight-extra-bold;
+    line-height: 1.1;
+  }
+
+  &__description {
+    margin: 0;
+
+    color: $color-text-soft;
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: $space-2;
+
+    color: $color-text-muted;
+    font-size: 0.875rem;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: $space-3;
+
+    margin-top: $space-5;
+    padding-top: $space-4;
+
+    border-top: 1px solid $color-border;
+  }
+
+  &__price {
+    color: $color-accent;
+
+    font-size: 1.1rem;
+    font-weight: $font-weight-extra-bold;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: $space-2;
+  }
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $space-5;
+
+  &--four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  &--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@include laptop {
+  .card-grid,
+  .card-grid--four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@include tablet {
+  .card {
+    padding: $space-4;
+
+    &--flush {
+      padding: 0;
+    }
+
+    &--flush &__body {
+      padding: $space-4;
+    }
+  }
+
+  .card-grid,
+  .card-grid--four,
+  .card-grid--two {
+    grid-template-columns: 1fr;
+    gap: $space-4;
+  }
+}

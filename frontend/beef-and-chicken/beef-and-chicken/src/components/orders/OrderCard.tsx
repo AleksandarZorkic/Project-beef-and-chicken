@@ -27,6 +27,8 @@ function formatStatus(status: OrderStatus) {
   switch (status) {
     case "Na_Cekanju":
       return "Na čekanju";
+    case "Otkazana":
+      return "Otkazana";
     case "Prihvacena":
       return "Prihvaćena / u pripremi";
     case "Spremna_za_preuzimanje":
@@ -49,6 +51,12 @@ function getStatusStyle(status: OrderStatus): CSSProperties {
         background: "#fff7e6",
         color: "#8a5a00",
         border: "1px solid #ffd591",
+      };
+    case "Otkazana":
+      return {
+        background: "#fff1f0",
+        color: "#a8071a",
+        border: "1px solid #ffa39e",
       };
     case "Prihvacena":
       return {
@@ -121,6 +129,36 @@ function getGoogleMapsDirectionsUrl(order: OrderDetailsDto) {
   const destination = encodeURIComponent(getDeliveryAddressText(order));
 
   return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+}
+
+function getPhoneHref(phoneNumber: string) {
+  const cleaned = phoneNumber.replace(/[^\d+]/g, "");
+
+  return `tel:${cleaned}`;
+}
+
+function formatPaymentMethod(paymentMethod: string) {
+  switch (paymentMethod) {
+    case "Cash":
+      return "Gotovina";
+    case "CardOnDelivery":
+      return "Kartica pri dostavi";
+    default:
+      return paymentMethod;
+  }
+}
+
+function formatPaymentStatus(paymentStatus: string) {
+  switch (paymentStatus) {
+    case "Pending":
+      return "Čeka naplatu";
+    case "Paid":
+      return "Plaćeno";
+    case "Cancelled":
+      return "Otkazano";
+    default:
+      return paymentStatus;
+  }
 }
 
 export default function OrderCard({
@@ -215,6 +253,29 @@ export default function OrderCard({
           </div>
         )}
 
+        {order.deliveryContactPhoneNumber && (
+          <div style={{ marginTop: 10 }}>
+            <strong>Telefon za dostavu:</strong>
+
+            <div style={{ marginTop: 6 }}>
+              <a
+                href={getPhoneHref(order.deliveryContactPhoneNumber)}
+                style={{
+                  display: "inline-block",
+                  padding: "8px 12px",
+                  border: "1px solid #ccc",
+                  borderRadius: 8,
+                  textDecoration: "none",
+                  color: "inherit",
+                  fontWeight: 700,
+                }}
+              >
+                Pozovi kupca: {order.deliveryContactPhoneNumber}
+              </a>
+            </div>
+          </div>
+        )}
+
         {order.deliveryAddress.note && (
           <div style={{ fontStyle: "italic", marginTop: 8 }}>
             Napomena za adresu: {order.deliveryAddress.note}
@@ -285,6 +346,15 @@ export default function OrderCard({
         <div>Dostava: {formatPrice(order.deliveryFee)}</div>
         <div style={{ fontWeight: 800 }}>
           Ukupno: {formatPrice(order.totalAmount)}
+        </div>
+
+        <div style={{ marginTop: 8 }}>
+          <strong>Plaćanje:</strong> {formatPaymentMethod(order.paymentMethod)}
+        </div>
+
+        <div>
+          <strong>Status plaćanja:</strong>{" "}
+          {formatPaymentStatus(order.paymentStatus)}
         </div>
       </div>
 

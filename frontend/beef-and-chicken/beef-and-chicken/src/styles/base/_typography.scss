@@ -1,0 +1,126 @@
+@use "../abstracts/variables" as *;
+
+body {
+  font-family: $font-family-body;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: $color-text;
+  font-family: $font-family-display;
+  font-weight: $font-weight-extra-bold;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+h1 {
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+}
+
+h2 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+}
+
+h3 {
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
+}
+
+h4 {
+  font-size: 1.25rem;
+}
+
+p {
+  color: $color-text-soft;
+  line-height: 1.7;
+}
+
+small {
+  font-size: 0.875rem;
+  color: $color-text-muted;
+}
+
+strong,
+b {
+  font-weight: $font-weight-bold;
+}
+
+.text-lead {
+  max-width: 720px;
+  font-size: clamp(1rem, 1.5vw, 1.125rem);
+  line-height: 1.75;
+  color: $color-text-soft;
+}
+
+.text-muted {
+  color: $color-text-muted;
+}
+
+.text-soft {
+  color: $color-text-soft;
+}
+
+.text-primary {
+  color: $color-primary;
+}
+
+.text-accent {
+  color: $color-accent;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+
+  margin-bottom: $space-3;
+  padding: $space-2 $space-3;
+
+  color: $color-accent;
+
+  font-size: 0.75rem;
+  font-weight: $font-weight-extra-bold;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+
+  background: rgba($color-accent, 0.1);
+  border: 1px solid rgba($color-accent, 0.2);
+  border-radius: $radius-pill;
+}
+
+.section-heading {
+  max-width: 760px;
+  margin-bottom: $space-6;
+
+  &--center {
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  &__title {
+    margin-bottom: $space-3;
+  }
+
+  &__description {
+    font-size: 1.05rem;
+    color: $color-text-soft;
+  }
+}
+
+@media (max-width: $breakpoint-tablet) {
+  h1 {
+    font-size: clamp(2.5rem, 13vw, 4rem);
+  }
+
+  h2 {
+    font-size: clamp(1.9rem, 9vw, 2.75rem);
+  }
+
+  .section-heading {
+    margin-bottom: $space-5;
+  }
+}

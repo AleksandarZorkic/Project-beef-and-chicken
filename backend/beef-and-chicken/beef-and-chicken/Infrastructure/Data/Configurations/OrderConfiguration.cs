@@ -85,13 +85,49 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
                     .HasMaxLength(500);
             });
 
+            builder.Property(o => o.PaymentMethod)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            builder.Property(o => o.PaymentStatus)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            builder.Property(o => o.DeliveryContactPhoneNumber)
+                .IsRequired()
+                .HasMaxLength(20);
+
+            builder.Property(o => o.AcceptedAt);
+
+            builder.Property(o => o.RejectedAt);
+
+            builder.Property(o => o.ReadyForPickupAt);
+
+            builder.Property(o => o.DeliveryStartedAt);
+
+            builder.Property(o => o.DeliveredAt);
+
             builder.Navigation(o => o.DeliveryAddress)
                 .IsRequired();
+
+            builder.HasMany(o => o.StatusHistory)
+                .WithOne(h => h.Order)
+                .HasForeignKey(h => h.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasIndex(o => o.CustomerId);
             builder.HasIndex(o => o.CourierId);
             builder.HasIndex(o => o.Status);
+            builder.HasIndex(o => o.PaymentMethod);
+            builder.HasIndex(o => o.PaymentStatus);
             builder.HasIndex(o => o.CreatedAt);
+            builder.HasIndex(o => o.AcceptedAt);
+            builder.HasIndex(o => o.RejectedAt);
+            builder.HasIndex(o => o.ReadyForPickupAt);
+            builder.HasIndex(o => o.DeliveryStartedAt);
+            builder.HasIndex(o => o.DeliveredAt);
 
             builder.ToTable("Orders", t =>
             {

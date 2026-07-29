@@ -3,6 +3,7 @@
     public enum DishOptionType
     {
         SideDish,
-        Spice
+        Spice,
+        SweetAddition
     }
 }

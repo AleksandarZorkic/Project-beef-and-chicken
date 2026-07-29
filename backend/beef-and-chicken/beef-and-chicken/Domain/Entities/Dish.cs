@@ -7,6 +7,8 @@
         public string?  Description { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public string? ImageUrl { get; set; }
+        public bool IsRecommended { get; set; } = false;
+        public int RecommendedSortOrder { get; set; } = 0;
         // Da li je jelo dostupno za naručivanje
         public bool IsActive { get; set; } = true;
         // Foreign Keys

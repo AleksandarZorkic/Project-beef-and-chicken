@@ -13,6 +13,10 @@ namespace beef_and_chicken.Application.DTOs
 
         public decimal Price { get; set; }
 
+        public bool IsRecommended { get; set; }
+
+        public int RecommendedSortOrder { get; set; }
+
         public bool IsAlwaysPaid { get; set; }
 
         public bool IsActive { get; set; }

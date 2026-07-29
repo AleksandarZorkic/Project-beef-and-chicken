@@ -1,0 +1,124 @@
+@use "variables" as *;
+
+// ======================================================
+// Responsive breakpoints
+// ======================================================
+
+@mixin mobile {
+  @media (max-width: $breakpoint-mobile) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: $breakpoint-tablet) {
+    @content;
+  }
+}
+
+@mixin laptop {
+  @media (max-width: $breakpoint-laptop) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (max-width: $breakpoint-desktop) {
+    @content;
+  }
+}
+
+// ======================================================
+// Layout
+// ======================================================
+
+@mixin container {
+  width: 100%;
+  max-width: calc(#{$container-width} + #{2 * $container-padding-desktop});
+
+  margin-inline: auto;
+  padding-inline: $container-padding-desktop;
+
+  @include tablet {
+    padding-inline: $container-padding-mobile;
+  }
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// ======================================================
+// Accessibility
+// ======================================================
+
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 3px solid rgba($color-accent, 0.75);
+    outline-offset: 3px;
+  }
+}
+
+// ======================================================
+// Interactive states
+// ======================================================
+
+@mixin interactive-lift {
+  transition:
+    transform $transition-base,
+    box-shadow $transition-base,
+    border-color $transition-base,
+    background-color $transition-base;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ======================================================
+// Text
+// ======================================================
+
+@mixin truncate {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@mixin line-clamp($lines: 2) {
+  display: -webkit-box;
+  overflow: hidden;
+
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: $lines;
+}
+
+// ======================================================
+// Surfaces
+// ======================================================
+
+@mixin glass-surface {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid $color-border;
+  backdrop-filter: blur(14px);
+}
+
+@mixin card-surface {
+  color: $color-text;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-md;
+}

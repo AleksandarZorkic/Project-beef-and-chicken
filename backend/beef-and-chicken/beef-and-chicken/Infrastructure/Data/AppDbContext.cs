@@ -24,6 +24,9 @@ namespace beef_and_chicken.Infrastructure.Data
         public DbSet<AuditLog> AuditLogs {  get; set; }
         public DbSet<DishOption> DishOptions { get; set; }
         public DbSet<OrderItemOption> OrderItemOptions { get; set; }
+        public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
+        public DbSet<Announcement> Announcements => Set<Announcement>();
+        public DbSet<RestaurantSettings> RestaurantSettings => Set<RestaurantSettings>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

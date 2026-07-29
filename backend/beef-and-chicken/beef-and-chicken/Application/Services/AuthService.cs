@@ -17,17 +17,20 @@ namespace beef_and_chicken.Application.Services
         private readonly IConfiguration _configuration;
         private readonly IMapper _mapper;
         private readonly ILogger<AuthService> _logger;
+        private readonly IEmailService _emailService;
 
         public AuthService(
             UserManager<User> userManager,
             IConfiguration configuration,
             IMapper mapper,
-            ILogger<AuthService> logger)
+            ILogger<AuthService> logger,
+            IEmailService emailService)
         {
             _userManager = userManager;
             _configuration = configuration;
             _mapper = mapper;
             _logger = logger;
+            _emailService = emailService;
         }
 
         public async Task RegisterAsync(RegistrationDto data)
@@ -38,8 +41,10 @@ namespace beef_and_chicken.Application.Services
             data.LastName = data.LastName.Trim();
             data.UserName = data.UserName.Trim();
             data.Email = data.Email.Trim();
+            data.PhoneNumber = NormalizePhoneNumber(data.PhoneNumber);
 
             var user = _mapper.Map<User>(data);
+            user.PhoneNumber = data.PhoneNumber;
             user.LockoutEnabled = true;
 
             var result = await _userManager.CreateAsync(user, data.Password);
@@ -148,6 +153,197 @@ namespace beef_and_chicken.Application.Services
             return await GenerateJwtAsync(user);
         }
 
+        public async Task ForgotPasswordAsync(
+            ForgotPasswordDto data,
+            CancellationToken ct = default)
+        {
+            if (data == null)
+                throw new BadRequestException("Podaci za reset lozinke su obavezni.");
+
+            if (string.IsNullOrWhiteSpace(data.Email))
+                throw new BadRequestException("Email je obavezan.");
+
+            var email = data.Email.Trim();
+
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+            {
+                _logger.LogInformation(
+                    "Password reset requested for non-existing email. Email={Email}",
+                    email
+                );
+
+                return;
+            }
+
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                _logger.LogWarning(
+                    "Password reset requested for locked user. UserId={UserId}, Email={Email}",
+                    user.Id,
+                    email
+                );
+
+                return;
+            }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var frontendBaseUrl = _configuration["Email:FrontendBaseUrl"]
+                ?? "http://localhost:5173";
+
+            var resetLink =
+                $"{frontendBaseUrl.TrimEnd('/')}/reset-password" +
+                $"?email={Uri.EscapeDataString(email)}" +
+                $"&token={Uri.EscapeDataString(token)}";
+
+            await _emailService.SendPasswordResetEmailAsync(
+                email,
+                resetLink,
+                ct
+            );
+
+            _logger.LogInformation(
+                "Password reset email requested. UserId={UserId}, Email={Email}",
+                user.Id,
+                email
+            );
+        }
+
+        public async Task ResetPasswordAsync(
+            ResetPasswordDto data,
+            CancellationToken ct = default)
+        {
+            if (data == null)
+                throw new BadRequestException("Podaci za promenu lozinke su obavezni.");
+
+            if (string.IsNullOrWhiteSpace(data.Email))
+                throw new BadRequestException("Email je obavezan.");
+
+            if (string.IsNullOrWhiteSpace(data.Token))
+                throw new BadRequestException("Token je obavezan.");
+
+            if (string.IsNullOrWhiteSpace(data.NewPassword))
+                throw new BadRequestException("Nova lozinka je obavezna.");
+
+            var email = data.Email.Trim();
+
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+            {
+                _logger.LogWarning(
+                    "Password reset failed. Reason=UserNotFound, Email={Email}",
+                    email
+                );
+
+                throw new BadRequestException("Link za promenu lozinke nije ispravan ili je istekao.");
+            }
+
+            var result = await _userManager.ResetPasswordAsync(
+                user,
+                data.Token,
+                data.NewPassword
+            );
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(error => error.Code switch
+                {
+                    "InvalidToken" => "Link za promenu lozinke nije ispravan ili je istekao.",
+                    "PasswordTooShort" => "Lozinka mora imati najmanje 8 karaktera.",
+                    "PasswordRequiresNonAlphanumeric" => "Lozinka mora sadržati bar jedan specijalni karakter.",
+                    "PasswordRequiresDigit" => "Lozinka mora sadržati bar jednu cifru.",
+                    "PasswordRequiresLower" => "Lozinka mora sadržati bar jedno malo slovo.",
+                    "PasswordRequiresUpper" => "Lozinka mora sadržati bar jedno veliko slovo.",
+                    _ => "Promena lozinke nije uspela."
+                });
+
+                _logger.LogWarning(
+                    "Password reset failed. UserId={UserId}, Email={Email}, ErrorCodes={ErrorCodes}",
+                    user.Id,
+                    email,
+                    string.Join(", ", result.Errors.Select(e => e.Code))
+                );
+
+                throw new BadRequestException(string.Join(", ", errors.Distinct()));
+            }
+
+            _logger.LogInformation(
+                "Password reset completed. UserId={UserId}, Email={Email}",
+                user.Id,
+                email
+            );
+        }
+
+        public async Task<UserProfileDto> GetProfileAsync(
+    int userId,
+    CancellationToken ct = default)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+
+            if (user == null)
+                throw new NotFoundException("Korisnik nije pronađen.");
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return new UserProfileDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email ?? string.Empty,
+                UserName = user.UserName ?? string.Empty,
+                PhoneNumber = user.PhoneNumber,
+                Roles = roles.ToList()
+            };
+        }
+
+        public async Task<UserProfileDto> UpdatePhoneNumberAsync(
+            int userId,
+            UpdatePhoneNumberDto data,
+            CancellationToken ct = default)
+        {
+            if (data == null)
+                throw new BadRequestException("Podaci za izmenu broja telefona su obavezni.");
+
+            ValidatePhoneNumber(data.PhoneNumber);
+
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+
+            if (user == null)
+                throw new NotFoundException("Korisnik nije pronađen.");
+
+            user.PhoneNumber = NormalizePhoneNumber(data.PhoneNumber);
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(error => error.Code switch
+                {
+                    "InvalidPhoneNumber" => "Broj telefona nije ispravan.",
+                    _ => error.Description
+                });
+
+                throw new BadRequestException(string.Join(", ", errors.Distinct()));
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return new UserProfileDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email ?? string.Empty,
+                UserName = user.UserName ?? string.Empty,
+                PhoneNumber = user.PhoneNumber,
+                Roles = roles.ToList()
+            };
+        }
+
         private async Task<string> GenerateJwtAsync(User user)
         {
             var roles = await _userManager.GetRolesAsync(user);
@@ -205,6 +401,48 @@ namespace beef_and_chicken.Application.Services
 
             if (string.IsNullOrWhiteSpace(data.Password))
                 throw new BadRequestException("Lozinka je obavezna.");
+
+            if (string.IsNullOrWhiteSpace(data.PhoneNumber))
+                throw new BadRequestException("Broj telefona je obavezan.");
+
+            ValidatePhoneNumber(data.PhoneNumber);
+        }
+
+        private static string NormalizePhoneNumber(string phoneNumber)
+        {
+            return phoneNumber.Trim();
+        }
+
+        private static void ValidatePhoneNumber(string phoneNumber)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                throw new BadRequestException("Broj telefona je obavezan.");
+
+            var trimmed = phoneNumber.Trim();
+
+            if (trimmed.Length < 6 || trimmed.Length > 20)
+            {
+                throw new BadRequestException(
+                    "Broj telefona mora imati između 6 i 20 karaktera."
+                );
+            }
+
+            var allowedCharacters = trimmed.All(c =>
+                char.IsDigit(c) ||
+                c == '+' ||
+                c == '-' ||
+                c == '/' ||
+                c == ' ' ||
+                c == '(' ||
+                c == ')'
+            );
+
+            if (!allowedCharacters)
+            {
+                throw new BadRequestException(
+                    "Broj telefona može sadržati samo brojeve, razmake i znakove + - / ( )."
+                );
+            }
         }
     }
 }
