@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useCart } from "../state/cart/CartContext";
 import { getMenu } from "../api/menuApi";
 import type { DishMenuDto } from "../api/menuApi";
@@ -11,7 +12,6 @@ import {
 } from "../api/dishOptionsApi";
 import type { CartSelectedOption } from "../state/cart/cart.types";
 import DishOptionsModal from "../components/menu/DishOptionsModal";
-import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { AppRoles } from "../auth/roles";
 import {
@@ -19,9 +19,12 @@ import {
   type RestaurantSettingsDto,
 } from "../api/restaurantSettingsApi";
 import { cartSubtotal } from "../state/cart/cart.selectors";
+import "../styles/MenuPage.scss";
 
 function resolveImageUrl(imageUrl?: string | null) {
-  if (!imageUrl) return null;
+  if (!imageUrl) {
+    return null;
+  }
 
   if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
     return imageUrl;
@@ -32,6 +35,10 @@ function resolveImageUrl(imageUrl?: string | null) {
 
 function formatPrice(value: number) {
   return `${value.toLocaleString("sr-RS")} RSD`;
+}
+
+function getCategoryAnchorId(categoryId: number) {
+  return `menu-category-${categoryId}`;
 }
 
 export default function MenuPage() {
@@ -67,7 +74,59 @@ export default function MenuPage() {
       : 0;
 
   const canAddToCart =
-    canOrder && !!restaurantSettings?.isDeliveryEnabled && !loadingSettings;
+    canOrder &&
+    Boolean(restaurantSettings?.isDeliveryEnabled) &&
+    !loadingSettings;
+
+  const minimumOrderProgress =
+    restaurantSettings?.minimumOrderAmount &&
+    restaurantSettings.minimumOrderAmount > 0
+      ? Math.min((subtotal / restaurantSettings.minimumOrderAmount) * 100, 100)
+      : 100;
+
+  const freeDeliveryProgress =
+    restaurantSettings?.freeDeliveryThreshold &&
+    restaurantSettings.freeDeliveryThreshold > 0
+      ? Math.min(
+          (subtotal / restaurantSettings.freeDeliveryThreshold) * 100,
+          100,
+        )
+      : 0;
+
+  const categoryGroups = useMemo(() => {
+    const groups = new Map<
+      number,
+      {
+        categoryId: number;
+        categoryName: string;
+        dishes: DishMenuDto[];
+      }
+    >();
+
+    data.forEach((dish) => {
+      const categoryId = dish.categoryId;
+      const categoryName = dish.categoryName || "Ostalo";
+
+      if (!groups.has(categoryId)) {
+        groups.set(categoryId, {
+          categoryId,
+          categoryName,
+          dishes: [],
+        });
+      }
+
+      groups.get(categoryId)?.dishes.push(dish);
+    });
+
+    return Array.from(groups.values())
+      .sort((a, b) => a.categoryId - b.categoryId)
+      .map((group) => ({
+        ...group,
+        dishes: group.dishes.sort((a, b) =>
+          a.name.localeCompare(b.name, "sr-RS"),
+        ),
+      }));
+  }, [data]);
 
   useEffect(() => {
     let isMounted = true;
@@ -84,7 +143,9 @@ export default function MenuPage() {
           getRestaurantSettings(),
         ]);
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         setData(menu);
         setDishOptions(options);
@@ -94,11 +155,15 @@ export default function MenuPage() {
           try {
             const userAllergens = await getMyAllergens();
 
-            if (!isMounted) return;
+            if (!isMounted) {
+              return;
+            }
 
             setMyAllergens(userAllergens);
           } catch {
-            if (!isMounted) return;
+            if (!isMounted) {
+              return;
+            }
 
             setMyAllergens([]);
           }
@@ -106,7 +171,9 @@ export default function MenuPage() {
           setMyAllergens([]);
         }
       } catch (e: any) {
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         setError(
           e?.response?.data?.message ??
@@ -115,7 +182,9 @@ export default function MenuPage() {
             "Došlo je do greške prilikom učitavanja menija.",
         );
       } finally {
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         setLoading(false);
         setLoadingSettings(false);
@@ -129,19 +198,20 @@ export default function MenuPage() {
     };
   }, [canOrder]);
 
-  const myAllergenId = useMemo(() => {
+  const myAllergenIds = useMemo(() => {
     return new Set(myAllergens.map((allergen) => allergen.id));
   }, [myAllergens]);
 
   function getMatchingAllergens(dish: DishMenuDto) {
     return dish.allergens.filter((allergen) =>
-      myAllergenId.has(allergen.allergenId),
+      myAllergenIds.has(allergen.allergenId),
     );
   }
 
   function handleAddDishWithOptions(selectedOptions: CartSelectedOption[]) {
-    if (!canOrder) return;
-    if (!selectedDish) return;
+    if (!canOrder || !selectedDish) {
+      return;
+    }
 
     const optionsTotal = selectedOptions.reduce(
       (sum, option) => sum + option.unitPrice,
@@ -153,6 +223,7 @@ export default function MenuPage() {
       payload: {
         dishId: selectedDish.id,
         name: selectedDish.name,
+        imageUrl: selectedDish.imageUrl,
         unitPrice: selectedDish.price,
         optionsTotal,
         selectedOptions,
@@ -163,13 +234,16 @@ export default function MenuPage() {
   }
 
   function handleAddDishDirectly(dish: DishMenuDto) {
-    if (!canOrder) return;
+    if (!canOrder) {
+      return;
+    }
 
     dispatch({
       type: "ADD-ITEM",
       payload: {
         dishId: dish.id,
         name: dish.name,
+        imageUrl: dish.imageUrl,
         unitPrice: dish.price,
         optionsTotal: 0,
         selectedOptions: [],
@@ -177,230 +251,551 @@ export default function MenuPage() {
     });
   }
 
-  if (loading) return <div>Učitavam meni...</div>;
-  if (error) return <div style={{ color: "crimson" }}>{error}</div>;
+  if (loading) {
+    return (
+      <main className="menu-page menu-page--state">
+        <section className="menu-state-card" aria-live="polite" role="status">
+          <span className="menu-state-card__spinner" aria-hidden="true" />
+
+          <span className="menu-state-card__eyebrow">BEEF N&apos; CHICKEN</span>
+
+          <h1 className="menu-state-card__title">Učitavamo meni</h1>
+
+          <p className="menu-state-card__text">
+            Pripremamo ponudu jela i dostupnih dodataka.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="menu-page menu-page--state">
+        <section
+          className="menu-state-card menu-state-card--error"
+          role="alert"
+        >
+          <span className="menu-state-card__error-icon" aria-hidden="true">
+            !
+          </span>
+
+          <span className="menu-state-card__eyebrow">
+            GREŠKA PRI UČITAVANJU
+          </span>
+
+          <h1 className="menu-state-card__title">
+            Meni trenutno nije dostupan
+          </h1>
+
+          <p className="menu-state-card__text">{error}</p>
+
+          <button
+            type="button"
+            className="menu-state-card__button"
+            onClick={() => window.location.reload()}
+          >
+            Pokušaj ponovo
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   return (
-    <div>
-      <h2>Meni</h2>
+    <main className="menu-page">
+      <section className="menu-hero">
+        <div className="menu-hero__inner">
+          <div className="menu-hero__content">
+            <span className="menu-hero__eyebrow">
+              PRIPREMLJENO ZA OZBILJAN APETIT
+            </span>
 
-      {restaurantSettings && (
-        <div
-          style={{
-            border: "1px solid #ddd",
-            borderRadius: 10,
-            padding: 12,
-            marginBottom: 16,
-            background: restaurantSettings.isDeliveryEnabled
-              ? "white"
-              : "#fff2f2",
-            display: "grid",
-            gap: 6,
-          }}
-        >
-          <strong>Pravila dostave</strong>
+            <h1 className="menu-hero__title">
+              Izaberi svoj
+              <span> savršen obrok.</span>
+            </h1>
 
-          {!restaurantSettings.isDeliveryEnabled ? (
-            <div style={{ color: "crimson", fontWeight: 700 }}>
-              Dostava trenutno nije dostupna.
+            <p className="menu-hero__description">
+              Sočni burgeri, hrskava piletina, bogati obroci i dodaci koje biraš
+              po svom ukusu.
+            </p>
+
+            <div className="menu-hero__meta">
+              <span>
+                <strong>{data.length}</strong>
+                {data.length === 1 ? " jelo u ponudi" : " jela u ponudi"}
+              </span>
+
+              <span>Alergeni jasno označeni</span>
+
+              <span>Dodaci po izboru</span>
             </div>
-          ) : (
-            <>
-              <div>
-                Minimalna porudžbina:{" "}
-                <strong>
-                  {restaurantSettings.minimumOrderAmount.toLocaleString(
-                    "sr-RS",
-                  )}{" "}
-                  RSD
-                </strong>
-              </div>
+          </div>
 
-              <div>
-                Cena dostave:{" "}
-                <strong>
-                  {restaurantSettings.deliveryFee.toLocaleString("sr-RS")} RSD
-                </strong>
-              </div>
-
-              {restaurantSettings.freeDeliveryThreshold && (
-                <div>
-                  Besplatna dostava preko:{" "}
-                  <strong>
-                    {restaurantSettings.freeDeliveryThreshold.toLocaleString(
-                      "sr-RS",
-                    )}{" "}
-                    RSD
-                  </strong>
-                </div>
-              )}
-
-              {canOrder && missingForMinimum > 0 && subtotal > 0 && (
-                <div style={{ color: "crimson", fontWeight: 700 }}>
-                  U korpi trenutno imaš {subtotal.toLocaleString("sr-RS")} RSD.
-                  Dodaj još {missingForMinimum.toLocaleString("sr-RS")} RSD za
-                  poručivanje.
-                </div>
-              )}
-
-              {canOrder &&
-                missingForMinimum === 0 &&
-                missingForFreeDelivery > 0 && (
-                  <div style={{ color: "#8a5a00" }}>
-                    Dodaj još {missingForFreeDelivery.toLocaleString("sr-RS")}{" "}
-                    RSD za besplatnu dostavu.
-                  </div>
-                )}
-            </>
-          )}
+          <div className="menu-hero__visual" aria-hidden="true">
+            <div className="menu-hero__logo-shell">
+              <img src="/logo.png" alt="" className="menu-hero__logo" />
+            </div>
+          </div>
         </div>
-      )}
+      </section>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          gap: 12,
-        }}
-      >
-        {data.map((d) => {
-          const matchingAllergens = getMatchingAllergens(d);
-          const directAllergens = matchingAllergens.filter((a) => !a.isTrace);
-          const traceAllergens = matchingAllergens.filter((a) => a.isTrace);
-          const hasAllergyWarning = matchingAllergens.length > 0;
-          const imageUrl = resolveImageUrl(d.imageUrl);
-
-          return (
-            <div
-              key={d.id}
-              style={{
-                border: hasAllergyWarning
-                  ? "2px solid #d9534f"
-                  : "1px solid #ddd",
-                background: hasAllergyWarning ? "#fff2f2" : "white",
-                borderRadius: 8,
-                padding: 12,
-                marginBottom: 12,
-              }}
+      <div className="menu-content">
+        <div className="menu-content__inner">
+          {restaurantSettings && (
+            <aside
+              className={[
+                "delivery-card",
+                restaurantSettings.isDeliveryEnabled
+                  ? ""
+                  : "delivery-card--closed",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              aria-labelledby="delivery-card-title"
             >
-              {imageUrl && (
-                <img
-                  src={imageUrl}
-                  alt={d.name}
-                  style={{
-                    width: "100%",
-                    height: 180,
-                    objectFit: "cover",
-                    borderRadius: 8,
-                    marginBottom: 10,
-                  }}
-                />
-              )}
+              <div className="delivery-card__header">
+                <div>
+                  <span className="delivery-card__eyebrow">
+                    INFORMACIJE O PORUČIVANJU
+                  </span>
 
-              <h3>{d.name}</h3>
-
-              <p>{d.description}</p>
-
-              <strong>{formatPrice(d.price)}</strong>
-
-              {hasAllergyWarning && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    padding: 10,
-                    borderRadius: 6,
-                    background: "#ffe1e1",
-                    color: "#9f1d1d",
-                    fontWeight: 600,
-                  }}
-                >
-                  ⚠ Ovo jelo sadrži alergene koje ste označili na profilu.
-                  {directAllergens.length > 0 && (
-                    <div style={{ marginTop: 6 }}>
-                      Sadrži:{" "}
-                      {directAllergens
-                        .map((allergen) => allergen.allergenName)
-                        .join(", ")}
-                    </div>
-                  )}
-                  {traceAllergens.length > 0 && (
-                    <div style={{ marginTop: 6 }}>
-                      Može sadržati tragove:{" "}
-                      {traceAllergens
-                        .map((allergen) => allergen.allergenName)
-                        .join(", ")}
-                    </div>
-                  )}
+                  <h2 id="delivery-card-title" className="delivery-card__title">
+                    Dostava i uslovi porudžbine
+                  </h2>
                 </div>
-              )}
 
-              {d.allergens.length > 0 && (
-                <div style={{ marginTop: 10 }}>
-                  <strong>Alergeni: </strong>
+                <div
+                  className={[
+                    "delivery-card__status",
+                    restaurantSettings.isDeliveryEnabled
+                      ? "delivery-card__status--open"
+                      : "delivery-card__status--closed",
+                  ].join(" ")}
+                >
+                  <span
+                    className="delivery-card__status-dot"
+                    aria-hidden="true"
+                  />
 
-                  {d.allergens.map((allergen) => (
-                    <span
-                      key={allergen.allergenId}
-                      style={{
-                        display: "inline-block",
-                        border: "1px solid #ddd",
-                        borderRadius: 999,
-                        padding: "2px 8px",
-                        marginRight: 6,
-                        marginTop: 4,
-                        fontSize: 13,
-                      }}
+                  {restaurantSettings.isDeliveryEnabled
+                    ? "Dostava je dostupna"
+                    : "Dostava nije dostupna"}
+                </div>
+              </div>
+
+              {restaurantSettings.isDeliveryEnabled ? (
+                <>
+                  <div className="delivery-card__metrics">
+                    <div className="delivery-card__metric">
+                      <span className="delivery-card__metric-label">
+                        Minimalna porudžbina
+                      </span>
+
+                      <strong className="delivery-card__metric-value">
+                        {formatPrice(restaurantSettings.minimumOrderAmount)}
+                      </strong>
+                    </div>
+
+                    <div className="delivery-card__metric">
+                      <span className="delivery-card__metric-label">
+                        Cena dostave
+                      </span>
+
+                      <strong className="delivery-card__metric-value">
+                        {formatPrice(restaurantSettings.deliveryFee)}
+                      </strong>
+                    </div>
+
+                    <div className="delivery-card__metric">
+                      <span className="delivery-card__metric-label">
+                        Besplatna dostava
+                      </span>
+
+                      <strong className="delivery-card__metric-value">
+                        {restaurantSettings.freeDeliveryThreshold
+                          ? `Preko ${formatPrice(
+                              restaurantSettings.freeDeliveryThreshold,
+                            )}`
+                          : "Nije dostupna"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {canOrder && subtotal > 0 && (
+                    <div
+                      className="delivery-card__progress-section"
+                      aria-live="polite"
                     >
-                      {allergen.allergenName}
-                      {allergen.isTrace ? " — tragovi" : ""}
-                    </span>
+                      {missingForMinimum > 0 ? (
+                        <div className="delivery-progress">
+                          <div className="delivery-progress__heading">
+                            <span>
+                              Još{" "}
+                              <strong>{formatPrice(missingForMinimum)}</strong>{" "}
+                              do minimalne porudžbine
+                            </span>
+
+                            <span>{formatPrice(subtotal)}</span>
+                          </div>
+
+                          <div
+                            className="delivery-progress__track"
+                            aria-hidden="true"
+                          >
+                            <span
+                              className="delivery-progress__value"
+                              style={{
+                                width: `${minimumOrderProgress}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ) : missingForFreeDelivery > 0 ? (
+                        <div className="delivery-progress">
+                          <div className="delivery-progress__heading">
+                            <span>
+                              Još{" "}
+                              <strong>
+                                {formatPrice(missingForFreeDelivery)}
+                              </strong>{" "}
+                              do besplatne dostave
+                            </span>
+
+                            <span>{formatPrice(subtotal)}</span>
+                          </div>
+
+                          <div
+                            className="delivery-progress__track"
+                            aria-hidden="true"
+                          >
+                            <span
+                              className="delivery-progress__value delivery-progress__value--free"
+                              style={{
+                                width: `${freeDeliveryProgress}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="delivery-card__success">
+                          <span aria-hidden="true">✓</span>
+                          Tvoja porudžbina ispunjava uslove za besplatnu
+                          dostavu.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="delivery-card__closed-message">
+                  Poručivanje je trenutno privremeno onemogućeno. Meni možeš
+                  slobodno da pregledaš.
+                </p>
+              )}
+            </aside>
+          )}
+
+          <section
+            className="menu-catalog"
+            aria-labelledby="menu-catalog-title"
+          >
+            <header className="menu-catalog__header">
+              <div>
+                <span className="menu-catalog__eyebrow">NAŠA PONUDA</span>
+
+                <h2 id="menu-catalog-title" className="menu-catalog__title">
+                  Šta ti se jede danas?
+                </h2>
+
+                <p className="menu-catalog__description">
+                  Izaberi jelo, proveri alergene i dodaj priloge ili dodatke
+                  koji ti odgovaraju.
+                </p>
+              </div>
+
+              <div className="menu-catalog__count">
+                <strong>{data.length}</strong>
+                <span>{data.length === 1 ? "jelo" : "jela"}</span>
+              </div>
+            </header>
+
+            {data.length === 0 ? (
+              <div className="menu-empty-state">
+                <img
+                  src="/logo.png"
+                  alt=""
+                  className="menu-empty-state__logo"
+                />
+
+                <h3 className="menu-empty-state__title">
+                  Trenutno nema dostupnih jela
+                </h3>
+
+                <p className="menu-empty-state__text">
+                  Ponuda će se pojaviti čim restoran doda aktivna jela u meni.
+                </p>
+              </div>
+            ) : (
+              <>
+                <nav className="menu-category-nav" aria-label="Kategorije jela">
+                  {categoryGroups.map((category) => (
+                    <a
+                      key={category.categoryId}
+                      href={`#${getCategoryAnchorId(category.categoryId)}`}
+                      className="menu-category-nav__link"
+                    >
+                      <span>{category.categoryName}</span>
+
+                      <small>
+                        {category.dishes.length}{" "}
+                        {category.dishes.length === 1 ? "jelo" : "jela"}
+                      </small>
+                    </a>
+                  ))}
+                </nav>
+
+                <div className="menu-category-sections">
+                  {categoryGroups.map((category) => (
+                    <section
+                      key={category.categoryId}
+                      id={getCategoryAnchorId(category.categoryId)}
+                      className="menu-category-section"
+                    >
+                      <header className="menu-category-section__header">
+                        <div>
+                          <span className="menu-category-section__eyebrow">
+                            KATEGORIJA
+                          </span>
+
+                          <h3 className="menu-category-section__title">
+                            {category.categoryName}
+                          </h3>
+                        </div>
+
+                        <span className="menu-category-section__count">
+                          {category.dishes.length}{" "}
+                          {category.dishes.length === 1 ? "jelo" : "jela"}
+                        </span>
+                      </header>
+
+                      <div className="menu-grid">
+                        {category.dishes.map((dish) => {
+                          const matchingAllergens = getMatchingAllergens(dish);
+
+                          const directAllergens = matchingAllergens.filter(
+                            (allergen) => !allergen.isTrace,
+                          );
+
+                          const traceAllergens = matchingAllergens.filter(
+                            (allergen) => allergen.isTrace,
+                          );
+
+                          const hasAllergyWarning =
+                            matchingAllergens.length > 0;
+
+                          const imageUrl = resolveImageUrl(dish.imageUrl);
+
+                          const hasConfigurableOptions =
+                            dish.allowsSideDishes ||
+                            dish.allowsSpices ||
+                            dish.allowsSweetAdditions;
+
+                          return (
+                            <article
+                              key={dish.id}
+                              className={[
+                                "dish-card",
+                                hasAllergyWarning
+                                  ? "dish-card--allergy-warning"
+                                  : "",
+                              ]
+                                .filter(Boolean)
+                                .join(" ")}
+                            >
+                              <div className="dish-card__media">
+                                {imageUrl ? (
+                                  <img
+                                    src={imageUrl}
+                                    alt={dish.name}
+                                    className="dish-card__image"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div className="dish-card__image-fallback">
+                                    <img src="/logo.png" alt="" />
+
+                                    <span>Slika uskoro</span>
+                                  </div>
+                                )}
+
+                                <div className="dish-card__media-overlay" />
+
+                                <span className="dish-card__price">
+                                  {formatPrice(dish.price)}
+                                </span>
+
+                                {hasAllergyWarning && (
+                                  <span className="dish-card__warning-badge">
+                                    Upozorenje na alergene
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="dish-card__body">
+                                <div className="dish-card__main">
+                                  <h3 className="dish-card__title">
+                                    {dish.name}
+                                  </h3>
+
+                                  <p className="dish-card__description">
+                                    {dish.description}
+                                  </p>
+
+                                  {hasAllergyWarning && (
+                                    <div
+                                      className="dish-allergy-warning"
+                                      role="alert"
+                                    >
+                                      <div className="dish-allergy-warning__header">
+                                        <span
+                                          className="dish-allergy-warning__icon"
+                                          aria-hidden="true"
+                                        >
+                                          !
+                                        </span>
+
+                                        <strong>
+                                          Ovo jelo sadrži alergene označene na
+                                          tvom profilu
+                                        </strong>
+                                      </div>
+
+                                      {directAllergens.length > 0 && (
+                                        <p>
+                                          <strong>Sadrži:</strong>{" "}
+                                          {directAllergens
+                                            .map(
+                                              (allergen) =>
+                                                allergen.allergenName,
+                                            )
+                                            .join(", ")}
+                                        </p>
+                                      )}
+
+                                      {traceAllergens.length > 0 && (
+                                        <p>
+                                          <strong>
+                                            Može sadržati tragove:
+                                          </strong>{" "}
+                                          {traceAllergens
+                                            .map(
+                                              (allergen) =>
+                                                allergen.allergenName,
+                                            )
+                                            .join(", ")}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {dish.allergens.length > 0 && (
+                                    <div className="dish-card__allergens">
+                                      <span className="dish-card__allergens-label">
+                                        Alergeni
+                                      </span>
+
+                                      <div className="dish-card__allergen-list">
+                                        {dish.allergens.map((allergen) => (
+                                          <span
+                                            key={allergen.allergenId}
+                                            className={[
+                                              "dish-card__allergen",
+                                              allergen.isTrace
+                                                ? "dish-card__allergen--trace"
+                                                : "",
+                                            ]
+                                              .filter(Boolean)
+                                              .join(" ")}
+                                          >
+                                            {allergen.allergenName}
+
+                                            {allergen.isTrace && (
+                                              <small>tragovi</small>
+                                            )}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="dish-card__footer">
+                                  {canAddToCart ? (
+                                    <button
+                                      type="button"
+                                      className="dish-card__button"
+                                      onClick={() => {
+                                        if (!hasConfigurableOptions) {
+                                          handleAddDishDirectly(dish);
+                                          return;
+                                        }
+
+                                        setSelectedDish(dish);
+                                      }}
+                                    >
+                                      <span>
+                                        {hasConfigurableOptions
+                                          ? "Izaberi dodatke"
+                                          : "Dodaj u korpu"}
+                                      </span>
+
+                                      <span
+                                        className="dish-card__button-arrow"
+                                        aria-hidden="true"
+                                      >
+                                        →
+                                      </span>
+                                    </button>
+                                  ) : canOrder &&
+                                    restaurantSettings &&
+                                    !restaurantSettings.isDeliveryEnabled ? (
+                                    <div className="dish-card__notice dish-card__notice--error">
+                                      Dostava trenutno nije dostupna.
+                                    </div>
+                                  ) : isAuthenticated ? (
+                                    <div className="dish-card__notice">
+                                      Samo kupci mogu da dodaju jela u korpu.
+                                    </div>
+                                  ) : (
+                                    <div className="dish-card__login">
+                                      <p>
+                                        Prijavi se kao kupac da bi dodao jelo u
+                                        korpu.
+                                      </p>
+
+                                      <Link
+                                        to="/login"
+                                        className="dish-card__login-link"
+                                      >
+                                        Prijavi se
+                                      </Link>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </section>
                   ))}
                 </div>
-              )}
-
-              {canAddToCart ? (
-                <button
-                  type="button"
-                  style={{ marginTop: 8 }}
-                  onClick={() => {
-                    if (
-                      !d.allowsSideDishes &&
-                      !d.allowsSpices &&
-                      !d.allowsSweetAdditions
-                    ) {
-                      handleAddDishDirectly(d);
-                      return;
-                    }
-
-                    setSelectedDish(d);
-                  }}
-                >
-                  Dodaj u korpu
-                </button>
-              ) : canOrder &&
-                restaurantSettings &&
-                !restaurantSettings.isDeliveryEnabled ? (
-                <div style={{ marginTop: 10, color: "crimson", fontSize: 13 }}>
-                  Dostava trenutno nije dostupna.
-                </div>
-              ) : isAuthenticated ? (
-                <div style={{ marginTop: 10, color: "#777", fontSize: 13 }}>
-                  Samo kupci mogu da dodaju jela u korpu.
-                </div>
-              ) : (
-                <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
-                  <div style={{ color: "#777", fontSize: 13 }}>
-                    Prijavi se kao kupac da bi dodao jelo u korpu.
-                  </div>
-
-                  <Link to="/login" style={{ fontWeight: 700 }}>
-                    Prijavi se
-                  </Link>
-                </div>
-              )}
-            </div>
-          );
-        })}
+              </>
+            )}
+          </section>
+        </div>
       </div>
 
       {canAddToCart && selectedDish && (
@@ -411,6 +806,6 @@ export default function MenuPage() {
           onAddToCart={handleAddDishWithOptions}
         />
       )}
-    </div>
+    </main>
   );
 }

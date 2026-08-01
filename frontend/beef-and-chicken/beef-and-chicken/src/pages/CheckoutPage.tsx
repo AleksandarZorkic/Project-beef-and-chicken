@@ -16,6 +16,7 @@ import {
   type RestaurantSettingsDto,
 } from "../api/restaurantSettingsApi";
 import { cartSubtotal } from "../state/cart/cart.selectors";
+import "../styles/CheckoutPage.scss";
 
 type DeliveryPhoneMode = "Profile" | "Custom";
 
@@ -317,243 +318,584 @@ export default function CheckoutPage() {
     }
   }
 
-  if (!user) return <div>Niste prijavljeni.</div>;
+  if (!user) {
+    return (
+      <main className="checkout-state">
+        <div className="checkout-state__card">
+          <span className="checkout-state__eyebrow">PRIJAVA JE POTREBNA</span>
 
-  if (state.items.length === 0) return <div>Korpa je prazna</div>;
+          <h1 className="checkout-state__title">Niste prijavljeni</h1>
+
+          <p className="checkout-state__text">
+            Prijavite se kako biste nastavili sa kreiranjem porudžbine.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (state.items.length === 0) {
+    return (
+      <main className="checkout-state">
+        <div className="checkout-state__card">
+          <div className="checkout-state__logo-shell" aria-hidden="true">
+            <img src="/logo.png" alt="" className="checkout-state__logo" />
+          </div>
+
+          <span className="checkout-state__eyebrow">NEMA STAVKI</span>
+
+          <h1 className="checkout-state__title">Korpa je prazna</h1>
+
+          <p className="checkout-state__text">
+            Dodajte jela u korpu pre nego što nastavite sa poručivanjem.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <div>
-      <h2>Checkout</h2>
+    <main className="checkout-page">
+      <header className="checkout-page__header">
+        <div className="checkout-page__heading">
+          <span className="checkout-page__eyebrow">ZAVRŠETAK PORUDŽBINE</span>
 
-      <h3>Izaberi adresu dostave</h3>
+          <h1 className="checkout-page__title">Checkout</h1>
 
-      {loadingAddresses && <div>Učitavam adrese...</div>}
-
-      {!loadingAddresses && addresses.length === 0 && (
-        <div style={{ color: "crimson", marginBottom: 12 }}>
-          Nemaš nijednu sačuvanu adresu. Prvo dodaj adresu.
+          <p className="checkout-page__description">
+            Izaberite adresu, proverite kontakt podatke i odaberite način
+            plaćanja.
+          </p>
         </div>
-      )}
 
-      {!loadingAddresses && addresses.length > 0 && (
-        <AddressSelector
-          addresses={addresses}
-          selectedAddressId={selectedAddressId}
-          onSelect={setSelectedAddressId}
-        />
-      )}
+        <div className="checkout-steps" aria-label="Koraci poručivanja">
+          <div className="checkout-steps__item">
+            <span className="checkout-steps__number">1</span>
 
-      <button
-        type="button"
-        style={{ marginTop: 16 }}
-        onClick={() => setShowNewAddressForm((prev) => !prev)}
-      >
-        {showNewAddressForm ? "Zatvori formu" : "Dodaj novu adresu"}
-      </button>
+            <span className="checkout-steps__label">Adresa</span>
+          </div>
 
-      {showNewAddressForm && (
-        <AddressForm
-          value={newAddress}
-          onChange={setNewAddress}
-          onSubmit={onCreateAddress}
-          saving={savingAddress}
-        />
+          <span className="checkout-steps__divider" aria-hidden="true" />
+
+          <div className="checkout-steps__item">
+            <span className="checkout-steps__number">2</span>
+
+            <span className="checkout-steps__label">Kontakt</span>
+          </div>
+
+          <span className="checkout-steps__divider" aria-hidden="true" />
+
+          <div className="checkout-steps__item">
+            <span className="checkout-steps__number">3</span>
+
+            <span className="checkout-steps__label">Plaćanje</span>
+          </div>
+        </div>
+      </header>
+
+      {error && (
+        <div className="checkout-alert checkout-alert--error" role="alert">
+          <span className="checkout-alert__icon" aria-hidden="true">
+            !
+          </span>
+
+          <div>
+            <strong>Proverite podatke</strong>
+            <p>{error}</p>
+          </div>
+        </div>
       )}
 
       {successMessage && (
         <div
-          style={{
-            color: "green",
-            marginTop: 12,
-            padding: 10,
-            border: "1px solid green",
-            borderRadius: 8,
-            background: "#f0fff0",
-          }}
+          className="checkout-alert checkout-alert--success"
+          role="status"
+          aria-live="polite"
         >
-          {successMessage}
+          <span className="checkout-alert__icon" aria-hidden="true">
+            ✓
+          </span>
+
+          <div>
+            <strong>Uspešno</strong>
+            <p>{successMessage}</p>
+          </div>
         </div>
       )}
 
-      <div style={{ marginTop: 16 }}>
-        <strong>Kontakt telefon za dostavu:</strong>
+      <div className="checkout-layout">
+        <div className="checkout-form-column">
+          <section
+            className="checkout-card"
+            aria-labelledby="checkout-address-title"
+          >
+            <header className="checkout-card__header">
+              <span className="checkout-card__number" aria-hidden="true">
+                1
+              </span>
 
-        {user.phoneNumber ? (
-          <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
-            <label>
-              <input
-                type="radio"
-                name="deliveryPhoneMode"
-                value="Profile"
-                checked={deliveryPhoneMode === "Profile"}
-                onChange={() => {
-                  setDeliveryPhoneMode("Profile");
-                  setDeliveryContactPhoneNumber(user.phoneNumber ?? "");
-                  setError(null);
-                }}
-              />{" "}
-              Koristi broj sa profila: {user.phoneNumber}
-            </label>
+              <div>
+                <span className="checkout-card__eyebrow">MESTO DOSTAVE</span>
 
-            <label>
-              <input
-                type="radio"
-                name="deliveryPhoneMode"
-                value="Custom"
-                checked={deliveryPhoneMode === "Custom"}
-                onChange={() => {
-                  setDeliveryPhoneMode("Custom");
-                  setDeliveryContactPhoneNumber("");
-                  setError(null);
-                }}
-              />{" "}
-              Koristi drugi broj za ovu porudžbinu
-            </label>
-          </div>
-        ) : (
-          <div style={{ color: "#555", marginTop: 8 }}>
-            Nemaš broj telefona na profilu. Unesi broj za ovu dostavu.
-          </div>
-        )}
+                <h2
+                  id="checkout-address-title"
+                  className="checkout-card__title"
+                >
+                  Izaberite adresu
+                </h2>
 
-        {deliveryPhoneMode === "Custom" && (
-          <label style={{ display: "block", marginTop: 10 }}>
-            Broj telefona:
-            <input
-              type="tel"
-              value={deliveryContactPhoneNumber}
-              onChange={(e) => setDeliveryContactPhoneNumber(e.target.value)}
-              placeholder="0601234567"
-              style={{ display: "block", width: "100%", marginTop: 4 }}
-            />
-          </label>
-        )}
+                <p className="checkout-card__description">
+                  Porudžbina će biti dostavljena na izabranu adresu.
+                </p>
+              </div>
+            </header>
 
-        <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>
-          Kurir koristi ovaj broj ako treba da te pozove pri dostavi.
+            {loadingAddresses && (
+              <div
+                className="checkout-loading"
+                role="status"
+                aria-live="polite"
+              >
+                <span
+                  className="checkout-loading__spinner"
+                  aria-hidden="true"
+                />
+
+                <span>Učitavamo sačuvane adrese...</span>
+              </div>
+            )}
+
+            {!loadingAddresses && addresses.length === 0 && (
+              <div className="checkout-address-warning">
+                <span
+                  className="checkout-address-warning__icon"
+                  aria-hidden="true"
+                >
+                  !
+                </span>
+
+                <div>
+                  <strong>Nema sačuvanih adresa</strong>
+
+                  <p>Dodajte adresu pre nastavka porudžbine.</p>
+                </div>
+              </div>
+            )}
+
+            {!loadingAddresses && addresses.length > 0 && (
+              <div className="checkout-address-selector">
+                <AddressSelector
+                  addresses={addresses}
+                  selectedAddressId={selectedAddressId}
+                  onSelect={setSelectedAddressId}
+                />
+              </div>
+            )}
+
+            <button
+              type="button"
+              className={[
+                "checkout-address-toggle",
+                showNewAddressForm ? "checkout-address-toggle--open" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => setShowNewAddressForm((prev) => !prev)}
+            >
+              <span
+                className="checkout-address-toggle__icon"
+                aria-hidden="true"
+              >
+                {showNewAddressForm ? "−" : "+"}
+              </span>
+
+              <span>
+                {showNewAddressForm ? "Zatvori formu" : "Dodaj novu adresu"}
+              </span>
+            </button>
+
+            {showNewAddressForm && (
+              <div className="checkout-address-form">
+                <AddressForm
+                  value={newAddress}
+                  onChange={setNewAddress}
+                  onSubmit={onCreateAddress}
+                  saving={savingAddress}
+                />
+              </div>
+            )}
+          </section>
+
+          <section
+            className="checkout-card"
+            aria-labelledby="checkout-phone-title"
+          >
+            <header className="checkout-card__header">
+              <span className="checkout-card__number" aria-hidden="true">
+                2
+              </span>
+
+              <div>
+                <span className="checkout-card__eyebrow">
+                  KONTAKT ZA DOSTAVU
+                </span>
+
+                <h2 id="checkout-phone-title" className="checkout-card__title">
+                  Broj telefona
+                </h2>
+
+                <p className="checkout-card__description">
+                  Kurir može koristiti ovaj broj ako mu je potrebna pomoć pri
+                  dostavi.
+                </p>
+              </div>
+            </header>
+
+            {user.phoneNumber ? (
+              <div className="checkout-choice-group">
+                <label className="checkout-choice">
+                  <input
+                    type="radio"
+                    name="deliveryPhoneMode"
+                    value="Profile"
+                    checked={deliveryPhoneMode === "Profile"}
+                    onChange={() => {
+                      setDeliveryPhoneMode("Profile");
+                      setDeliveryContactPhoneNumber(user.phoneNumber ?? "");
+                      setError(null);
+                    }}
+                  />
+
+                  <span className="checkout-choice__control">
+                    <span className="checkout-choice__radio" />
+
+                    <span className="checkout-choice__content">
+                      <strong>Koristi broj sa profila</strong>
+
+                      <small>{user.phoneNumber}</small>
+                    </span>
+                  </span>
+                </label>
+
+                <label className="checkout-choice">
+                  <input
+                    type="radio"
+                    name="deliveryPhoneMode"
+                    value="Custom"
+                    checked={deliveryPhoneMode === "Custom"}
+                    onChange={() => {
+                      setDeliveryPhoneMode("Custom");
+                      setDeliveryContactPhoneNumber("");
+                      setError(null);
+                    }}
+                  />
+
+                  <span className="checkout-choice__control">
+                    <span className="checkout-choice__radio" />
+
+                    <span className="checkout-choice__content">
+                      <strong>Koristi drugi broj</strong>
+
+                      <small>Samo za ovu porudžbinu</small>
+                    </span>
+                  </span>
+                </label>
+              </div>
+            ) : (
+              <div className="checkout-phone-notice">
+                <span
+                  className="checkout-phone-notice__icon"
+                  aria-hidden="true"
+                >
+                  i
+                </span>
+
+                <p>
+                  Nemate broj telefona na profilu. Unesite broj koji će kurir
+                  koristiti za ovu dostavu.
+                </p>
+              </div>
+            )}
+
+            {deliveryPhoneMode === "Custom" && (
+              <div className="checkout-field">
+                <label
+                  className="checkout-field__label"
+                  htmlFor="delivery-phone"
+                >
+                  Broj telefona
+                </label>
+
+                <div className="checkout-field__input-wrapper">
+                  <span className="checkout-field__prefix" aria-hidden="true">
+                    ☎
+                  </span>
+
+                  <input
+                    id="delivery-phone"
+                    className="checkout-field__input"
+                    type="tel"
+                    value={deliveryContactPhoneNumber}
+                    onChange={(e) =>
+                      setDeliveryContactPhoneNumber(e.target.value)
+                    }
+                    placeholder="060 123 4567"
+                  />
+                </div>
+              </div>
+            )}
+
+            <p className="checkout-card__hint">
+              Broj se koristi isključivo u vezi sa ovom dostavom.
+            </p>
+          </section>
+
+          <section
+            className="checkout-card"
+            aria-labelledby="checkout-payment-title"
+          >
+            <header className="checkout-card__header">
+              <span className="checkout-card__number" aria-hidden="true">
+                3
+              </span>
+
+              <div>
+                <span className="checkout-card__eyebrow">NAČIN PLAĆANJA</span>
+
+                <h2
+                  id="checkout-payment-title"
+                  className="checkout-card__title"
+                >
+                  Kako želite da platite?
+                </h2>
+
+                <p className="checkout-card__description">
+                  Izaberite način plaćanja prilikom preuzimanja porudžbine.
+                </p>
+              </div>
+            </header>
+
+            <div className="checkout-choice-group checkout-choice-group--payment">
+              <label className="checkout-choice">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="Cash"
+                  checked={paymentMethod === "Cash"}
+                  onChange={() => setPaymentMethod("Cash")}
+                />
+
+                <span className="checkout-choice__control">
+                  <span className="checkout-choice__radio" />
+
+                  <span
+                    className="checkout-choice__payment-icon"
+                    aria-hidden="true"
+                  >
+                    RSD
+                  </span>
+
+                  <span className="checkout-choice__content">
+                    <strong>Gotovina</strong>
+
+                    <small>Plaćanje kuriru prilikom dostave</small>
+                  </span>
+                </span>
+              </label>
+
+              <label className="checkout-choice">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="CardOnDelivery"
+                  checked={paymentMethod === "CardOnDelivery"}
+                  onChange={() => setPaymentMethod("CardOnDelivery")}
+                />
+
+                <span className="checkout-choice__control">
+                  <span className="checkout-choice__radio" />
+
+                  <span
+                    className="checkout-choice__payment-icon"
+                    aria-hidden="true"
+                  >
+                    ▣
+                  </span>
+
+                  <span className="checkout-choice__content">
+                    <strong>Kartica pri dostavi</strong>
+
+                    <small>Plaćanje putem terminala kuriru</small>
+                  </span>
+                </span>
+              </label>
+            </div>
+          </section>
         </div>
+
+        <aside
+          className="checkout-summary"
+          aria-labelledby="checkout-summary-title"
+        >
+          <header className="checkout-summary__header">
+            <span className="checkout-summary__eyebrow">
+              PREGLED PORUDŽBINE
+            </span>
+
+            <h2 id="checkout-summary-title" className="checkout-summary__title">
+              Ukupan iznos
+            </h2>
+
+            <p className="checkout-summary__description">
+              Proverite uslove i konačan iznos pre potvrde.
+            </p>
+          </header>
+
+          <div className="checkout-summary__item-count">
+            <span>Broj stavki</span>
+
+            <strong>{state.items.length}</strong>
+          </div>
+
+          {loadingSettings && (
+            <div
+              className="checkout-loading checkout-loading--summary"
+              role="status"
+            >
+              <span className="checkout-loading__spinner" aria-hidden="true" />
+
+              <span>Učitavamo pravila dostave...</span>
+            </div>
+          )}
+
+          {!loadingSettings && restaurantSettings && (
+            <>
+              {!restaurantSettings.isDeliveryEnabled && (
+                <div className="checkout-summary__notice checkout-summary__notice--error">
+                  <strong>Dostava trenutno nije dostupna</strong>
+
+                  <p>Porudžbinu trenutno nije moguće potvrditi.</p>
+                </div>
+              )}
+
+              <div className="checkout-summary__rows">
+                <div className="checkout-summary__row">
+                  <span>Hrana</span>
+
+                  <strong>{subtotal.toLocaleString("sr-RS")} RSD</strong>
+                </div>
+
+                <div className="checkout-summary__row">
+                  <span>Dostava</span>
+
+                  <strong>
+                    {deliveryFee === 0
+                      ? "Besplatna"
+                      : `${deliveryFee.toLocaleString("sr-RS")} RSD`}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="checkout-summary__rules">
+                <div>
+                  <span>Minimalna porudžbina</span>
+
+                  <strong>
+                    {restaurantSettings.minimumOrderAmount.toLocaleString(
+                      "sr-RS",
+                    )}{" "}
+                    RSD
+                  </strong>
+                </div>
+
+                {restaurantSettings.freeDeliveryThreshold && (
+                  <div>
+                    <span>Besplatna dostava preko</span>
+
+                    <strong>
+                      {restaurantSettings.freeDeliveryThreshold.toLocaleString(
+                        "sr-RS",
+                      )}{" "}
+                      RSD
+                    </strong>
+                  </div>
+                )}
+              </div>
+
+              {missingForMinimum > 0 && (
+                <div className="checkout-summary__notice checkout-summary__notice--error">
+                  <strong>
+                    Nedostaje još {missingForMinimum.toLocaleString("sr-RS")}{" "}
+                    RSD
+                  </strong>
+
+                  <p>
+                    Dodajte još jela kako biste dostigli minimalnu porudžbinu.
+                  </p>
+                </div>
+              )}
+
+              {missingForMinimum === 0 && missingForFreeDelivery > 0 && (
+                <div className="checkout-summary__notice checkout-summary__notice--warning">
+                  <strong>
+                    Još {missingForFreeDelivery.toLocaleString("sr-RS")} RSD do
+                    besplatne dostave
+                  </strong>
+
+                  <p>Porudžbinu već možete potvrditi.</p>
+                </div>
+              )}
+
+              {missingForMinimum === 0 &&
+                missingForFreeDelivery === 0 &&
+                restaurantSettings.isDeliveryEnabled && (
+                  <div className="checkout-summary__notice checkout-summary__notice--success">
+                    <strong>Ostvarili ste besplatnu dostavu</strong>
+
+                    <p>Cena dostave neće biti dodata na račun.</p>
+                  </div>
+                )}
+
+              <div className="checkout-summary__total">
+                <span>Ukupno</span>
+
+                <strong>{totalAmount.toLocaleString("sr-RS")} RSD</strong>
+              </div>
+            </>
+          )}
+
+          <button
+            type="button"
+            className="checkout-summary__submit-button"
+            disabled={
+              loadingOrder ||
+              loadingAddresses ||
+              loadingSettings ||
+              !selectedAddressId ||
+              !restaurantSettings?.isDeliveryEnabled ||
+              missingForMinimum > 0
+            }
+            onClick={onSubmit}
+          >
+            <span>
+              {loadingOrder ? "Kreiramo porudžbinu..." : "Potvrdi porudžbinu"}
+            </span>
+
+            {!loadingOrder && (
+              <span
+                className="checkout-summary__submit-arrow"
+                aria-hidden="true"
+              >
+                →
+              </span>
+            )}
+          </button>
+
+          <p className="checkout-summary__security">
+            Podaci porudžbine obrađuju se bezbedno
+          </p>
+        </aside>
       </div>
-
-      <div style={{ marginTop: 16 }}>
-        <strong>Način plaćanja:</strong>
-
-        <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
-          <label>
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="Cash"
-              checked={paymentMethod === "Cash"}
-              onChange={() => setPaymentMethod("Cash")}
-            />{" "}
-            Gotovina
-          </label>
-
-          <label>
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="CardOnDelivery"
-              checked={paymentMethod === "CardOnDelivery"}
-              onChange={() => setPaymentMethod("CardOnDelivery")}
-            />{" "}
-            Kartica pri dostavi
-          </label>
-        </div>
-      </div>
-
-      {error && <div style={{ color: "crimson", marginTop: 12 }}>{error}</div>}
-
-      <div
-        style={{
-          marginTop: 20,
-          border: "1px solid #ddd",
-          borderRadius: 10,
-          padding: 14,
-          background: "white",
-          display: "grid",
-          gap: 8,
-        }}
-      >
-        <h3 style={{ margin: 0 }}>Pregled porudžbine</h3>
-
-        {loadingSettings && <div>Učitavam pravila dostave...</div>}
-
-        {!loadingSettings && restaurantSettings && (
-          <>
-            {!restaurantSettings.isDeliveryEnabled && (
-              <div style={{ color: "crimson", fontWeight: 700 }}>
-                Dostava trenutno nije dostupna.
-              </div>
-            )}
-
-            <div>
-              Hrana: <strong>{subtotal.toLocaleString("sr-RS")} RSD</strong>
-            </div>
-
-            <div>
-              Dostava:{" "}
-              <strong>
-                {deliveryFee === 0
-                  ? "Besplatna"
-                  : `${deliveryFee.toLocaleString("sr-RS")} RSD`}
-              </strong>
-            </div>
-
-            <div style={{ fontSize: 13, color: "#555" }}>
-              Minimalna porudžbina:{" "}
-              {restaurantSettings.minimumOrderAmount.toLocaleString("sr-RS")}{" "}
-              RSD
-            </div>
-
-            {restaurantSettings.freeDeliveryThreshold && (
-              <div style={{ fontSize: 13, color: "#555" }}>
-                Besplatna dostava preko:{" "}
-                {restaurantSettings.freeDeliveryThreshold.toLocaleString(
-                  "sr-RS",
-                )}{" "}
-                RSD
-              </div>
-            )}
-
-            {missingForMinimum > 0 && (
-              <div style={{ color: "crimson", fontWeight: 700 }}>
-                Dodaj još {missingForMinimum.toLocaleString("sr-RS")} RSD za
-                poručivanje.
-              </div>
-            )}
-
-            {missingForMinimum === 0 && missingForFreeDelivery > 0 && (
-              <div style={{ color: "#8a5a00" }}>
-                Dodaj još {missingForFreeDelivery.toLocaleString("sr-RS")} RSD
-                za besplatnu dostavu.
-              </div>
-            )}
-
-            <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
-              Ukupno:{" "}
-              <strong style={{ fontSize: 18 }}>
-                {totalAmount.toLocaleString("sr-RS")} RSD
-              </strong>
-            </div>
-          </>
-        )}
-      </div>
-
-      <button
-        disabled={
-          loadingOrder ||
-          loadingAddresses ||
-          loadingSettings ||
-          !selectedAddressId ||
-          !restaurantSettings?.isDeliveryEnabled ||
-          missingForMinimum > 0
-        }
-        style={{ marginTop: 12 }}
-        onClick={onSubmit}
-      >
-        {loadingOrder ? "Kreiram..." : "Poruči"}
-      </button>
-    </div>
+    </main>
   );
 }

@@ -21,7 +21,7 @@ import ProfileAllergensPage from "./pages/ProfileAllergensPage";
 import MyOrdersPage from "./pages/MyOrdersPage";
 import AllergensPage from "./pages/AllergensPage";
 
-import AddressesPage from "./components/address/AddressesPage";
+import AddressesPage from "../src/pages/AddressesPage";
 
 import AdminDishesPage from "./pages/AdminDishesPage";
 import AdminUsersPage from "./pages/AdminUsersPage";

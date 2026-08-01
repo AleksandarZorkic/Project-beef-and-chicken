@@ -11,6 +11,7 @@ export type CartItem = {
   cartItemId: string;
   dishId: number;
   name: string;
+  imageUrl?: string | null;
   unitPrice: number;
   optionsTotal: number;
   quantity: number;
@@ -41,6 +42,7 @@ export type CartAction =
       payload: {
         dishId: number;
         name: string;
+        imageUrl?: string | null;
         unitPrice: number;
         optionsTotal?: number;
         selectedOptions?: CartSelectedOption[];

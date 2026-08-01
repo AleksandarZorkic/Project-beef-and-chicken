@@ -154,6 +154,48 @@
     min-width: max-content;
     margin-left: auto;
   }
+  // ====================================================
+  // Guest authentication actions
+  // ====================================================
+
+  &__guest-actions {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+
+    min-width: max-content;
+  }
+
+  &__login-link,
+  &__register-link {
+    min-height: 42px;
+
+    white-space: nowrap;
+  }
+
+  &__login-link {
+    border-color: rgba(255, 255, 255, 0.11);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.065);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+  }
+
+  &__register-link {
+    box-shadow: 0 10px 24px rgba($color-accent, 0.14);
+
+    &:hover {
+      box-shadow: 0 14px 30px rgba($color-accent, 0.21);
+    }
+  }
+
+  &__mobile-guest-actions {
+    display: grid;
+    gap: $space-3;
+
+    width: 100%;
+  }
 
   &__cart-summary {
     display: flex;
@@ -536,12 +578,17 @@
 
     &__brand-description,
     &__cart-summary,
-    &__auth-button {
+    &__auth-button,
+    &__guest-actions {
       display: none;
     }
 
     &__mobile-auth {
       display: inline-flex;
+    }
+
+    &__mobile-guest-actions {
+      display: grid;
     }
 
     &__cart-button {

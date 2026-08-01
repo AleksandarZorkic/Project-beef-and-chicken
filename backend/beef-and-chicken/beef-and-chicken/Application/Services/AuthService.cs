@@ -17,7 +17,7 @@ namespace beef_and_chicken.Application.Services
         private readonly IConfiguration _configuration;
         private readonly IMapper _mapper;
         private readonly ILogger<AuthService> _logger;
-        private readonly IEmailService _emailService;
+        private readonly IEmailService _emailService;  
 
         public AuthService(
             UserManager<User> userManager,

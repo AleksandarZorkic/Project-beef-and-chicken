@@ -1,4 +1,5 @@
 import type { AddressDto } from "../../api/addressApi";
+import "./AddressSelector.scss";
 
 type AddressSelectorProps = {
   addresses: AddressDto[];
@@ -16,52 +17,119 @@ export default function AddressSelector({
   }
 
   return (
-    <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-      {addresses.map((address) => (
-        <label
-          key={address.id}
-          style={{
-            display: "block",
-            border:
-              selectedAddressId === address.id
-                ? "2px solid black"
-                : "1px solid #ccc",
-            borderRadius: 8,
-            padding: 12,
-            cursor: "pointer",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div
+      className="address-selector"
+      role="radiogroup"
+      aria-label="Izaberite adresu za dostavu"
+    >
+      {addresses.map((address) => {
+        const isSelected = selectedAddressId === address.id;
+
+        return (
+          <label
+            key={address.id}
+            className={[
+              "address-selector__option",
+              isSelected ? "address-selector__option--selected" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
             <input
+              className="address-selector__input"
               type="radio"
               name="selectedAddress"
-              checked={selectedAddressId === address.id}
+              checked={isSelected}
               onChange={() => onSelect(address.id)}
             />
-            <strong>{address.label?.trim() ? address.label : "Adresa"}</strong>
-            {address.isDefault && (
-              <span style={{ fontSize: 12, color: "green" }}>
-                (Podrazumevana)
+
+            <span className="address-selector__card">
+              <span className="address-selector__header">
+                <span className="address-selector__radio" aria-hidden="true">
+                  <span className="address-selector__radio-dot" />
+                </span>
+
+                <span className="address-selector__identity">
+                  <span className="address-selector__eyebrow">
+                    ADRESA ZA DOSTAVU
+                  </span>
+
+                  <strong className="address-selector__title">
+                    {address.label?.trim() ? address.label : "Adresa"}
+                  </strong>
+                </span>
+
+                {address.isDefault && (
+                  <span className="address-selector__default-badge">
+                    <span
+                      className="address-selector__default-dot"
+                      aria-hidden="true"
+                    />
+                    Podrazumevana
+                  </span>
+                )}
               </span>
-            )}
-          </div>
 
-          <div style={{ marginTop: 8 }}>
-            {address.street} {address.houseNumber}
-          </div>
+              <span className="address-selector__address">
+                <span
+                  className="address-selector__location-icon"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
 
-          <div>
-            {address.postalCode ? `${address.postalCode} ` : ""}
-            {address.city}
-          </div>
+                    <circle
+                      cx="12"
+                      cy="9"
+                      r="2.3"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    />
+                  </svg>
+                </span>
 
-          {address.note && (
-            <div style={{ marginTop: 6, fontStyle: "italic" }}>
-              Napomena: {address.note}
-            </div>
-          )}
-        </label>
-      ))}
+                <span className="address-selector__address-content">
+                  <strong>
+                    {address.street} {address.houseNumber}
+                  </strong>
+
+                  <span>
+                    {address.postalCode ? `${address.postalCode} ` : ""}
+                    {address.city}
+                  </span>
+                </span>
+              </span>
+
+              {address.note && (
+                <span className="address-selector__note">
+                  <span className="address-selector__note-label">Napomena</span>
+
+                  <span className="address-selector__note-text">
+                    {address.note}
+                  </span>
+                </span>
+              )}
+
+              {isSelected && (
+                <span
+                  className="address-selector__selected-mark"
+                  aria-hidden="true"
+                >
+                  ✓
+                </span>
+              )}
+            </span>
+          </label>
+        );
+      })}
     </div>
   );
 }

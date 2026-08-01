@@ -1,0 +1,370 @@
+@use "../../styles/abstracts/variables" as *;
+
+// ======================================================
+// Address selector
+// ======================================================
+
+.address-selector {
+  display: grid;
+  gap: 12px;
+
+  width: 100%;
+
+  &__option {
+    position: relative;
+
+    display: block;
+
+    cursor: pointer;
+  }
+
+  &__input {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+
+    overflow: hidden;
+
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+
+    white-space: nowrap;
+
+    border: 0;
+  }
+
+  &__card {
+    position: relative;
+
+    display: block;
+
+    padding: 17px;
+
+    overflow: hidden;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.04),
+        rgba(255, 255, 255, 0.018)
+      ),
+      rgba(0, 0, 0, 0.13);
+
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.02);
+
+    transition:
+      background-color $transition-fast,
+      border-color $transition-fast,
+      box-shadow $transition-base,
+      transform $transition-base;
+  }
+
+  &__option:hover &__card {
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.06),
+        rgba(255, 255, 255, 0.022)
+      ),
+      rgba(0, 0, 0, 0.15);
+
+    border-color: $color-border-strong;
+
+    transform: translateY(-1px);
+  }
+
+  &__option--selected &__card {
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba($color-accent, 0.1),
+        transparent 16rem
+      ),
+      linear-gradient(
+        145deg,
+        rgba($color-accent, 0.075),
+        rgba($color-primary, 0.045)
+      ),
+      rgba(0, 0, 0, 0.15);
+
+    border-color: rgba($color-accent, 0.58);
+
+    box-shadow:
+      0 0 0 2px rgba($color-accent, 0.07),
+      0 15px 34px rgba(0, 0, 0, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  }
+
+  &__input:focus-visible + &__card {
+    outline: 3px solid rgba($color-accent, 0.3);
+    outline-offset: 4px;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    padding-right: 32px;
+  }
+
+  &__radio {
+    position: relative;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+
+    background: rgba(0, 0, 0, 0.18);
+    border: 2px solid $color-border-strong;
+    border-radius: 50%;
+
+    transition:
+      background-color $transition-fast,
+      border-color $transition-fast,
+      box-shadow $transition-fast;
+  }
+
+  &__radio-dot {
+    width: 8px;
+    height: 8px;
+
+    background: $color-accent;
+    border-radius: 50%;
+
+    opacity: 0;
+    transform: scale(0.4);
+
+    transition:
+      opacity $transition-fast,
+      transform $transition-fast;
+  }
+
+  &__option--selected &__radio {
+    background: rgba($color-accent, 0.08);
+    border-color: $color-accent;
+
+    box-shadow: 0 0 0 4px rgba($color-accent, 0.1);
+  }
+
+  &__option--selected &__radio-dot {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  &__identity {
+    display: grid;
+    gap: 3px;
+
+    min-width: 0;
+  }
+
+  &__eyebrow {
+    color: $color-text-muted;
+
+    font-size: 0.59rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.11em;
+  }
+
+  &__title {
+    overflow: hidden;
+
+    color: $color-text;
+
+    font-size: 0.93rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__option--selected &__title {
+    color: $color-accent;
+  }
+
+  &__default-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    min-height: 27px;
+    margin-left: auto;
+    padding-inline: 9px;
+
+    color: #b8f3c9;
+
+    font-size: 0.6rem;
+    font-weight: $font-weight-extra-bold;
+
+    background: rgba(46, 134, 70, 0.13);
+    border: 1px solid rgba(84, 210, 121, 0.19);
+    border-radius: $radius-pill;
+
+    white-space: nowrap;
+  }
+
+  &__default-dot {
+    width: 6px;
+    height: 6px;
+
+    background: #66d586;
+    border-radius: 50%;
+
+    box-shadow: 0 0 0 3px rgba(102, 213, 134, 0.1);
+  }
+
+  &__address {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+
+    margin-top: 15px;
+    padding-top: 15px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.065);
+  }
+
+  &__location-icon {
+    display: grid;
+    place-items: center;
+
+    width: 33px;
+    height: 33px;
+    flex: 0 0 33px;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.06);
+    border: 1px solid rgba($color-accent, 0.11);
+    border-radius: $radius-md;
+
+    svg {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  &__address-content {
+    display: grid;
+    gap: 4px;
+
+    min-width: 0;
+
+    strong {
+      color: $color-text;
+
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    > span {
+      color: $color-text-soft;
+
+      font-size: 0.7rem;
+    }
+  }
+
+  &__note {
+    display: grid;
+    gap: 5px;
+
+    margin-top: 13px;
+    padding: 11px 12px;
+
+    background: rgba(0, 0, 0, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: $radius-md;
+  }
+
+  &__note-label {
+    color: $color-text-muted;
+
+    font-size: 0.58rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  &__note-text {
+    color: $color-text-soft;
+
+    font-size: 0.68rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  &__selected-mark {
+    position: absolute;
+    top: 11px;
+    right: 11px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 22px;
+    height: 22px;
+
+    color: #11140f;
+
+    font-size: 0.67rem;
+    font-weight: $font-weight-black;
+
+    background: $color-accent;
+    border-radius: 50%;
+
+    box-shadow: 0 6px 14px rgba($color-accent, 0.2);
+  }
+}
+
+// ======================================================
+// Responsive
+// ======================================================
+
+@media (max-width: $breakpoint-mobile) {
+  .address-selector {
+    &__card {
+      padding: 14px;
+    }
+
+    &__header {
+      align-items: flex-start;
+      flex-wrap: wrap;
+
+      padding-right: 30px;
+    }
+
+    &__identity {
+      flex: 1;
+    }
+
+    &__default-badge {
+      margin-left: 31px;
+    }
+
+    &__address {
+      margin-top: 13px;
+      padding-top: 13px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .address-selector__card,
+  .address-selector__radio,
+  .address-selector__radio-dot {
+    transition-duration: 0.01ms;
+  }
+}

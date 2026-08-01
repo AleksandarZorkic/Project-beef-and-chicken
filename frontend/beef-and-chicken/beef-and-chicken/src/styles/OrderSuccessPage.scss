@@ -1,0 +1,473 @@
+@use "./abstracts/variables" as *;
+
+// ======================================================
+// Order success page
+// ======================================================
+
+.order-success-page {
+  position: relative;
+
+  display: grid;
+  place-items: center;
+
+  min-height: calc(100vh - #{$header-height});
+  padding: clamp(50px, 8vw, 100px) 24px;
+
+  overflow: hidden;
+
+  color: $color-text;
+
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      rgba($color-primary, 0.12),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 85% 70%,
+      rgba($color-accent, 0.045),
+      transparent 24rem
+    );
+}
+
+// ======================================================
+// Success card
+// ======================================================
+
+.order-success-card {
+  position: relative;
+
+  display: grid;
+  justify-items: center;
+
+  width: min(100%, 720px);
+  padding: clamp(34px, 7vw, 68px);
+
+  overflow: hidden;
+
+  text-align: center;
+
+  background:
+    radial-gradient(
+      circle at top,
+      rgba($color-primary, 0.1),
+      transparent 24rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.065),
+      rgba(255, 255, 255, 0.018)
+    ),
+    $color-bg-soft;
+
+  border: 1px solid rgba($color-accent, 0.13);
+  border-radius: $radius-xl;
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  &::before {
+    position: absolute;
+    top: 0;
+    right: 15%;
+    left: 15%;
+
+    height: 1px;
+
+    content: "";
+
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba($color-accent, 0.58),
+      transparent
+    );
+  }
+
+  &__decoration {
+    position: absolute;
+    top: -135px;
+    left: 50%;
+
+    width: 310px;
+    height: 310px;
+
+    pointer-events: none;
+
+    border: 1px solid rgba($color-accent, 0.07);
+    border-radius: 50%;
+
+    transform: translateX(-50%);
+
+    box-shadow:
+      0 0 0 42px rgba($color-accent, 0.022),
+      0 0 0 84px rgba($color-accent, 0.014);
+  }
+
+  &__icon-shell {
+    position: relative;
+    z-index: 1;
+
+    display: grid;
+    place-items: center;
+
+    width: 92px;
+    height: 92px;
+
+    margin-bottom: $space-6;
+
+    color: #112015;
+
+    background: linear-gradient(135deg, #a9e8b9, #5dc57b);
+
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 50%;
+
+    box-shadow:
+      0 18px 42px rgba(67, 184, 97, 0.22),
+      0 0 0 9px rgba(74, 193, 109, 0.065),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+
+    animation: order-success-enter 520ms ease both;
+  }
+
+  &__icon {
+    width: 43px;
+    height: 43px;
+  }
+
+  &__eyebrow {
+    position: relative;
+    z-index: 1;
+
+    color: #a9e8b9;
+
+    font-size: 0.7rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.17em;
+  }
+
+  &__title {
+    position: relative;
+    z-index: 1;
+
+    max-width: 600px;
+
+    margin: $space-3 0 0;
+
+    color: $color-text;
+
+    font-family: $font-family-display;
+    font-size: clamp(2.8rem, 6vw, 4.8rem);
+    font-weight: $font-weight-black;
+    line-height: 0.95;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+
+    text-wrap: balance;
+  }
+
+  &__description {
+    position: relative;
+    z-index: 1;
+
+    max-width: 540px;
+
+    margin: $space-5 0 0;
+
+    color: $color-text-soft;
+
+    font-size: 0.93rem;
+    line-height: 1.75;
+  }
+
+  &__number {
+    position: relative;
+    z-index: 1;
+
+    display: grid;
+    justify-items: center;
+    gap: 7px;
+
+    min-width: min(100%, 280px);
+
+    margin-top: $space-7;
+    padding: 18px 24px;
+
+    background: linear-gradient(
+      145deg,
+      rgba($color-accent, 0.075),
+      rgba($color-primary, 0.04)
+    );
+
+    border: 1px solid rgba($color-accent, 0.18);
+    border-radius: $radius-lg;
+
+    box-shadow:
+      0 14px 34px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+    span {
+      color: $color-text-muted;
+
+      font-size: 0.67rem;
+      font-weight: $font-weight-bold;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    strong {
+      color: $color-accent;
+
+      font-family: $font-family-display;
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-weight: $font-weight-black;
+      line-height: 1;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  &__info {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    max-width: 540px;
+
+    margin-top: $space-5;
+    padding: 13px 15px;
+
+    color: $color-text-muted;
+
+    text-align: left;
+
+    background: rgba(255, 255, 255, 0.028);
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    p {
+      margin: 0;
+
+      font-size: 0.72rem;
+      line-height: 1.55;
+    }
+  }
+
+  &__info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 21px;
+
+    width: 21px;
+    height: 21px;
+
+    color: $color-accent;
+
+    font-size: 0.68rem;
+    font-weight: $font-weight-black;
+
+    background: rgba($color-accent, 0.075);
+    border: 1px solid rgba($color-accent, 0.14);
+    border-radius: 50%;
+  }
+
+  &__actions {
+    position: relative;
+    z-index: 1;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    gap: $space-3;
+
+    width: min(100%, 540px);
+
+    margin-top: $space-7;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $space-3;
+
+    min-height: 52px;
+    padding-inline: 18px;
+
+    font-size: 0.8rem;
+    font-weight: $font-weight-extra-bold;
+    text-decoration: none;
+
+    border-radius: $radius-md;
+
+    transition:
+      transform $transition-base,
+      filter $transition-fast,
+      color $transition-fast,
+      background-color $transition-fast,
+      border-color $transition-fast,
+      box-shadow $transition-base;
+
+    &--primary {
+      justify-content: space-between;
+
+      color: #11140f;
+
+      background: linear-gradient(135deg, $color-accent, #f0b628);
+
+      border: 1px solid rgba(255, 255, 255, 0.18);
+
+      box-shadow:
+        0 13px 30px rgba($color-accent, 0.17),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+
+      &:hover {
+        filter: brightness(1.055);
+
+        box-shadow:
+          0 17px 38px rgba($color-accent, 0.23),
+          inset 0 1px 0 rgba(255, 255, 255, 0.32);
+
+        transform: translateY(-2px);
+
+        .order-success-card__link-arrow {
+          transform: translateX(4px);
+        }
+      }
+    }
+
+    &--secondary {
+      color: $color-text-soft;
+
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid $color-border;
+
+      &:hover {
+        color: $color-text;
+
+        background: rgba(255, 255, 255, 0.065);
+        border-color: $color-border-strong;
+
+        transform: translateY(-1px);
+      }
+    }
+
+    &:focus-visible {
+      outline: 3px solid rgba($color-accent, 0.34);
+      outline-offset: 4px;
+    }
+  }
+
+  &__link-arrow {
+    font-size: 1.08rem;
+
+    transition: transform $transition-base;
+  }
+
+  &__footer {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    margin-top: $space-7;
+
+    color: $color-text-muted;
+
+    font-size: 0.67rem;
+    font-weight: $font-weight-semibold;
+    letter-spacing: 0.05em;
+  }
+
+  &__logo {
+    width: 30px;
+    height: 30px;
+
+    object-fit: contain;
+
+    opacity: 0.75;
+
+    filter: drop-shadow(0 7px 12px rgba(0, 0, 0, 0.35));
+  }
+}
+
+// ======================================================
+// Animation
+// ======================================================
+
+@keyframes order-success-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// ======================================================
+// Responsive
+// ======================================================
+
+@media (max-width: $breakpoint-mobile) {
+  .order-success-page {
+    padding: 32px 16px;
+  }
+
+  .order-success-card {
+    padding: 34px 20px;
+
+    border-radius: $radius-lg;
+
+    &__icon-shell {
+      width: 78px;
+      height: 78px;
+
+      margin-bottom: $space-5;
+    }
+
+    &__icon {
+      width: 36px;
+      height: 36px;
+    }
+
+    &__title {
+      font-size: 2.75rem;
+    }
+
+    &__description {
+      font-size: 0.85rem;
+    }
+
+    &__actions {
+      grid-template-columns: 1fr;
+    }
+
+    &__link--primary {
+      order: 1;
+    }
+
+    &__link--secondary {
+      order: 2;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-success-card__icon-shell {
+    animation-duration: 0.01ms;
+  }
+
+  .order-success-card__link,
+  .order-success-card__link-arrow {
+    transition-duration: 0.01ms;
+  }
+}

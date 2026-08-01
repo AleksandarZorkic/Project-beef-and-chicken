@@ -164,15 +164,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     navigate("/cart");
   }
 
-  function handleAuthentication() {
-    if (isAuthenticated) {
-      handleLogout();
-      return;
-    }
-
-    navigate("/login");
-  }
-
   return (
     <div className="app-layout">
       <header className="app-header">
@@ -260,13 +251,31 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </button>
               )}
 
-              <button
-                type="button"
-                className="btn btn--ghost btn--sm app-header__auth-button"
-                onClick={handleAuthentication}
-              >
-                {isAuthenticated ? "Odjavi se" : "Prijavi se"}
-              </button>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm app-header__auth-button"
+                  onClick={handleLogout}
+                >
+                  Odjavi se
+                </button>
+              ) : (
+                <div className="app-header__guest-actions">
+                  <NavLink
+                    to="/login"
+                    className="btn btn--ghost btn--sm app-header__login-link"
+                  >
+                    Prijavi se
+                  </NavLink>
+
+                  <NavLink
+                    to="/register"
+                    className="btn btn--primary btn--sm app-header__register-link"
+                  >
+                    Registruj se
+                  </NavLink>
+                </div>
+              )}
 
               <button
                 type="button"
@@ -378,13 +387,33 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </div>
               )}
 
-              <button
-                type="button"
-                className="btn btn--ghost btn--full app-header__mobile-auth"
-                onClick={handleAuthentication}
-              >
-                {isAuthenticated ? "Odjavi se" : "Prijavi se"}
-              </button>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--full app-header__mobile-auth"
+                  onClick={handleLogout}
+                >
+                  Odjavi se
+                </button>
+              ) : (
+                <div className="app-header__mobile-guest-actions">
+                  <NavLink
+                    to="/login"
+                    className="btn btn--ghost btn--full"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Prijavi se
+                  </NavLink>
+
+                  <NavLink
+                    to="/register"
+                    className="btn btn--primary btn--full"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Registruj se
+                  </NavLink>
+                </div>
+              )}
             </div>
           </div>
         )}

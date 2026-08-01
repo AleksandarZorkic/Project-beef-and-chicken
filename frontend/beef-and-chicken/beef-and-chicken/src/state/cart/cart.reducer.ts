@@ -34,7 +34,10 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
     case "LOAD-CART":
       return {
         ownerUserId: action.payload.ownerUserId,
-        items: action.payload.cart.items,
+        items: action.payload.cart.items.map((item) => ({
+          ...item,
+          imageUrl: item.imageUrl ?? null,
+        })),
         notes: action.payload.cart.notes,
       };
 
@@ -64,7 +67,11 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           ...state,
           items: state.items.map((item) =>
             item.cartItemId === existing.cartItemId
-              ? { ...item, quantity: item.quantity + 1 }
+              ? {
+                  ...item,
+                  quantity: item.quantity + 1,
+                  imageUrl: item.imageUrl ?? action.payload.imageUrl ?? null,
+                }
               : item,
           ),
         };
@@ -78,6 +85,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
             cartItemId: createCartItemId(),
             dishId: action.payload.dishId,
             name: action.payload.name,
+            imageUrl: action.payload.imageUrl ?? null,
             unitPrice: action.payload.unitPrice,
             optionsTotal,
             quantity: 1,

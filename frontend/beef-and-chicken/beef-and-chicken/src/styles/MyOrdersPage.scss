@@ -1,0 +1,972 @@
+@use "./abstracts/variables" as *;
+
+// ======================================================
+// My orders page
+// ======================================================
+
+.my-orders-page {
+  width: 100%;
+  padding-block: clamp(46px, 6vw, 82px);
+
+  color: $color-text;
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $space-6;
+
+    margin-bottom: clamp(34px, 5vw, 56px);
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: $space-2;
+
+    color: $color-accent;
+
+    font-size: 0.72rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.17em;
+  }
+
+  &__title {
+    margin: 0;
+
+    font-family: $font-family-display;
+    font-size: clamp(3.4rem, 7vw, 5.8rem);
+    font-weight: $font-weight-black;
+    line-height: 0.9;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+
+  &__description {
+    max-width: 650px;
+
+    margin: $space-4 0 0;
+
+    color: $color-text-soft;
+
+    font-size: 0.96rem;
+    line-height: 1.7;
+  }
+
+  &__realtime {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 12px 15px;
+
+    color: #b8f3c9;
+
+    font-size: 0.7rem;
+    font-weight: $font-weight-bold;
+
+    background: rgba(55, 181, 94, 0.075);
+    border: 1px solid rgba(84, 210, 121, 0.16);
+    border-radius: $radius-pill;
+  }
+
+  &__realtime-dot {
+    position: relative;
+
+    width: 8px;
+    height: 8px;
+
+    background: #66d586;
+    border-radius: 50%;
+
+    box-shadow: 0 0 0 4px rgba(102, 213, 134, 0.1);
+
+    &::after {
+      position: absolute;
+      inset: -5px;
+
+      content: "";
+
+      border: 1px solid rgba(102, 213, 134, 0.34);
+      border-radius: 50%;
+
+      animation: orders-realtime-pulse 1.8s ease-out infinite;
+    }
+  }
+}
+
+// ======================================================
+// Alerts and loading
+// ======================================================
+
+.orders-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  margin-bottom: $space-5;
+  padding: 14px 16px;
+
+  border: 1px solid transparent;
+  border-radius: $radius-lg;
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 24px;
+
+    width: 24px;
+    height: 24px;
+
+    font-size: 0.75rem;
+    font-weight: $font-weight-black;
+
+    border: 1px solid currentColor;
+    border-radius: 50%;
+  }
+
+  strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 0.8rem;
+  }
+
+  p {
+    margin: 0;
+
+    font-size: 0.74rem;
+    line-height: 1.55;
+  }
+
+  &--error {
+    color: #ffb3b3;
+
+    background: rgba(137, 29, 29, 0.16);
+    border-color: rgba(255, 91, 91, 0.23);
+  }
+}
+
+.orders-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+
+  min-height: 320px;
+  padding: 40px;
+
+  color: $color-text-soft;
+
+  text-align: left;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba($color-primary, 0.08),
+      transparent 20rem
+    ),
+    rgba(255, 255, 255, 0.025);
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  &__spinner {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+
+    border: 3px solid rgba($color-accent, 0.13);
+    border-top-color: $color-accent;
+    border-radius: 50%;
+
+    animation: orders-loading-spin 700ms linear infinite;
+  }
+
+  strong {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: $color-text;
+
+    font-size: 0.9rem;
+  }
+
+  p {
+    margin: 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.74rem;
+  }
+}
+
+// ======================================================
+// Empty state
+// ======================================================
+
+.orders-empty {
+  display: grid;
+  justify-items: center;
+
+  min-height: 430px;
+  padding: clamp(48px, 8vw, 78px) 24px;
+
+  text-align: center;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba($color-primary, 0.09),
+      transparent 21rem
+    ),
+    rgba(255, 255, 255, 0.025);
+
+  border: 1px dashed $color-border-strong;
+  border-radius: $radius-xl;
+
+  &__logo-shell {
+    display: grid;
+    place-items: center;
+
+    width: 112px;
+    height: 112px;
+
+    margin-bottom: $space-5;
+
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba($color-accent, 0.11);
+    border-radius: 50%;
+  }
+
+  &__logo {
+    width: 82px;
+    height: 82px;
+
+    object-fit: contain;
+
+    opacity: 0.82;
+
+    filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.4));
+  }
+
+  &__eyebrow {
+    color: $color-accent;
+
+    font-size: 0.67rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.15em;
+  }
+
+  &__title {
+    margin: $space-3 0 0;
+
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1;
+  }
+
+  &__description {
+    max-width: 470px;
+
+    margin: $space-4 0 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.86rem;
+    line-height: 1.65;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-5;
+
+    min-width: 210px;
+    min-height: 50px;
+
+    margin-top: $space-6;
+    padding-inline: 18px;
+
+    color: #11140f;
+
+    font-size: 0.8rem;
+    font-weight: $font-weight-extra-bold;
+    text-decoration: none;
+
+    background: linear-gradient(135deg, $color-accent, #f0b628);
+
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: $radius-md;
+
+    box-shadow:
+      0 13px 30px rgba($color-accent, 0.17),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
+    transition:
+      filter $transition-fast,
+      box-shadow $transition-base,
+      transform $transition-base;
+
+    &:hover {
+      filter: brightness(1.055);
+
+      box-shadow:
+        0 17px 36px rgba($color-accent, 0.23),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// ======================================================
+// Orders list
+// ======================================================
+
+.orders-list {
+  display: grid;
+  gap: $space-6;
+}
+
+// ======================================================
+// Order card
+// ======================================================
+
+.order-card {
+  position: relative;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba($color-primary, 0.08),
+      transparent 25rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.052),
+      rgba(255, 255, 255, 0.018)
+    ),
+    $color-bg-soft;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  box-shadow:
+    0 20px 52px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.028);
+
+  transition:
+    border-color $transition-base,
+    box-shadow $transition-base,
+    transform $transition-base;
+
+  &:hover {
+    border-color: rgba($color-accent, 0.16);
+
+    box-shadow:
+      0 26px 62px rgba(0, 0, 0, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+    transform: translateY(-2px);
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-5;
+
+    padding: clamp(22px, 4vw, 32px);
+
+    background: rgba(255, 255, 255, 0.018);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: $color-accent;
+
+    font-size: 0.65rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.15em;
+  }
+
+  &__title {
+    margin: 0;
+
+    color: $color-text;
+
+    font-family: $font-family-display;
+    font-size: clamp(1.8rem, 4vw, 2.65rem);
+    font-weight: $font-weight-black;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  &__header-side {
+    display: flex;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 11px;
+  }
+
+  &__header-total {
+    color: $color-accent;
+
+    font-family: $font-family-display;
+    font-size: 1.45rem;
+    font-weight: $font-weight-black;
+    white-space: nowrap;
+  }
+
+  &__body {
+    display: grid;
+    grid-template-columns:
+      minmax(220px, 0.75fr)
+      minmax(0, 1.25fr);
+    gap: $space-5;
+
+    padding: clamp(22px, 4vw, 32px);
+  }
+
+  &__section {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    min-width: 0;
+    padding: 15px;
+
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.065);
+    border-radius: $radius-lg;
+
+    &--note {
+      grid-column: 1;
+
+      color: $color-text-soft;
+    }
+  }
+
+  &__section-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 36px;
+
+    width: 36px;
+    height: 36px;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.065);
+    border: 1px solid rgba($color-accent, 0.12);
+    border-radius: $radius-md;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  &__section-label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: $color-text-muted;
+
+    font-size: 0.63rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  &__address-main {
+    display: block;
+
+    color: $color-text;
+
+    font-size: 0.83rem;
+    line-height: 1.4;
+  }
+
+  &__address-city {
+    display: block;
+
+    margin-top: 3px;
+
+    color: $color-text-soft;
+
+    font-size: 0.74rem;
+  }
+
+  &__address-note {
+    margin: 9px 0 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.69rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  &__note-text {
+    margin: 0;
+
+    color: $color-text-soft;
+
+    font-size: 0.74rem;
+    line-height: 1.6;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $space-6;
+
+    padding: clamp(22px, 4vw, 32px);
+
+    background: rgba(0, 0, 0, 0.12);
+    border-top: 1px solid rgba(255, 255, 255, 0.065);
+  }
+
+  &__cancel-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 43px;
+    padding-inline: 14px;
+
+    color: #ffaaaa;
+
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: $font-weight-bold;
+
+    background: rgba(145, 32, 32, 0.1);
+    border: 1px solid rgba(255, 91, 91, 0.17);
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    transition:
+      color $transition-fast,
+      background-color $transition-fast,
+      border-color $transition-fast,
+      transform $transition-base;
+
+    &:hover {
+      color: #ffd0d0;
+
+      background: rgba(175, 41, 41, 0.17);
+      border-color: rgba(255, 91, 91, 0.28);
+
+      transform: translateY(-1px);
+    }
+
+    &:focus-visible {
+      outline: 3px solid rgba(255, 91, 91, 0.25);
+      outline-offset: 3px;
+    }
+  }
+
+  &__cancel-icon {
+    width: 17px;
+    height: 17px;
+  }
+}
+
+// ======================================================
+// Status
+// ======================================================
+
+.order-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  min-height: 32px;
+  padding-inline: 12px;
+
+  font-size: 0.68rem;
+  font-weight: $font-weight-extra-bold;
+
+  border: 1px solid transparent;
+  border-radius: $radius-pill;
+
+  &__dot {
+    width: 7px;
+    height: 7px;
+
+    background: currentColor;
+    border-radius: 50%;
+
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.04);
+  }
+
+  &--waiting {
+    color: #ffd36f;
+
+    background: rgba(175, 120, 18, 0.12);
+    border-color: rgba(255, 202, 68, 0.2);
+  }
+
+  &--accepted {
+    color: #ffb36b;
+
+    background: rgba(172, 86, 22, 0.13);
+    border-color: rgba(255, 145, 55, 0.2);
+  }
+
+  &--ready {
+    color: #8fcaff;
+
+    background: rgba(37, 104, 164, 0.14);
+    border-color: rgba(93, 169, 235, 0.21);
+  }
+
+  &--delivery {
+    color: #c5a7ff;
+
+    background: rgba(92, 55, 155, 0.14);
+    border-color: rgba(164, 123, 235, 0.21);
+  }
+
+  &--delivered {
+    color: #9be3ae;
+
+    background: rgba(38, 139, 68, 0.14);
+    border-color: rgba(84, 210, 121, 0.2);
+  }
+
+  &--rejected {
+    color: #ffaaaa;
+
+    background: rgba(137, 29, 29, 0.14);
+    border-color: rgba(255, 91, 91, 0.2);
+  }
+
+  &--default {
+    color: $color-text-soft;
+
+    background: rgba(255, 255, 255, 0.04);
+    border-color: $color-border;
+  }
+}
+
+// ======================================================
+// Order items
+// ======================================================
+
+.order-items {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+
+  min-width: 0;
+  padding: 18px;
+
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: $radius-lg;
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $space-4;
+
+    margin-bottom: $space-4;
+    padding-bottom: $space-4;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: $color-accent;
+
+    font-size: 0.61rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.12em;
+  }
+
+  &__title {
+    margin: 0;
+
+    color: $color-text;
+
+    font-size: 1.15rem;
+  }
+
+  &__count {
+    color: $color-text-muted;
+
+    font-size: 0.67rem;
+  }
+
+  &__list {
+    display: grid;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-4;
+
+    padding-block: 11px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+
+    &:first-child {
+      padding-top: 0;
+    }
+
+    &:last-child {
+      padding-bottom: 0;
+
+      border-bottom: 0;
+    }
+  }
+
+  &__item-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    min-width: 0;
+  }
+
+  &__quantity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 29px;
+
+    width: 29px;
+    height: 29px;
+
+    color: $color-accent;
+
+    font-size: 0.65rem;
+    font-weight: $font-weight-extra-bold;
+
+    background: rgba($color-accent, 0.065);
+    border: 1px solid rgba($color-accent, 0.12);
+    border-radius: 50%;
+  }
+
+  &__name {
+    overflow: hidden;
+
+    color: $color-text-soft;
+
+    font-size: 0.76rem;
+    font-weight: $font-weight-semibold;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__price {
+    flex: 0 0 auto;
+
+    color: $color-text;
+
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+}
+
+// ======================================================
+// Totals
+// ======================================================
+
+.order-totals {
+  display: grid;
+  gap: 9px;
+
+  min-width: min(100%, 310px);
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-6;
+
+    color: $color-text-muted;
+
+    font-size: 0.73rem;
+
+    strong {
+      color: $color-text-soft;
+
+      font-size: 0.76rem;
+      white-space: nowrap;
+    }
+
+    &--total {
+      margin-top: 3px;
+      padding-top: 11px;
+
+      color: $color-text;
+
+      font-size: 0.83rem;
+      font-weight: $font-weight-bold;
+
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+
+      strong {
+        color: $color-accent;
+
+        font-family: $font-family-display;
+        font-size: 1.35rem;
+        font-weight: $font-weight-black;
+      }
+    }
+  }
+}
+
+// ======================================================
+// Animation
+// ======================================================
+
+@keyframes orders-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orders-realtime-pulse {
+  from {
+    opacity: 0.8;
+    transform: scale(0.55);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+// ======================================================
+// Responsive
+// ======================================================
+
+@media (max-width: $breakpoint-tablet) {
+  .my-orders-page {
+    padding-block: $space-8;
+
+    &__header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+
+  .order-card {
+    &__body {
+      grid-template-columns: 1fr;
+    }
+
+    &__section--note {
+      grid-column: auto;
+    }
+  }
+
+  .order-items {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .my-orders-page {
+    padding-block: $space-7;
+
+    &__title {
+      font-size: 3.25rem;
+    }
+
+    &__realtime {
+      width: 100%;
+
+      justify-content: center;
+    }
+  }
+
+  .order-card {
+    border-radius: $radius-lg;
+
+    &__header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    &__header-side {
+      align-items: flex-start;
+
+      width: 100%;
+    }
+
+    &__header-total {
+      font-size: 1.3rem;
+    }
+
+    &__body,
+    &__footer {
+      padding: $space-5;
+    }
+
+    &__footer {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    &__cancel-button {
+      width: 100%;
+    }
+  }
+
+  .order-items {
+    padding: 15px;
+
+    &__item {
+      align-items: flex-start;
+    }
+
+    &__name {
+      white-space: normal;
+    }
+  }
+
+  .order-totals {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .my-orders-page__realtime-dot::after,
+  .orders-loading__spinner {
+    animation-duration: 0.01ms;
+  }
+
+  .order-card,
+  .order-card__cancel-button,
+  .orders-empty__link {
+    transition-duration: 0.01ms;
+  }
+}
