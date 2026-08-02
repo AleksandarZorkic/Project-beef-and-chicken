@@ -390,13 +390,15 @@
   &::after {
     bottom: 0;
 
-    height: 190px;
+    height: 250px;
 
     background: linear-gradient(
       180deg,
       transparent 0%,
-      rgba($color-bg, 0.25) 50%,
-      rgba($color-bg, 0.84) 100%
+      rgba($color-bg, 0.12) 28%,
+      rgba($color-bg, 0.42) 58%,
+      rgba($color-bg, 0.88) 86%,
+      $color-bg 100%
     );
   }
 
@@ -430,15 +432,32 @@
     z-index: 1;
 
     background:
-      linear-gradient(
-        90deg,
-        rgba(5, 8, 6, 0.98) 0%,
-        rgba(5, 8, 6, 0.92) 29%,
-        rgba(5, 8, 6, 0.62) 52%,
-        rgba(5, 8, 6, 0.22) 76%,
-        rgba(5, 8, 6, 0.08) 100%
+    // Extra darkness in the bottom-right corner.
+      radial-gradient(
+        ellipse 48% 42% at 100% 100%,
+        rgba(5, 8, 6, 1) 0%,
+        rgba(5, 8, 6, 0.94) 22%,
+        rgba(5, 8, 6, 0.72) 42%,
+        rgba(5, 8, 6, 0.34) 62%,
+        transparent 82%
       ),
-      linear-gradient(0deg, rgba(5, 8, 6, 0.5) 0%, transparent 52%);
+      // Existing dark layer behind the hero text.
+      linear-gradient(
+          90deg,
+          rgba(5, 8, 6, 0.98) 0%,
+          rgba(5, 8, 6, 0.92) 29%,
+          rgba(5, 8, 6, 0.62) 52%,
+          rgba(5, 8, 6, 0.25) 76%,
+          rgba(5, 8, 6, 0.1) 100%
+        ),
+      // Gradual darkness from the bottom.
+      linear-gradient(
+          0deg,
+          rgba(5, 8, 6, 0.86) 0%,
+          rgba(5, 8, 6, 0.52) 18%,
+          rgba(5, 8, 6, 0.2) 36%,
+          transparent 58%
+        );
   }
 
   &__inner {
@@ -1231,6 +1250,52 @@
     .home-section-heading__text {
       font-size: 0.94rem;
       line-height: 1.7;
+    }
+  }
+}
+
+// ======================================================
+// Responsive: wide and short laptop screens
+// ======================================================
+
+@media (min-width: 1100px) and (max-height: 900px) {
+  .home-hero {
+    &__video {
+      object-position: center 18%;
+
+      transform: scale(1.07);
+      transform-origin: center;
+    }
+
+    &__overlay {
+      background:
+        radial-gradient(
+          ellipse 52% 46% at 100% 100%,
+          rgba(5, 8, 6, 1) 0%,
+          rgba(5, 8, 6, 0.98) 24%,
+          rgba(5, 8, 6, 0.8) 45%,
+          rgba(5, 8, 6, 0.4) 64%,
+          transparent 83%
+        ),
+        linear-gradient(
+          90deg,
+          rgba(5, 8, 6, 0.98) 0%,
+          rgba(5, 8, 6, 0.92) 29%,
+          rgba(5, 8, 6, 0.62) 52%,
+          rgba(5, 8, 6, 0.27) 76%,
+          rgba(5, 8, 6, 0.12) 100%
+        ),
+        linear-gradient(
+          0deg,
+          rgba(5, 8, 6, 0.94) 0%,
+          rgba(5, 8, 6, 0.6) 20%,
+          rgba(5, 8, 6, 0.22) 40%,
+          transparent 60%
+        );
+    }
+
+    &::after {
+      height: 270px;
     }
   }
 }

@@ -1,0 +1,960 @@
+@use "./abstracts/variables" as *;
+
+// ======================================================
+// Allergens page
+// ======================================================
+
+.allergens-page {
+  width: 100%;
+  padding-block: clamp(46px, 6vw, 82px);
+
+  color: $color-text;
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $space-7;
+
+    margin-bottom: clamp(34px, 5vw, 56px);
+  }
+
+  &__heading {
+    max-width: 720px;
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: $space-2;
+
+    color: $color-accent;
+
+    font-size: 0.72rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.17em;
+  }
+
+  &__title {
+    margin: 0;
+
+    font-family: $font-family-display;
+    font-size: clamp(3.4rem, 7vw, 5.8rem);
+    font-weight: $font-weight-black;
+    line-height: 0.9;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+
+  &__description {
+    max-width: 660px;
+
+    margin: $space-4 0 0;
+
+    color: $color-text-soft;
+
+    font-size: 0.96rem;
+    line-height: 1.7;
+  }
+
+  &__count {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+
+    padding: 13px 16px;
+
+    color: $color-text-muted;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+
+    strong {
+      color: $color-accent;
+
+      font-family: $font-family-display;
+      font-size: 1.8rem;
+      font-weight: $font-weight-black;
+      line-height: 1;
+    }
+
+    span {
+      font-size: 0.7rem;
+      font-weight: $font-weight-semibold;
+      white-space: nowrap;
+    }
+  }
+}
+
+// ======================================================
+// Alerts
+// ======================================================
+
+.allergens-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  margin-bottom: $space-5;
+  padding: 14px 16px;
+
+  border: 1px solid transparent;
+  border-radius: $radius-lg;
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 24px;
+
+    width: 24px;
+    height: 24px;
+
+    font-size: 0.75rem;
+    font-weight: $font-weight-black;
+
+    border: 1px solid currentColor;
+    border-radius: 50%;
+  }
+
+  strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 0.8rem;
+  }
+
+  p {
+    margin: 0;
+
+    font-size: 0.74rem;
+    line-height: 1.55;
+  }
+
+  &--success {
+    color: #b8f3c9;
+
+    background: rgba(46, 134, 70, 0.14);
+    border-color: rgba(84, 210, 121, 0.2);
+  }
+
+  &--error {
+    color: #ffb3b3;
+
+    background: rgba(137, 29, 29, 0.16);
+    border-color: rgba(255, 91, 91, 0.23);
+  }
+}
+
+// ======================================================
+// Form panel
+// ======================================================
+
+.allergens-form-panel {
+  padding: clamp(23px, 4vw, 32px);
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba($color-primary, 0.085),
+      transparent 24rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.052),
+      rgba(255, 255, 255, 0.018)
+    ),
+    $color-bg-soft;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  box-shadow:
+    0 20px 52px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    gap: $space-4;
+
+    margin-bottom: $space-6;
+    padding-bottom: $space-5;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 43px;
+
+    width: 43px;
+    height: 43px;
+
+    color: #11140f;
+
+    font-family: $font-family-display;
+    font-size: 1.2rem;
+    font-weight: $font-weight-black;
+
+    background: linear-gradient(135deg, $color-accent, #f0b628);
+
+    border-radius: $radius-md;
+
+    box-shadow: 0 10px 24px rgba($color-accent, 0.15);
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: $color-accent;
+
+    font-size: 0.63rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  &__title {
+    margin: 0;
+
+    color: $color-text;
+
+    font-size: clamp(1.4rem, 3vw, 1.85rem);
+    line-height: 1.15;
+  }
+
+  &__description {
+    margin: 8px 0 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.73rem;
+    line-height: 1.55;
+  }
+
+  &__editing-badge {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 30px;
+    margin-left: auto;
+    padding-inline: 10px;
+
+    color: $color-accent;
+
+    font-size: 0.62rem;
+    font-weight: $font-weight-extra-bold;
+
+    background: rgba($color-accent, 0.075);
+    border: 1px solid rgba($color-accent, 0.16);
+    border-radius: $radius-pill;
+
+    white-space: nowrap;
+  }
+}
+
+// ======================================================
+// Form
+// ======================================================
+
+.allergens-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: flex-end;
+  gap: $space-5;
+
+  &__field {
+    display: block;
+
+    min-width: 0;
+  }
+
+  &__label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    margin-bottom: 8px;
+
+    color: $color-text-soft;
+
+    font-size: 0.74rem;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__required {
+    color: $color-accent;
+  }
+
+  &__input-wrapper {
+    position: relative;
+  }
+
+  &__input-icon {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+
+    display: grid;
+    place-items: center;
+
+    width: 19px;
+    height: 19px;
+
+    color: $color-accent;
+
+    pointer-events: none;
+
+    transform: translateY(-50%);
+
+    svg {
+      width: 19px;
+      height: 19px;
+    }
+  }
+
+  &__input {
+    width: 100%;
+    min-height: 49px;
+    padding: 11px 44px;
+
+    color: $color-text;
+
+    font: inherit;
+    font-size: 0.82rem;
+
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid $color-border-strong;
+    border-radius: $radius-md;
+
+    outline: none;
+
+    transition:
+      background-color $transition-fast,
+      border-color $transition-fast,
+      box-shadow $transition-fast;
+
+    &::placeholder {
+      color: rgba($color-text, 0.34);
+    }
+
+    &:hover:not(:disabled) {
+      border-color: rgba($color-accent, 0.22);
+    }
+
+    &:focus {
+      background: rgba(0, 0, 0, 0.29);
+      border-color: $color-accent;
+
+      box-shadow: 0 0 0 3px rgba($color-accent, 0.11);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__field-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: $space-4;
+
+    margin-top: 7px;
+  }
+
+  &__hint,
+  &__character-count {
+    color: $color-text-muted;
+
+    font-size: 0.61rem;
+    line-height: 1.45;
+  }
+
+  &__character-count {
+    white-space: nowrap;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  &__cancel-button,
+  &__submit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    min-height: 49px;
+    padding-inline: 16px;
+
+    font: inherit;
+    font-size: 0.74rem;
+    font-weight: $font-weight-bold;
+
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    transition:
+      filter $transition-fast,
+      background-color $transition-fast,
+      border-color $transition-fast,
+      transform $transition-base;
+
+    &:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: 3px solid rgba($color-accent, 0.28);
+      outline-offset: 4px;
+    }
+  }
+
+  &__cancel-button {
+    color: $color-text-soft;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+
+    &:hover:not(:disabled) {
+      color: $color-text;
+
+      background: rgba(255, 255, 255, 0.065);
+      border-color: $color-border-strong;
+
+      transform: translateY(-1px);
+    }
+  }
+
+  &__submit-button {
+    min-width: 160px;
+
+    color: #11140f;
+
+    background: linear-gradient(135deg, $color-accent, #f0b628);
+
+    border: 1px solid rgba(255, 255, 255, 0.17);
+
+    box-shadow:
+      0 12px 27px rgba($color-accent, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.055);
+
+      transform: translateY(-1px);
+    }
+  }
+
+  &__spinner {
+    width: 16px;
+    height: 16px;
+
+    border: 2px solid rgba(17, 20, 15, 0.2);
+    border-top-color: #11140f;
+    border-radius: 50%;
+
+    animation: allergens-spin 700ms linear infinite;
+  }
+}
+
+// ======================================================
+// List section
+// ======================================================
+
+.allergens-list-section {
+  margin-top: $space-6;
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $space-5;
+
+    margin-bottom: $space-5;
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: $color-accent;
+
+    font-size: 0.63rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  &__title {
+    margin: 0;
+
+    color: $color-text;
+
+    font-size: 1.7rem;
+  }
+
+  &__summary {
+    color: $color-text-muted;
+
+    font-size: 0.7rem;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.allergens-list {
+  display: grid;
+  gap: 11px;
+}
+
+// ======================================================
+// Allergen card
+// ======================================================
+
+.allergen-card {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1fr)
+    auto
+    auto;
+  align-items: center;
+  gap: $space-5;
+
+  padding: 16px 18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.015)
+    ),
+    $color-bg-soft;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+
+  transition:
+    background-color $transition-fast,
+    border-color $transition-fast,
+    box-shadow $transition-base,
+    transform $transition-base;
+
+  &:hover {
+    border-color: rgba($color-accent, 0.19);
+
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+
+    transform: translateY(-1px);
+  }
+
+  &--editing {
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba($color-accent, 0.08),
+        transparent 18rem
+      ),
+      $color-bg-soft;
+
+    border-color: rgba($color-accent, 0.38);
+
+    box-shadow:
+      0 0 0 2px rgba($color-accent, 0.05),
+      0 16px 36px rgba(0, 0, 0, 0.22);
+  }
+
+  &__identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    min-width: 0;
+  }
+
+  &__number {
+    display: grid;
+    place-items: center;
+    flex: 0 0 39px;
+
+    width: 39px;
+    height: 39px;
+
+    color: $color-accent;
+
+    font-family: $font-family-display;
+    font-size: 0.8rem;
+    font-weight: $font-weight-black;
+
+    background: rgba($color-accent, 0.065);
+    border: 1px solid rgba($color-accent, 0.13);
+    border-radius: $radius-md;
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: $color-text-muted;
+
+    font-size: 0.58rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.11em;
+  }
+
+  &__name {
+    margin: 0;
+
+    overflow-wrap: anywhere;
+
+    color: $color-text;
+
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  &__metadata {
+    display: grid;
+    justify-items: end;
+    gap: 5px;
+  }
+
+  &__id {
+    color: $color-text-muted;
+
+    font-size: 0.65rem;
+  }
+
+  &__editing-label {
+    color: $color-accent;
+
+    font-size: 0.61rem;
+    font-weight: $font-weight-bold;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  &__edit-button,
+  &__delete-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    min-height: 40px;
+    padding-inline: 12px;
+
+    font: inherit;
+    font-size: 0.69rem;
+    font-weight: $font-weight-bold;
+
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    transition:
+      color $transition-fast,
+      background-color $transition-fast,
+      border-color $transition-fast,
+      transform $transition-base;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+  }
+
+  &__edit-button {
+    color: $color-text-soft;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+
+    &:hover {
+      color: $color-text;
+
+      background: rgba(255, 255, 255, 0.065);
+      border-color: $color-border-strong;
+
+      transform: translateY(-1px);
+    }
+  }
+
+  &__delete-button {
+    color: #ffaaaa;
+
+    background: rgba(145, 32, 32, 0.1);
+    border: 1px solid rgba(255, 91, 91, 0.16);
+
+    &:hover {
+      color: #ffd0d0;
+
+      background: rgba(175, 41, 41, 0.17);
+      border-color: rgba(255, 91, 91, 0.27);
+
+      transform: translateY(-1px);
+    }
+  }
+}
+
+// ======================================================
+// Loading and empty states
+// ======================================================
+
+.allergens-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+
+  min-height: 260px;
+  padding: 40px;
+
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  &__spinner {
+    width: 34px;
+    height: 34px;
+
+    border: 3px solid rgba($color-accent, 0.13);
+    border-top-color: $color-accent;
+    border-radius: 50%;
+
+    animation: allergens-spin 700ms linear infinite;
+  }
+
+  strong {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: $color-text;
+
+    font-size: 0.87rem;
+  }
+
+  p {
+    margin: 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.72rem;
+  }
+}
+
+.allergens-empty {
+  display: grid;
+  justify-items: center;
+
+  min-height: 320px;
+  padding: 48px 24px;
+
+  text-align: center;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba($color-primary, 0.08),
+      transparent 20rem
+    ),
+    rgba(255, 255, 255, 0.025);
+
+  border: 1px dashed $color-border-strong;
+  border-radius: $radius-xl;
+
+  &__icon {
+    display: grid;
+    place-items: center;
+
+    width: 70px;
+    height: 70px;
+
+    margin-bottom: $space-4;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.06);
+    border: 1px solid rgba($color-accent, 0.13);
+    border-radius: 50%;
+
+    svg {
+      width: 32px;
+      height: 32px;
+    }
+  }
+
+  &__eyebrow {
+    color: $color-accent;
+
+    font-size: 0.63rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  &__title {
+    margin: $space-3 0 0;
+
+    color: $color-text;
+
+    font-size: 1.6rem;
+  }
+
+  &__description {
+    margin: $space-3 0 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.76rem;
+  }
+}
+
+@keyframes allergens-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ======================================================
+// Responsive
+// ======================================================
+
+@media (max-width: $breakpoint-tablet) {
+  .allergens-page {
+    padding-block: $space-8;
+
+    &__header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+
+  .allergens-form {
+    grid-template-columns: 1fr;
+
+    &__actions {
+      justify-content: flex-end;
+    }
+  }
+
+  .allergen-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    &__metadata {
+      grid-column: 1;
+      justify-items: start;
+    }
+
+    &__actions {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .allergens-page {
+    padding-block: $space-7;
+
+    &__title {
+      font-size: 3.25rem;
+    }
+
+    &__count {
+      width: 100%;
+
+      justify-content: center;
+    }
+  }
+
+  .allergens-form-panel {
+    padding: $space-5;
+
+    border-radius: $radius-lg;
+
+    &__header {
+      flex-wrap: wrap;
+    }
+
+    &__editing-badge {
+      width: 100%;
+      margin-left: 0;
+
+      justify-content: center;
+    }
+  }
+
+  .allergens-form {
+    &__actions {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    &__cancel-button,
+    &__submit-button {
+      width: 100%;
+    }
+  }
+
+  .allergen-card {
+    grid-template-columns: 1fr;
+
+    padding: 15px;
+
+    &__metadata,
+    &__actions {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    &__metadata {
+      justify-items: start;
+    }
+
+    &__actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    &__edit-button,
+    &__delete-button {
+      width: 100%;
+    }
+  }
+
+  .allergens-list-section__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .allergens-form__spinner,
+  .allergens-loading__spinner {
+    animation-duration: 0.01ms;
+  }
+
+  .allergens-form__cancel-button,
+  .allergens-form__submit-button,
+  .allergen-card,
+  .allergen-card__edit-button,
+  .allergen-card__delete-button {
+    transition-duration: 0.01ms;
+  }
+}

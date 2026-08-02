@@ -5,12 +5,12 @@ import {
   markReadyForPickup,
   rejectOrder,
   type OrderDetailsDto,
-  type OrderStatus,
 } from "../api/orderApi";
 import { AppRoles } from "../auth/roles";
 import { useAuth } from "../auth/AuthContext";
 import { useOrderRealtime } from "../realtime/useOrderRealtime";
 import OrderCard from "../components/orders/OrderCard";
+import "../styles/AdminOrdersPage.scss";
 
 type AdminOrderTab =
   | "Sve"
@@ -19,306 +19,69 @@ type AdminOrderTab =
   | "Spremna_za_preuzimanje"
   | "Dostava_u_toku";
 
-function getErrorMessage(e: any, fallback: string) {
+const tabs: AdminOrderTab[] = [
+  "Sve",
+  "Na_Cekanju",
+  "Prihvacena",
+  "Spremna_za_preuzimanje",
+  "Dostava_u_toku",
+];
+
+function getErrorMessage(error: any, fallback: string) {
   return (
-    e?.response?.data?.error ??
-    e?.response?.data?.message ??
-    e?.response?.data?.title ??
-    e?.message ??
+    error?.response?.data?.error ??
+    error?.response?.data?.message ??
+    error?.response?.data?.title ??
+    error?.message ??
     fallback
   );
-}
-
-function formatPrice(value: number) {
-  return `${value.toLocaleString("sr-RS")} RSD`;
-}
-
-function formatDateTime(value?: string) {
-  if (!value) return "-";
-
-  return new Date(value).toLocaleString("sr-RS");
 }
 
 function getOrderLabel(order: OrderDetailsDto) {
   return order.orderNumber ?? String(order.id);
 }
 
-function formatStatus(status: OrderStatus) {
-  switch (status) {
-    case "Na_Cekanju":
-      return "Na čekanju";
-    case "Prihvacena":
-      return "Prihvaćena / u pripremi";
-    case "Spremna_za_preuzimanje":
-      return "Spremna za preuzimanje";
-    case "Dostava_u_toku":
-      return "Dostava u toku";
-    case "Dostavljena":
-      return "Dostavljena";
-    case "Odbijena":
-      return "Odbijena";
-    default:
-      return status;
-  }
-}
-
-function getStatusStyle(status: OrderStatus): React.CSSProperties {
-  switch (status) {
-    case "Na_Cekanju":
-      return {
-        background: "#fff7e6",
-        color: "#8a5a00",
-        border: "1px solid #ffd591",
-      };
-    case "Prihvacena":
-      return {
-        background: "#e6f4ff",
-        color: "#0958d9",
-        border: "1px solid #91caff",
-      };
-    case "Spremna_za_preuzimanje":
-      return {
-        background: "#f6ffed",
-        color: "#237804",
-        border: "1px solid #b7eb8f",
-      };
-    case "Dostava_u_toku":
-      return {
-        background: "#f9f0ff",
-        color: "#531dab",
-        border: "1px solid #d3adf7",
-      };
-    default:
-      return {
-        background: "#f5f5f5",
-        color: "#333",
-        border: "1px solid #ddd",
-      };
-  }
-}
-
-function StatusBadge({ status }: { status: OrderStatus }) {
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        padding: "4px 8px",
-        borderRadius: 999,
-        fontSize: 13,
-        fontWeight: 700,
-        ...getStatusStyle(status),
-      }}
-    >
-      {formatStatus(status)}
-    </span>
-  );
-}
-
-function Spremna_za_preuzimanje({
-  order,
-  actionLoadingId,
-  onAccept,
-  onReject,
-  onReadyForPickup,
-}: {
-  order: OrderDetailsDto;
-  actionLoadingId: number | null;
-  onAccept: (order: OrderDetailsDto) => void;
-  onReject: (order: OrderDetailsDto) => void;
-  onReadyForPickup: (order: OrderDetailsDto) => void;
-}) {
-  const isLoading = actionLoadingId === order.id;
-
-  return (
-    <div
-      style={{
-        border: "1px solid #ccc",
-        borderRadius: 10,
-        padding: 16,
-        background: "white",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <h3 style={{ margin: 0, fontSize: 22 }}>#{getOrderLabel(order)}</h3>
-
-          <div style={{ marginTop: 6 }}>
-            <StatusBadge status={order.status} />
-          </div>
-
-          <div style={{ marginTop: 6, fontSize: 13, color: "#555" }}>
-            Kreirana: {formatDateTime(order.createdAt)}
-          </div>
-
-          {order.courierId && (
-            <div style={{ marginTop: 4, fontSize: 13 }}>
-              Kurir ID: {order.courierId}
-            </div>
-          )}
-        </div>
-
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>
-            {formatPrice(order.totalAmount)}
-          </div>
-
-          <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>
-            Stavki: {order.items.length}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ marginTop: 14 }}>
-        <strong>Adresa dostave:</strong>
-        <div>
-          {order.deliveryAddress.street} {order.deliveryAddress.houseNumber}
-        </div>
-        <div>
-          {order.deliveryAddress.postalCode
-            ? `${order.deliveryAddress.postalCode} `
-            : ""}
-          {order.deliveryAddress.city}
-        </div>
-
-        {order.deliveryAddress.note && (
-          <div style={{ fontStyle: "italic", marginTop: 4 }}>
-            Napomena za adresu: {order.deliveryAddress.note}
-          </div>
-        )}
-      </div>
-
-      {order.notes && (
-        <div style={{ marginTop: 12 }}>
-          <strong>Napomena za porudžbinu:</strong>
-          <div>{order.notes}</div>
-        </div>
-      )}
-
-      <details style={{ marginTop: 12 }}>
-        <summary style={{ cursor: "pointer", fontWeight: 700 }}>
-          Prikaži stavke porudžbine
-        </summary>
-
-        <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-          {order.items.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                borderBottom: "1px solid #eee",
-                paddingBottom: 8,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 8,
-                }}
-              >
-                <span>
-                  {item.dishName} x {item.quantity}
-                </span>
-
-                <span>
-                  {formatPrice(
-                    (item.unitPrice + item.optionsTotal) * item.quantity,
-                  )}
-                </span>
-              </div>
-
-              {item.options.length > 0 && (
-                <div style={{ fontSize: 13, marginTop: 4, color: "#555" }}>
-                  Dodaci:{" "}
-                  {item.options
-                    .map((option) =>
-                      option.unitPrice > 0
-                        ? `${option.optionName} (+${formatPrice(
-                            option.unitPrice,
-                          )})`
-                        : option.optionName,
-                    )
-                    .join(", ")}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </details>
-
-      <div style={{ marginTop: 12, fontSize: 14 }}>
-        <div>Subtotal: {formatPrice(order.subtotal)}</div>
-        <div>Dostava: {formatPrice(order.deliveryFee)}</div>
-        <div style={{ fontWeight: 800 }}>
-          Ukupno: {formatPrice(order.totalAmount)}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-        {order.status === "Na_Cekanju" && (
-          <>
-            <button
-              type="button"
-              disabled={isLoading}
-              onClick={() => onAccept(order)}
-            >
-              {isLoading ? "Obrađujem..." : "Prihvati"}
-            </button>
-
-            <button
-              type="button"
-              disabled={isLoading}
-              onClick={() => onReject(order)}
-            >
-              {isLoading ? "Obrađujem..." : "Odbij"}
-            </button>
-          </>
-        )}
-
-        {order.status === "Prihvacena" && (
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={() => onReadyForPickup(order)}
-          >
-            {isLoading ? "Obrađujem..." : "Spremna za preuzimanje"}
-          </button>
-        )}
-
-        {order.status === "Spremna_za_preuzimanje" && (
-          <div style={{ fontWeight: 700 }}>
-            Čeka kurira da preuzme porudžbinu.
-          </div>
-        )}
-
-        {order.status === "Dostava_u_toku" && (
-          <div style={{ fontWeight: 700 }}>Porudžbina je kod kurira.</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function tabLabel(tab: AdminOrderTab) {
+function getTabLabel(tab: AdminOrderTab) {
   switch (tab) {
     case "Sve":
       return "Sve aktivne";
+
     case "Na_Cekanju":
       return "Na čekanju";
+
     case "Prihvacena":
       return "U pripremi";
+
     case "Spremna_za_preuzimanje":
       return "Spremne";
+
     case "Dostava_u_toku":
       return "Dostava";
+
     default:
       return tab;
+  }
+}
+
+function getTabModifier(tab: AdminOrderTab) {
+  switch (tab) {
+    case "Sve":
+      return "all";
+
+    case "Na_Cekanju":
+      return "waiting";
+
+    case "Prihvacena":
+      return "preparing";
+
+    case "Spremna_za_preuzimanje":
+      return "ready";
+
+    case "Dostava_u_toku":
+      return "delivery";
+
+    default:
+      return "all";
   }
 }
 
@@ -326,13 +89,17 @@ export default function AdminOrdersPage() {
   const { isAuthenticated, hasAnyRole } = useAuth();
 
   const [orders, setOrders] = useState<OrderDetailsDto[]>([]);
+
   const [activeTab, setActiveTab] = useState<AdminOrderTab>("Sve");
 
   const [loading, setLoading] = useState(true);
+
   const [refreshing, setRefreshing] = useState(false);
+
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
 
   const [error, setError] = useState<string | null>(null);
+
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const loadOrders = useCallback(async (showLoading = true) => {
@@ -346,9 +113,10 @@ export default function AdminOrdersPage() {
       }
 
       const data = await getActiveOrders();
+
       setOrders(data);
-    } catch (e: any) {
-      setError(getErrorMessage(e, "Greška pri učitavanju porudžbina."));
+    } catch (error: any) {
+      setError(getErrorMessage(error, "Greška pri učitavanju porudžbina."));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -369,34 +137,48 @@ export default function AdminOrdersPage() {
   });
 
   useEffect(() => {
-    if (!successMessage) return;
+    if (!successMessage) {
+      return;
+    }
 
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setSuccessMessage(null);
     }, 2500);
 
-    return () => clearTimeout(timer);
+    return () => window.clearTimeout(timer);
   }, [successMessage]);
 
   const sortedOrders = useMemo(() => {
-    return [...orders].sort((a, b) => {
-      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return [...orders].sort((first, second) => {
+      const firstTime = first.createdAt
+        ? new Date(first.createdAt).getTime()
+        : 0;
 
-      return aTime - bTime;
+      const secondTime = second.createdAt
+        ? new Date(second.createdAt).getTime()
+        : 0;
+
+      return firstTime - secondTime;
     });
   }, [orders]);
 
-  const counts = useMemo(() => {
+  const counts = useMemo<Record<AdminOrderTab, number>>(() => {
     return {
       Sve: sortedOrders.length,
-      Na_Cekanju: sortedOrders.filter((o) => o.status === "Na_Cekanju").length,
-      Prihvacena: sortedOrders.filter((o) => o.status === "Prihvacena").length,
-      Spremna_za_preuzimanje: sortedOrders.filter(
-        (o) => o.status === "Spremna_za_preuzimanje",
-      ).length,
-      Dostava_u_toku: sortedOrders.filter((o) => o.status === "Dostava_u_toku")
+
+      Na_Cekanju: sortedOrders.filter((order) => order.status === "Na_Cekanju")
         .length,
+
+      Prihvacena: sortedOrders.filter((order) => order.status === "Prihvacena")
+        .length,
+
+      Spremna_za_preuzimanje: sortedOrders.filter(
+        (order) => order.status === "Spremna_za_preuzimanje",
+      ).length,
+
+      Dostava_u_toku: sortedOrders.filter(
+        (order) => order.status === "Dostava_u_toku",
+      ).length,
     };
   }, [sortedOrders]);
 
@@ -413,7 +195,9 @@ export default function AdminOrdersPage() {
       `Da li želiš da prihvatiš porudžbinu #${getOrderLabel(order)}?`,
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
       setError(null);
@@ -424,8 +208,8 @@ export default function AdminOrdersPage() {
       await loadOrders(false);
 
       setSuccessMessage(`Porudžbina #${getOrderLabel(order)} je prihvaćena.`);
-    } catch (e: any) {
-      setError(getErrorMessage(e, "Greška pri prihvatanju porudžbine."));
+    } catch (error: any) {
+      setError(getErrorMessage(error, "Greška pri prihvatanju porudžbine."));
     } finally {
       setActionLoadingId(null);
     }
@@ -436,7 +220,9 @@ export default function AdminOrdersPage() {
       `Da li želiš da odbiješ porudžbinu #${getOrderLabel(order)}?`,
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
       setError(null);
@@ -447,8 +233,8 @@ export default function AdminOrdersPage() {
       await loadOrders(false);
 
       setSuccessMessage(`Porudžbina #${getOrderLabel(order)} je odbijena.`);
-    } catch (e: any) {
-      setError(getErrorMessage(e, "Greška pri odbijanju porudžbine."));
+    } catch (error: any) {
+      setError(getErrorMessage(error, "Greška pri odbijanju porudžbine."));
     } finally {
       setActionLoadingId(null);
     }
@@ -459,7 +245,9 @@ export default function AdminOrdersPage() {
       `Da li je porudžbina #${getOrderLabel(order)} spremna za preuzimanje?`,
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
       setError(null);
@@ -472,176 +260,380 @@ export default function AdminOrdersPage() {
       setSuccessMessage(
         `Porudžbina #${getOrderLabel(order)} je spremna za preuzimanje.`,
       );
-    } catch (e: any) {
+    } catch (error: any) {
       setError(
-        getErrorMessage(e, "Greška pri označavanju porudžbine kao spremne."),
+        getErrorMessage(
+          error,
+          "Greška pri označavanju porudžbine kao spremne.",
+        ),
       );
     } finally {
       setActionLoadingId(null);
     }
   }
 
-  const tabs: AdminOrderTab[] = [
-    "Sve",
-    "Na_Cekanju",
-    "Prihvacena",
-    "Spremna_za_preuzimanje",
-    "Dostava_u_toku",
-  ];
-
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "wrap",
-          alignItems: "center",
-        }}
-      >
-        <div>
-          <h2 style={{ marginBottom: 4 }}>Aktivne porudžbine</h2>
-          <div style={{ color: "#555", fontSize: 14 }}>
-            Operativni prikaz za pripremu, preuzimanje i dostavu.
-          </div>
+    <main className="admin-orders-page">
+      <header className="admin-orders-page__header">
+        <div className="admin-orders-page__heading">
+          <span className="admin-orders-page__eyebrow">OPERATIVNI PANEL</span>
+
+          <h1 className="admin-orders-page__title">Porudžbine</h1>
+
+          <p className="admin-orders-page__description">
+            Prihvatite nove porudžbine, pratite pripremu i prosledite spremne
+            porudžbine kurirskoj službi.
+          </p>
         </div>
 
-        <button
-          type="button"
-          disabled={loading || refreshing}
-          onClick={() => loadOrders(false)}
+        <div className="admin-orders-page__header-actions">
+          <div className="admin-orders-page__realtime">
+            <span
+              className="admin-orders-page__realtime-dot"
+              aria-hidden="true"
+            />
+
+            <span>Porudžbine uživo</span>
+          </div>
+
+          <button
+            type="button"
+            className="admin-orders-page__refresh-button"
+            disabled={loading || refreshing}
+            onClick={() => loadOrders(false)}
+          >
+            {refreshing ? (
+              <span className="admin-orders-page__spinner" aria-hidden="true" />
+            ) : (
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M20 7v5h-5M4 17v-5h5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                <path
+                  d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+
+            <span>{refreshing ? "Osvežavam..." : "Osveži"}</span>
+          </button>
+        </div>
+      </header>
+
+      <section className="admin-orders-overview">
+        <article className="admin-orders-overview__card admin-orders-overview__card--waiting">
+          <span className="admin-orders-overview__label">Na čekanju</span>
+
+          <strong>{counts.Na_Cekanju}</strong>
+        </article>
+
+        <article className="admin-orders-overview__card admin-orders-overview__card--preparing">
+          <span className="admin-orders-overview__label">U pripremi</span>
+
+          <strong>{counts.Prihvacena}</strong>
+        </article>
+
+        <article className="admin-orders-overview__card admin-orders-overview__card--ready">
+          <span className="admin-orders-overview__label">Spremne</span>
+
+          <strong>{counts.Spremna_za_preuzimanje}</strong>
+        </article>
+
+        <article className="admin-orders-overview__card admin-orders-overview__card--delivery">
+          <span className="admin-orders-overview__label">Dostava u toku</span>
+
+          <strong>{counts.Dostava_u_toku}</strong>
+        </article>
+      </section>
+
+      <section className="admin-orders-filter">
+        <header className="admin-orders-filter__header">
+          <div>
+            <span className="admin-orders-filter__eyebrow">FILTRIRANJE</span>
+
+            <h2 className="admin-orders-filter__title">Aktivne porudžbine</h2>
+          </div>
+
+          <span className="admin-orders-filter__total">
+            Ukupno aktivnih: <strong>{counts.Sve}</strong>
+          </span>
+        </header>
+
+        <div
+          className="admin-orders-tabs"
+          role="tablist"
+          aria-label="Filtriranje aktivnih porudžbina"
         >
-          {refreshing ? "Osvežavam..." : "Osveži"}
-        </button>
-      </div>
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab;
 
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          marginTop: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab;
+            const modifier = getTabModifier(tab);
 
-          return (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              style={{
-                padding: "8px 12px",
-                borderRadius: 999,
-                border: isActive ? "2px solid #111" : "1px solid #ccc",
-                fontWeight: isActive ? 800 : 500,
-                background: isActive ? "#f5f5f5" : "white",
-              }}
-            >
-              {tabLabel(tab)} ({counts[tab]})
-            </button>
-          );
-        })}
-      </div>
+            return (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={[
+                  "admin-orders-tabs__button",
+                  `admin-orders-tabs__button--${modifier}`,
+                  isActive ? "admin-orders-tabs__button--active" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onClick={() => setActiveTab(tab)}
+              >
+                <span className="admin-orders-tabs__dot" aria-hidden="true" />
+
+                <span>{getTabLabel(tab)}</span>
+
+                <strong className="admin-orders-tabs__count">
+                  {counts[tab]}
+                </strong>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {successMessage && (
         <div
-          style={{
-            color: "green",
-            marginTop: 12,
-            padding: 10,
-            border: "1px solid green",
-            borderRadius: 8,
-            background: "#f0fff0",
-          }}
+          className="admin-orders-alert admin-orders-alert--success"
+          role="status"
+          aria-live="polite"
         >
-          {successMessage}
+          <span className="admin-orders-alert__icon" aria-hidden="true">
+            ✓
+          </span>
+
+          <div>
+            <strong>Uspešno</strong>
+            <p>{successMessage}</p>
+          </div>
         </div>
       )}
 
       {error && (
         <div
-          style={{
-            color: "crimson",
-            marginTop: 12,
-            padding: 10,
-            border: "1px solid crimson",
-            borderRadius: 8,
-            background: "#fff5f5",
-          }}
+          className="admin-orders-alert admin-orders-alert--error"
+          role="alert"
         >
-          {error}
+          <span className="admin-orders-alert__icon" aria-hidden="true">
+            !
+          </span>
+
+          <div>
+            <strong>Došlo je do greške</strong>
+            <p>{error}</p>
+          </div>
         </div>
       )}
 
       {loading ? (
-        <div style={{ marginTop: 16 }}>Učitavam porudžbine...</div>
+        <section className="admin-orders-loading" aria-live="polite">
+          <span className="admin-orders-loading__spinner" aria-hidden="true" />
+
+          <div>
+            <strong>Učitavamo porudžbine</strong>
+
+            <p>Sačekajte trenutak dok preuzmemo trenutno stanje operative.</p>
+          </div>
+        </section>
       ) : visibleOrders.length === 0 ? (
-        <div style={{ marginTop: 16 }}>Nema porudžbina za izabrani prikaz.</div>
+        <section className="admin-orders-empty">
+          <div className="admin-orders-empty__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M6 4h12l1 16H5L6 4Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              <path
+                d="M9 8a3 3 0 0 0 6 0"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+
+          <span className="admin-orders-empty__eyebrow">NEMA PORUDŽBINA</span>
+
+          <h2 className="admin-orders-empty__title">
+            Nema porudžbina za ovaj prikaz
+          </h2>
+
+          <p className="admin-orders-empty__description">
+            Izaberite drugi status ili sačekajte da stigne nova porudžbina.
+          </p>
+        </section>
       ) : (
-        <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
-          {visibleOrders.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              showGoogleMapsLink={false}
-              actions={
-                <>
-                  {order.status === "Na_Cekanju" && (
+        <section className="admin-orders-results">
+          <header className="admin-orders-results__header">
+            <div>
+              <span className="admin-orders-results__eyebrow">REZULTATI</span>
+
+              <h2 className="admin-orders-results__title">
+                {getTabLabel(activeTab)}
+              </h2>
+            </div>
+
+            <span className="admin-orders-results__count">
+              {visibleOrders.length}
+            </span>
+          </header>
+
+          <div className="admin-orders-list">
+            {visibleOrders.map((order) => {
+              const isProcessing = actionLoadingId === order.id;
+
+              return (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  showGoogleMapsLink={false}
+                  actions={
                     <>
-                      <button
-                        type="button"
-                        disabled={actionLoadingId === order.id}
-                        onClick={() => handleAccept(order)}
-                      >
-                        {actionLoadingId === order.id
-                          ? "Obrađujem..."
-                          : "Prihvati"}
-                      </button>
+                      {order.status === "Na_Cekanju" && (
+                        <>
+                          <button
+                            type="button"
+                            className="admin-order-action admin-order-action--accept"
+                            disabled={isProcessing}
+                            onClick={() => handleAccept(order)}
+                          >
+                            {isProcessing && (
+                              <span
+                                className="admin-order-action__spinner"
+                                aria-hidden="true"
+                              />
+                            )}
 
-                      <button
-                        type="button"
-                        disabled={actionLoadingId === order.id}
-                        onClick={() => handleReject(order)}
-                      >
-                        {actionLoadingId === order.id
-                          ? "Obrađujem..."
-                          : "Odbij"}
-                      </button>
+                            {!isProcessing && (
+                              <span
+                                className="admin-order-action__icon"
+                                aria-hidden="true"
+                              >
+                                ✓
+                              </span>
+                            )}
+
+                            <span>
+                              {isProcessing
+                                ? "Obrađujem..."
+                                : "Prihvati porudžbinu"}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="admin-order-action admin-order-action--reject"
+                            disabled={isProcessing}
+                            onClick={() => handleReject(order)}
+                          >
+                            {!isProcessing && (
+                              <span
+                                className="admin-order-action__icon"
+                                aria-hidden="true"
+                              >
+                                ×
+                              </span>
+                            )}
+
+                            <span>
+                              {isProcessing ? "Obrađujem..." : "Odbij"}
+                            </span>
+                          </button>
+                        </>
+                      )}
+
+                      {order.status === "Prihvacena" && (
+                        <button
+                          type="button"
+                          className="admin-order-action admin-order-action--ready"
+                          disabled={isProcessing}
+                          onClick={() => handleReadyForPickup(order)}
+                        >
+                          {isProcessing && (
+                            <span
+                              className="admin-order-action__spinner"
+                              aria-hidden="true"
+                            />
+                          )}
+
+                          {!isProcessing && (
+                            <span
+                              className="admin-order-action__icon"
+                              aria-hidden="true"
+                            >
+                              ✓
+                            </span>
+                          )}
+
+                          <span>
+                            {isProcessing
+                              ? "Obrađujem..."
+                              : "Označi kao spremnu"}
+                          </span>
+
+                          {!isProcessing && <span aria-hidden="true">→</span>}
+                        </button>
+                      )}
+
+                      {order.status === "Spremna_za_preuzimanje" && (
+                        <div className="admin-order-notice admin-order-notice--ready">
+                          <span
+                            className="admin-order-notice__dot"
+                            aria-hidden="true"
+                          />
+
+                          <div>
+                            <strong>Čeka preuzimanje</strong>
+
+                            <span>Porudžbina je spremna i čeka kurira.</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {order.status === "Dostava_u_toku" && (
+                        <div className="admin-order-notice admin-order-notice--delivery">
+                          <span
+                            className="admin-order-notice__dot"
+                            aria-hidden="true"
+                          />
+
+                          <div>
+                            <strong>Dostava je u toku</strong>
+
+                            <span>Porudžbina je trenutno kod kurira.</span>
+                          </div>
+                        </div>
+                      )}
                     </>
-                  )}
-
-                  {order.status === "Prihvacena" && (
-                    <button
-                      type="button"
-                      disabled={actionLoadingId === order.id}
-                      onClick={() => handleReadyForPickup(order)}
-                    >
-                      {actionLoadingId === order.id
-                        ? "Obrađujem..."
-                        : "Spremna za preuzimanje"}
-                    </button>
-                  )}
-
-                  {order.status === "Spremna_za_preuzimanje" && (
-                    <div style={{ fontWeight: 700 }}>
-                      Čeka kurira da preuzme porudžbinu.
-                    </div>
-                  )}
-
-                  {order.status === "Dostava_u_toku" && (
-                    <div style={{ fontWeight: 700 }}>
-                      Porudžbina je kod kurira.
-                    </div>
-                  )}
-                </>
-              }
-            />
-          ))}
-        </div>
+                  }
+                />
+              );
+            })}
+          </div>
+        </section>
       )}
-    </div>
+    </main>
   );
 }

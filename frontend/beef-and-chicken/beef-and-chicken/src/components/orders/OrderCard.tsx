@@ -1,5 +1,6 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { OrderDetailsDto, OrderStatus } from "../../api/orderApi";
+import "./OrderCard.scss";
 
 type OrderCardProps = {
   order: OrderDetailsDto;
@@ -14,7 +15,9 @@ function formatPrice(value: number) {
 }
 
 function formatDateTime(value?: string) {
-  if (!value) return "-";
+  if (!value) {
+    return "-";
+  }
 
   return new Date(value).toLocaleString("sr-RS");
 }
@@ -27,91 +30,56 @@ function formatStatus(status: OrderStatus) {
   switch (status) {
     case "Na_Cekanju":
       return "Na čekanju";
+
     case "Otkazana":
       return "Otkazana";
+
     case "Prihvacena":
       return "Prihvaćena / u pripremi";
+
     case "Spremna_za_preuzimanje":
       return "Spremna za preuzimanje";
+
     case "Dostava_u_toku":
       return "Dostava u toku";
+
     case "Dostavljena":
       return "Dostavljena";
+
     case "Odbijena":
       return "Odbijena";
+
     default:
       return status;
   }
 }
 
-function getStatusStyle(status: OrderStatus): CSSProperties {
+function getStatusModifier(status: OrderStatus) {
   switch (status) {
     case "Na_Cekanju":
-      return {
-        background: "#fff7e6",
-        color: "#8a5a00",
-        border: "1px solid #ffd591",
-      };
-    case "Otkazana":
-      return {
-        background: "#fff1f0",
-        color: "#a8071a",
-        border: "1px solid #ffa39e",
-      };
-    case "Prihvacena":
-      return {
-        background: "#e6f4ff",
-        color: "#0958d9",
-        border: "1px solid #91caff",
-      };
-    case "Spremna_za_preuzimanje":
-      return {
-        background: "#f6ffed",
-        color: "#237804",
-        border: "1px solid #b7eb8f",
-      };
-    case "Dostava_u_toku":
-      return {
-        background: "#f9f0ff",
-        color: "#531dab",
-        border: "1px solid #d3adf7",
-      };
-    case "Dostavljena":
-      return {
-        background: "#f6ffed",
-        color: "#237804",
-        border: "1px solid #b7eb8f",
-      };
-    case "Odbijena":
-      return {
-        background: "#fff1f0",
-        color: "#a8071a",
-        border: "1px solid #ffa39e",
-      };
-    default:
-      return {
-        background: "#f5f5f5",
-        color: "#333",
-        border: "1px solid #ddd",
-      };
-  }
-}
+      return "waiting";
 
-function StatusBadge({ status }: { status: OrderStatus }) {
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        padding: "4px 8px",
-        borderRadius: 999,
-        fontSize: 13,
-        fontWeight: 700,
-        ...getStatusStyle(status),
-      }}
-    >
-      {formatStatus(status)}
-    </span>
-  );
+    case "Otkazana":
+      return "cancelled";
+
+    case "Prihvacena":
+      return "accepted";
+
+    case "Spremna_za_preuzimanje":
+      return "ready";
+
+    case "Dostava_u_toku":
+      return "delivery";
+
+    case "Dostavljena":
+      return "delivered";
+
+    case "Odbijena":
+      return "rejected";
+
+    default:
+      return "default";
+  }
 }
 
 function getDeliveryAddressText(order: OrderDetailsDto) {
@@ -141,8 +109,10 @@ function formatPaymentMethod(paymentMethod: string) {
   switch (paymentMethod) {
     case "Cash":
       return "Gotovina";
+
     case "CardOnDelivery":
       return "Kartica pri dostavi";
+
     default:
       return paymentMethod;
   }
@@ -152,12 +122,31 @@ function formatPaymentStatus(paymentStatus: string) {
   switch (paymentStatus) {
     case "Pending":
       return "Čeka naplatu";
+
     case "Paid":
       return "Plaćeno";
+
     case "Cancelled":
       return "Otkazano";
+
     default:
       return paymentStatus;
+  }
+}
+
+function getPaymentStatusModifier(paymentStatus: string) {
+  switch (paymentStatus) {
+    case "Paid":
+      return "paid";
+
+    case "Cancelled":
+      return "cancelled";
+
+    case "Pending":
+      return "pending";
+
+    default:
+      return "default";
   }
 }
 
@@ -168,208 +157,325 @@ export default function OrderCard({
   showCourierId = true,
   showCreatedAt = true,
 }: OrderCardProps) {
+  const statusModifier = getStatusModifier(order.status);
+  const paymentStatusModifier = getPaymentStatusModifier(order.paymentStatus);
+
   return (
-    <div
-      style={{
-        border: "1px solid #ccc",
-        borderRadius: 10,
-        padding: 16,
-        background: "white",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <h3 style={{ margin: 0, fontSize: 22 }}>
-            Porudžbina #{getOrderLabel(order)}
-          </h3>
+    <article className="shared-order-card">
+      <header className="shared-order-card__header">
+        <div className="shared-order-card__identity">
+          <span className="shared-order-card__eyebrow">PORUDŽBINA</span>
 
-          <div style={{ marginTop: 6 }}>
-            <StatusBadge status={order.status} />
+          <h2 className="shared-order-card__title">#{getOrderLabel(order)}</h2>
+
+          <div className="shared-order-card__metadata">
+            <span
+              className={`shared-order-status shared-order-status--${statusModifier}`}
+            >
+              <span className="shared-order-status__dot" aria-hidden="true" />
+
+              {formatStatus(order.status)}
+            </span>
+
+            {showCreatedAt && (
+              <span className="shared-order-card__created-at">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="8"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+
+                  <path
+                    d="M12 7.5V12l3 2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+
+                {formatDateTime(order.createdAt)}
+              </span>
+            )}
+
+            {showCourierId && order.courierId && (
+              <span className="shared-order-card__courier">
+                Kurir ID: {order.courierId}
+              </span>
+            )}
           </div>
-
-          {showCreatedAt && (
-            <div style={{ marginTop: 6, fontSize: 13, color: "#555" }}>
-              Kreirana: {formatDateTime(order.createdAt)}
-            </div>
-          )}
-
-          {showCourierId && order.courierId && (
-            <div style={{ marginTop: 4, fontSize: 13 }}>
-              Kurir ID: {order.courierId}
-            </div>
-          )}
         </div>
 
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>
+        <div className="shared-order-card__header-summary">
+          <span className="shared-order-card__items-count">
+            {order.items.length}{" "}
+            {order.items.length === 1 ? "stavka" : "stavke"}
+          </span>
+
+          <strong className="shared-order-card__total">
             {formatPrice(order.totalAmount)}
-          </div>
-
-          <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>
-            Stavki: {order.items.length}
-          </div>
+          </strong>
         </div>
-      </div>
+      </header>
 
-      <div style={{ marginTop: 14 }}>
-        <strong>Adresa dostave:</strong>
+      <div className="shared-order-card__body">
+        <div className="shared-order-card__information">
+          <section className="shared-order-panel">
+            <header className="shared-order-panel__header">
+              <span className="shared-order-panel__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
 
-        <div>
-          {order.deliveryAddress.street} {order.deliveryAddress.houseNumber}
-        </div>
+                  <circle
+                    cx="12"
+                    cy="9"
+                    r="2.3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+                </svg>
+              </span>
 
-        <div>
-          {order.deliveryAddress.postalCode
-            ? `${order.deliveryAddress.postalCode} `
-            : ""}
-          {order.deliveryAddress.city}
-        </div>
+              <div>
+                <span className="shared-order-panel__eyebrow">LOKACIJA</span>
 
-        {showGoogleMapsLink && (
-          <div style={{ marginTop: 8 }}>
-            <a
-              href={getGoogleMapsDirectionsUrl(order)}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: "inline-block",
-                padding: "8px 12px",
-                border: "1px solid #ccc",
-                borderRadius: 8,
-                textDecoration: "none",
-                color: "inherit",
-                fontWeight: 700,
-              }}
-            >
-              Otvori u Google Maps
-            </a>
-          </div>
-        )}
-
-        {order.deliveryContactPhoneNumber && (
-          <div style={{ marginTop: 10 }}>
-            <strong>Telefon za dostavu:</strong>
-
-            <div style={{ marginTop: 6 }}>
-              <a
-                href={getPhoneHref(order.deliveryContactPhoneNumber)}
-                style={{
-                  display: "inline-block",
-                  padding: "8px 12px",
-                  border: "1px solid #ccc",
-                  borderRadius: 8,
-                  textDecoration: "none",
-                  color: "inherit",
-                  fontWeight: 700,
-                }}
-              >
-                Pozovi kupca: {order.deliveryContactPhoneNumber}
-              </a>
-            </div>
-          </div>
-        )}
-
-        {order.deliveryAddress.note && (
-          <div style={{ fontStyle: "italic", marginTop: 8 }}>
-            Napomena za adresu: {order.deliveryAddress.note}
-          </div>
-        )}
-      </div>
-
-      {order.notes && (
-        <div style={{ marginTop: 12 }}>
-          <strong>Napomena za porudžbinu:</strong>
-          <div>{order.notes}</div>
-        </div>
-      )}
-
-      <details style={{ marginTop: 12 }}>
-        <summary style={{ cursor: "pointer", fontWeight: 700 }}>
-          Prikaži stavke porudžbine
-        </summary>
-
-        <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-          {order.items.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                borderBottom: "1px solid #eee",
-                paddingBottom: 8,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 8,
-                }}
-              >
-                <span>
-                  {item.dishName} x {item.quantity}
-                </span>
-
-                <span>
-                  {formatPrice(
-                    (item.unitPrice + item.optionsTotal) * item.quantity,
-                  )}
-                </span>
+                <h3 className="shared-order-panel__title">Adresa dostave</h3>
               </div>
+            </header>
 
-              {item.options.length > 0 && (
-                <div style={{ fontSize: 13, marginTop: 4, color: "#555" }}>
-                  Dodaci:{" "}
-                  {item.options
-                    .map((option) =>
-                      option.unitPrice > 0
-                        ? `${option.optionName} (+${formatPrice(
-                            option.unitPrice,
-                          )})`
-                        : option.optionName,
-                    )
-                    .join(", ")}
-                </div>
-              )}
+            <div className="shared-order-address">
+              <strong>
+                {order.deliveryAddress.street}{" "}
+                {order.deliveryAddress.houseNumber}
+              </strong>
+
+              <span>
+                {order.deliveryAddress.postalCode
+                  ? `${order.deliveryAddress.postalCode} `
+                  : ""}
+                {order.deliveryAddress.city}
+              </span>
             </div>
-          ))}
-        </div>
-      </details>
 
-      <div style={{ marginTop: 12, fontSize: 14 }}>
-        <div>Subtotal: {formatPrice(order.subtotal)}</div>
-        <div>Dostava: {formatPrice(order.deliveryFee)}</div>
-        <div style={{ fontWeight: 800 }}>
-          Ukupno: {formatPrice(order.totalAmount)}
+            {order.deliveryAddress.note && (
+              <div className="shared-order-note">
+                <span className="shared-order-note__label">
+                  Napomena za adresu
+                </span>
+
+                <p>{order.deliveryAddress.note}</p>
+              </div>
+            )}
+
+            {(showGoogleMapsLink || order.deliveryContactPhoneNumber) && (
+              <div className="shared-order-panel__links">
+                {showGoogleMapsLink && (
+                  <a
+                    className="shared-order-action-link"
+                    href={getGoogleMapsDirectionsUrl(order)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+
+                      <circle
+                        cx="12"
+                        cy="9"
+                        r="2.3"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                      />
+                    </svg>
+
+                    <span>Google Maps</span>
+                  </a>
+                )}
+
+                {order.deliveryContactPhoneNumber && (
+                  <a
+                    className="shared-order-action-link"
+                    href={getPhoneHref(order.deliveryContactPhoneNumber)}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M8.2 3.5 10 7.7a1.4 1.4 0 0 1-.3 1.5L8.3 10.6a15.5 15.5 0 0 0 5.1 5.1l1.4-1.4a1.4 1.4 0 0 1 1.5-.3l4.2 1.8a1.4 1.4 0 0 1 .8 1.3v2.2a2 2 0 0 1-2 2C10.1 20.7 3.3 13.9 2.7 4.7a2 2 0 0 1 2-2h2.2a1.4 1.4 0 0 1 1.3.8Z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+
+                    <span>{order.deliveryContactPhoneNumber}</span>
+                  </a>
+                )}
+              </div>
+            )}
+          </section>
+
+          {order.notes && (
+            <section className="shared-order-panel">
+              <header className="shared-order-panel__header">
+                <span className="shared-order-panel__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M6 4h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+
+                <div>
+                  <span className="shared-order-panel__eyebrow">
+                    DODATNE INFORMACIJE
+                  </span>
+
+                  <h3 className="shared-order-panel__title">
+                    Napomena porudžbine
+                  </h3>
+                </div>
+              </header>
+
+              <p className="shared-order-panel__text">{order.notes}</p>
+            </section>
+          )}
+
+          <section className="shared-order-payment">
+            <div className="shared-order-payment__item">
+              <span className="shared-order-payment__label">
+                Način plaćanja
+              </span>
+
+              <strong>{formatPaymentMethod(order.paymentMethod)}</strong>
+            </div>
+
+            <div className="shared-order-payment__item">
+              <span className="shared-order-payment__label">
+                Status plaćanja
+              </span>
+
+              <span
+                className={`shared-payment-status shared-payment-status--${paymentStatusModifier}`}
+              >
+                {formatPaymentStatus(order.paymentStatus)}
+              </span>
+            </div>
+          </section>
         </div>
 
-        <div style={{ marginTop: 8 }}>
-          <strong>Plaćanje:</strong> {formatPaymentMethod(order.paymentMethod)}
-        </div>
+        <div className="shared-order-card__details">
+          <details className="shared-order-items" open>
+            <summary className="shared-order-items__summary">
+              <span>
+                <span className="shared-order-items__eyebrow">
+                  SADRŽAJ PORUDŽBINE
+                </span>
 
-        <div>
-          <strong>Status plaćanja:</strong>{" "}
-          {formatPaymentStatus(order.paymentStatus)}
+                <strong className="shared-order-items__title">
+                  Stavke porudžbine
+                </strong>
+              </span>
+
+              <span className="shared-order-items__chevron" aria-hidden="true">
+                ↓
+              </span>
+            </summary>
+
+            <div className="shared-order-items__list">
+              {order.items.map((item) => (
+                <div key={item.id} className="shared-order-item">
+                  <div className="shared-order-item__main">
+                    <span className="shared-order-item__quantity">
+                      {item.quantity}×
+                    </span>
+
+                    <div className="shared-order-item__content">
+                      <strong className="shared-order-item__name">
+                        {item.dishName}
+                      </strong>
+
+                      {item.options.length > 0 && (
+                        <span className="shared-order-item__options">
+                          {item.options
+                            .map((option) =>
+                              option.unitPrice > 0
+                                ? `${option.optionName} (+${formatPrice(
+                                    option.unitPrice,
+                                  )})`
+                                : option.optionName,
+                            )
+                            .join(", ")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <strong className="shared-order-item__price">
+                    {formatPrice(
+                      (item.unitPrice + item.optionsTotal) * item.quantity,
+                    )}
+                  </strong>
+                </div>
+              ))}
+            </div>
+          </details>
+
+          <section className="shared-order-totals">
+            <div className="shared-order-totals__row">
+              <span>Međuzbir</span>
+
+              <strong>{formatPrice(order.subtotal)}</strong>
+            </div>
+
+            <div className="shared-order-totals__row">
+              <span>Dostava</span>
+
+              <strong>
+                {order.deliveryFee === 0
+                  ? "Besplatna"
+                  : formatPrice(order.deliveryFee)}
+              </strong>
+            </div>
+
+            <div className="shared-order-totals__row shared-order-totals__row--total">
+              <span>Ukupno</span>
+
+              <strong>{formatPrice(order.totalAmount)}</strong>
+            </div>
+          </section>
         </div>
       </div>
 
       {actions && (
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            marginTop: 14,
-            flexWrap: "wrap",
-          }}
-        >
-          {actions}
-        </div>
+        <footer className="shared-order-card__actions">{actions}</footer>
       )}
-    </div>
+    </article>
   );
 }

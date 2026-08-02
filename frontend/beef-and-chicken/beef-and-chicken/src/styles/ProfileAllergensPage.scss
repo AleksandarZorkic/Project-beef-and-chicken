@@ -1,0 +1,764 @@
+@use "./abstracts/variables" as *;
+
+// ======================================================
+// Profile allergens page
+// ======================================================
+
+.profile-allergens-page {
+  width: 100%;
+  padding-block: clamp(46px, 6vw, 82px);
+
+  color: $color-text;
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $space-7;
+
+    margin-bottom: $space-6;
+  }
+
+  &__heading {
+    max-width: 720px;
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: $space-2;
+
+    color: $color-accent;
+
+    font-size: 0.72rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.17em;
+  }
+
+  &__title {
+    margin: 0;
+
+    font-family: $font-family-display;
+    font-size: clamp(3.4rem, 7vw, 5.8rem);
+    font-weight: $font-weight-black;
+    line-height: 0.9;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+
+  &__description {
+    max-width: 660px;
+
+    margin: $space-4 0 0;
+
+    color: $color-text-soft;
+
+    font-size: 0.96rem;
+    line-height: 1.7;
+  }
+
+  &__summary {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+
+    min-width: 150px;
+    padding: 15px 17px;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+  }
+
+  &__summary-label {
+    color: $color-text-muted;
+
+    font-size: 0.66rem;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__summary-value {
+    color: $color-accent;
+
+    font-family: $font-family-display;
+    font-size: 2rem;
+    font-weight: $font-weight-black;
+    line-height: 1;
+  }
+
+  &__summary-total {
+    color: $color-text-muted;
+
+    font-size: 0.65rem;
+  }
+}
+
+// ======================================================
+// Information panel
+// ======================================================
+
+.profile-allergens-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+
+  margin-bottom: $space-5;
+  padding: 16px;
+
+  background: rgba($color-accent, 0.045);
+  border: 1px solid rgba($color-accent, 0.12);
+  border-radius: $radius-lg;
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 37px;
+
+    width: 37px;
+    height: 37px;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.07);
+    border: 1px solid rgba($color-accent, 0.13);
+    border-radius: $radius-md;
+
+    svg {
+      width: 19px;
+      height: 19px;
+    }
+  }
+
+  strong {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: $color-text;
+
+    font-size: 0.78rem;
+  }
+
+  p {
+    margin: 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.7rem;
+    line-height: 1.55;
+  }
+}
+
+// ======================================================
+// Alerts
+// ======================================================
+
+.profile-allergens-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  margin-bottom: $space-5;
+  padding: 14px 16px;
+
+  border: 1px solid transparent;
+  border-radius: $radius-lg;
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 24px;
+
+    width: 24px;
+    height: 24px;
+
+    font-size: 0.75rem;
+    font-weight: $font-weight-black;
+
+    border: 1px solid currentColor;
+    border-radius: 50%;
+  }
+
+  strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 0.8rem;
+  }
+
+  p {
+    margin: 0;
+
+    font-size: 0.74rem;
+    line-height: 1.55;
+  }
+
+  &--success {
+    color: #b8f3c9;
+
+    background: rgba(46, 134, 70, 0.14);
+    border-color: rgba(84, 210, 121, 0.2);
+  }
+
+  &--error {
+    color: #ffb3b3;
+
+    background: rgba(137, 29, 29, 0.16);
+    border-color: rgba(255, 91, 91, 0.23);
+  }
+}
+
+// ======================================================
+// Selection section
+// ======================================================
+
+.profile-allergens-selection {
+  padding: clamp(23px, 4vw, 32px);
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba($color-primary, 0.08),
+      transparent 25rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.05),
+      rgba(255, 255, 255, 0.018)
+    ),
+    $color-bg-soft;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  box-shadow:
+    0 20px 52px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $space-5;
+
+    margin-bottom: $space-6;
+    padding-bottom: $space-5;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: $color-accent;
+
+    font-size: 0.63rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  &__title {
+    margin: 0;
+
+    color: $color-text;
+
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  &__hint {
+    color: $color-text-muted;
+
+    font-size: 0.67rem;
+  }
+}
+
+// ======================================================
+// Allergen grid
+// ======================================================
+
+.profile-allergens-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.profile-allergen-card {
+  position: relative;
+
+  display: flex;
+  align-items: stretch;
+  flex-direction: column;
+
+  min-width: 0;
+  min-height: 235px;
+  padding: 17px;
+
+  color: inherit;
+  text-align: left;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.015)
+    ),
+    rgba(0, 0, 0, 0.13);
+
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: $radius-lg;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 12px 29px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+
+  transition:
+    background-color $transition-fast,
+    border-color $transition-fast,
+    box-shadow $transition-base,
+    transform $transition-base;
+
+  &:hover:not(:disabled) {
+    border-color: rgba($color-accent, 0.22);
+
+    box-shadow:
+      0 17px 37px rgba(0, 0, 0, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+    transform: translateY(-3px);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba($color-accent, 0.3);
+    outline-offset: 4px;
+  }
+
+  &:disabled {
+    cursor: wait;
+  }
+
+  &--selected {
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba($color-accent, 0.11),
+        transparent 15rem
+      ),
+      linear-gradient(
+        145deg,
+        rgba($color-accent, 0.08),
+        rgba($color-primary, 0.04)
+      ),
+      rgba(0, 0, 0, 0.14);
+
+    border-color: rgba($color-accent, 0.44);
+
+    box-shadow:
+      0 0 0 2px rgba($color-accent, 0.045),
+      0 16px 35px rgba(0, 0, 0, 0.22);
+  }
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__number,
+  &__selection {
+    display: grid;
+    place-items: center;
+
+    width: 34px;
+    height: 34px;
+
+    border-radius: $radius-md;
+  }
+
+  &__number {
+    color: $color-text-muted;
+
+    font-family: $font-family-display;
+    font-size: 0.7rem;
+    font-weight: $font-weight-black;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+  }
+
+  &__selection {
+    color: $color-text-muted;
+
+    font-size: 0.9rem;
+    font-weight: $font-weight-black;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+
+    transition:
+      color $transition-fast,
+      background-color $transition-fast,
+      border-color $transition-fast;
+  }
+
+  &--selected &__selection {
+    color: #11140f;
+
+    background: linear-gradient(135deg, $color-accent, #f0b628);
+
+    border-color: $color-accent;
+
+    box-shadow: 0 7px 17px rgba($color-accent, 0.17);
+  }
+
+  &__content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+
+    margin-top: $space-5;
+  }
+
+  &__eyebrow {
+    color: $color-text-muted;
+
+    font-size: 0.58rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.11em;
+  }
+
+  &__name {
+    margin-top: 6px;
+
+    overflow-wrap: anywhere;
+
+    color: $color-text;
+
+    font-size: 1.08rem;
+    line-height: 1.3;
+  }
+
+  &--selected &__name {
+    color: $color-accent;
+  }
+
+  &__status {
+    margin-top: 7px;
+
+    color: $color-text-muted;
+
+    font-size: 0.65rem;
+    line-height: 1.45;
+  }
+
+  &--selected &__status {
+    color: #b8f3c9;
+  }
+
+  &__action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    margin-top: $space-5;
+    padding-top: 13px;
+
+    color: $color-text-soft;
+
+    font-size: 0.65rem;
+    font-weight: $font-weight-bold;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.065);
+  }
+
+  &--selected &__action {
+    color: $color-accent;
+  }
+
+  &__spinner {
+    width: 15px;
+    height: 15px;
+
+    border: 2px solid rgba($color-text, 0.15);
+    border-top-color: $color-accent;
+    border-radius: 50%;
+
+    animation: profile-allergens-spin 700ms linear infinite;
+  }
+}
+
+// ======================================================
+// Footer status
+// ======================================================
+
+.profile-allergens-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-5;
+
+  margin-top: $space-5;
+  padding: 17px 19px;
+
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+
+  strong {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: $color-text;
+
+    font-size: 0.78rem;
+  }
+
+  p {
+    margin: 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.67rem;
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    min-height: 30px;
+    padding-inline: 10px;
+
+    color: $color-text-muted;
+
+    font-size: 0.62rem;
+    font-weight: $font-weight-bold;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+    border-radius: $radius-pill;
+
+    &--active {
+      color: #b8f3c9;
+
+      background: rgba(46, 134, 70, 0.13);
+      border-color: rgba(84, 210, 121, 0.19);
+    }
+  }
+
+  &__status-dot {
+    width: 7px;
+    height: 7px;
+
+    background: currentColor;
+    border-radius: 50%;
+
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.035);
+  }
+}
+
+// ======================================================
+// Loading and empty states
+// ======================================================
+
+.profile-allergens-loading,
+.profile-allergens-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 390px;
+  padding: 45px;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba($color-primary, 0.08),
+      transparent 21rem
+    ),
+    rgba(255, 255, 255, 0.025);
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+}
+
+.profile-allergens-loading {
+  gap: 15px;
+
+  &__spinner {
+    width: 35px;
+    height: 35px;
+
+    border: 3px solid rgba($color-accent, 0.13);
+    border-top-color: $color-accent;
+    border-radius: 50%;
+
+    animation: profile-allergens-spin 700ms linear infinite;
+  }
+
+  strong {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: $color-text;
+
+    font-size: 0.88rem;
+  }
+
+  p {
+    margin: 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.72rem;
+  }
+}
+
+.profile-allergens-empty {
+  align-items: center;
+  flex-direction: column;
+
+  text-align: center;
+
+  border-style: dashed;
+
+  &__icon {
+    display: grid;
+    place-items: center;
+
+    width: 72px;
+    height: 72px;
+
+    margin-bottom: $space-4;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.06);
+    border: 1px solid rgba($color-accent, 0.13);
+    border-radius: 50%;
+
+    svg {
+      width: 33px;
+      height: 33px;
+    }
+  }
+
+  &__eyebrow {
+    color: $color-accent;
+
+    font-size: 0.63rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  &__title {
+    margin: $space-3 0 0;
+
+    color: $color-text;
+
+    font-size: 1.7rem;
+  }
+
+  &__description {
+    margin: $space-3 0 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.76rem;
+  }
+}
+
+@keyframes profile-allergens-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ======================================================
+// Responsive
+// ======================================================
+
+@media (max-width: $breakpoint-laptop) {
+  .profile-allergens-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: $breakpoint-tablet) {
+  .profile-allergens-page {
+    padding-block: $space-8;
+
+    &__header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+
+  .profile-allergens-selection {
+    &__header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .profile-allergens-page {
+    padding-block: $space-7;
+
+    &__title {
+      font-size: 3.25rem;
+    }
+
+    &__summary {
+      width: 100%;
+
+      justify-content: center;
+    }
+  }
+
+  .profile-allergens-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-allergens-selection {
+    padding: $space-5;
+
+    border-radius: $radius-lg;
+  }
+
+  .profile-allergen-card {
+    min-height: 215px;
+  }
+
+  .profile-allergens-footer {
+    align-items: flex-start;
+    flex-direction: column;
+
+    &__status {
+      width: 100%;
+
+      justify-content: center;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-allergen-card__spinner,
+  .profile-allergens-loading__spinner {
+    animation-duration: 0.01ms;
+  }
+
+  .profile-allergen-card,
+  .profile-allergen-card__selection {
+    transition-duration: 0.01ms;
+  }
+}
