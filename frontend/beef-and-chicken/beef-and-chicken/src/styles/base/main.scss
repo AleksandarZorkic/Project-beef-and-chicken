@@ -1,0 +1,26 @@
+// ======================================================
+// Base
+// ======================================================
+
+@use "./reset";
+@use "./base";
+@use "./typography";
+
+// ======================================================
+// Global components
+// ======================================================
+
+@use "../components/buttons";
+@use "../components/forms";
+@use "../components/cards";
+@use "../components/alerts";
+@use "../components/badges";
+@use "../components/modal";
+@use "../components/tables";
+
+// ======================================================
+// Global layout
+// ======================================================
+
+@use "../layout/app-layout";
+@use "../layout/header";

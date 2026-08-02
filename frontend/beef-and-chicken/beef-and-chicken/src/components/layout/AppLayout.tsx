@@ -133,6 +133,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {
         to: "/admin/orders",
         label: "Porudžbine",
+        end: true,
       },
       {
         to: "/admin/orders/history",
@@ -310,6 +311,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   <NavLink
                     key={link.to}
                     to={link.to}
+                    end={link.end}
                     className={getSecondaryNavLinkClass}
                   >
                     {link.label}
@@ -354,6 +356,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                       <NavLink
                         key={link.to}
                         to={link.to}
+                        end={link.end}
                         className={getMobileNavLinkClass}
                       >
                         {link.label}

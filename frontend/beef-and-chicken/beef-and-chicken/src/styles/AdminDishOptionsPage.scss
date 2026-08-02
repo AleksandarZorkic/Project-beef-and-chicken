@@ -1,0 +1,1159 @@
+@use "./abstracts/variables" as *;
+
+// ======================================================
+// Page
+// ======================================================
+
+.admin-dish-options-page {
+  width: 100%;
+  padding-block: clamp(46px, 6vw, 82px);
+
+  color: $color-text;
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $space-7;
+
+    margin-bottom: clamp(30px, 5vw, 48px);
+  }
+
+  &__heading {
+    max-width: 760px;
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: $space-2;
+
+    color: $color-accent;
+
+    font-size: 0.72rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.17em;
+  }
+
+  &__title {
+    margin: 0;
+
+    font-family: $font-family-display;
+    font-size: clamp(3rem, 6.5vw, 5.5rem);
+    font-weight: $font-weight-black;
+    line-height: 0.92;
+    text-transform: uppercase;
+  }
+
+  &__description {
+    max-width: 660px;
+
+    margin: $space-4 0 0;
+
+    color: $color-text-soft;
+
+    font-size: 0.96rem;
+    line-height: 1.7;
+  }
+
+  &__new-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    min-height: 48px;
+    padding-inline: 18px;
+
+    color: #11140f;
+
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: $font-weight-extra-bold;
+
+    background: linear-gradient(135deg, $color-accent, #efb829);
+
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    box-shadow:
+      0 14px 30px rgba($color-accent, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28);
+
+    transition:
+      filter $transition-fast,
+      transform $transition-base;
+
+    span {
+      font-size: 1.1rem;
+    }
+
+    &:hover {
+      filter: brightness(1.06);
+      transform: translateY(-2px);
+    }
+  }
+
+  &__messages {
+    display: grid;
+    gap: 10px;
+
+    margin-bottom: $space-6;
+
+    &:empty {
+      display: none;
+    }
+  }
+}
+
+// ======================================================
+// Statistics
+// ======================================================
+
+.admin-dish-option-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+
+  margin-bottom: $space-6;
+}
+
+.admin-dish-option-stat {
+  display: grid;
+  gap: 4px;
+
+  min-height: 126px;
+  padding: 19px 21px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.015)
+    ),
+    $color-bg-soft;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  &__label {
+    color: $color-text-muted;
+
+    font-size: 0.64rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  &__value {
+    color: $color-text;
+
+    font-family: $font-family-display;
+    font-size: 2.5rem;
+    font-weight: $font-weight-black;
+    line-height: 1;
+  }
+
+  &__description {
+    color: $color-text-muted;
+    font-size: 0.64rem;
+  }
+
+  &--active {
+    border-color: rgba(84, 210, 121, 0.16);
+
+    .admin-dish-option-stat__value {
+      color: #9be3ae;
+    }
+  }
+
+  &--side {
+    border-color: rgba($color-accent, 0.18);
+
+    .admin-dish-option-stat__value {
+      color: $color-accent;
+    }
+  }
+
+  &--spice {
+    border-color: rgba(93, 173, 231, 0.17);
+
+    .admin-dish-option-stat__value {
+      color: #9fd7ff;
+    }
+  }
+}
+
+// ======================================================
+// Alerts
+// ======================================================
+
+.admin-dish-option-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  padding: 14px 16px;
+
+  border: 1px solid transparent;
+  border-radius: $radius-lg;
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 25px;
+
+    width: 25px;
+    height: 25px;
+
+    font-size: 0.75rem;
+    font-weight: $font-weight-black;
+
+    border: 1px solid currentColor;
+    border-radius: 50%;
+  }
+
+  strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 0.8rem;
+  }
+
+  p {
+    margin: 0;
+
+    font-size: 0.72rem;
+    line-height: 1.55;
+  }
+
+  &--success {
+    color: #b8f3c9;
+
+    background: rgba(46, 134, 70, 0.12);
+    border-color: rgba(84, 210, 121, 0.2);
+  }
+
+  &--error {
+    color: #ffb3b3;
+
+    background: rgba(137, 29, 29, 0.14);
+    border-color: rgba(255, 91, 91, 0.22);
+  }
+}
+
+// ======================================================
+// Layout
+// ======================================================
+
+.admin-dish-options-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(350px, 420px)
+    minmax(0, 1fr);
+
+  align-items: start;
+  gap: $space-6;
+}
+
+// ======================================================
+// Editor
+// ======================================================
+
+.admin-dish-option-editor {
+  position: sticky;
+  top: 150px;
+
+  padding: clamp(22px, 4vw, 29px);
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba($color-primary, 0.08),
+      transparent 24rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.048),
+      rgba(255, 255, 255, 0.015)
+    ),
+    $color-bg-soft;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+  scroll-margin-top: 150px;
+
+  &--editing {
+    border-color: rgba($color-accent, 0.3);
+
+    box-shadow:
+      0 20px 48px rgba(0, 0, 0, 0.24),
+      0 0 0 3px rgba($color-accent, 0.05);
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-4;
+
+    margin-bottom: $space-6;
+    padding-bottom: $space-5;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: $color-accent;
+
+    font-size: 0.62rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  &__title {
+    margin: 0;
+
+    color: $color-text;
+    font-size: 1.75rem;
+  }
+
+  &__mode {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 29px;
+    padding-inline: 9px;
+
+    color: $color-text-soft;
+
+    font-size: 0.6rem;
+    font-weight: $font-weight-bold;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+    border-radius: $radius-pill;
+  }
+}
+
+.admin-dish-option-form {
+  &__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+.admin-dish-option-type-info {
+  padding: 13px 14px;
+
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: $radius-md;
+
+  strong {
+    display: block;
+
+    color: $color-accent;
+    font-size: 0.72rem;
+  }
+
+  p {
+    margin: 5px 0 0;
+
+    color: $color-text-muted;
+    font-size: 0.62rem;
+    line-height: 1.5;
+  }
+}
+
+// ======================================================
+// Payment and switch
+// ======================================================
+
+.admin-dish-option-payment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+
+  padding: 14px;
+
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: $radius-lg;
+
+  &__content {
+    strong {
+      display: block;
+
+      color: $color-text;
+      font-size: 0.73rem;
+    }
+
+    p {
+      max-width: 280px;
+
+      margin: 5px 0 0;
+
+      color: $color-text-muted;
+      font-size: 0.6rem;
+      line-height: 1.5;
+    }
+  }
+}
+
+.admin-dish-option-switch {
+  position: relative;
+
+  display: inline-flex;
+  flex: 0 0 auto;
+
+  cursor: pointer;
+
+  > input {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    overflow: hidden;
+
+    opacity: 0;
+  }
+
+  &__control {
+    position: relative;
+
+    display: block;
+
+    width: 50px;
+    height: 28px;
+
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid $color-border-strong;
+    border-radius: $radius-pill;
+  }
+
+  &__thumb {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+
+    width: 18px;
+    height: 18px;
+
+    background: $color-text-muted;
+    border-radius: 50%;
+
+    transition:
+      background-color $transition-fast,
+      transform $transition-base;
+  }
+}
+
+.admin-dish-option-switch > input:checked + .admin-dish-option-switch__control {
+  background: rgba($color-accent, 0.21);
+  border-color: rgba($color-accent, 0.56);
+}
+
+.admin-dish-option-switch
+  > input:checked
+  + .admin-dish-option-switch__control
+  .admin-dish-option-switch__thumb {
+  background: $color-accent;
+
+  transform: translateX(22px);
+}
+
+.admin-dish-option-switch
+  > input:focus-visible
+  + .admin-dish-option-switch__control {
+  outline: 3px solid rgba($color-accent, 0.3);
+  outline-offset: 3px;
+}
+
+.admin-dish-option-money-control {
+  position: relative;
+
+  input {
+    padding-right: 62px;
+  }
+
+  > span {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+
+    color: $color-accent;
+
+    font-size: 0.64rem;
+    font-weight: $font-weight-extra-bold;
+
+    pointer-events: none;
+
+    transform: translateY(-50%);
+  }
+}
+
+// ======================================================
+// Buttons
+// ======================================================
+
+.admin-dish-option-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  min-height: 47px;
+  padding-inline: 16px;
+
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: $font-weight-extra-bold;
+
+  border: 1px solid transparent;
+  border-radius: $radius-md;
+
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    color: #11140f;
+
+    background: linear-gradient(135deg, $color-accent, #efb829);
+  }
+
+  &--secondary {
+    color: $color-text-soft;
+
+    background: rgba(255, 255, 255, 0.035);
+    border-color: $color-border;
+  }
+
+  &__spinner {
+    width: 16px;
+    height: 16px;
+
+    border: 2px solid rgba(17, 20, 15, 0.25);
+    border-top-color: #11140f;
+    border-radius: 50%;
+
+    animation: admin-dish-option-spin 700ms linear infinite;
+  }
+}
+
+// ======================================================
+// Catalog
+// ======================================================
+
+.admin-dish-option-catalog {
+  min-width: 0;
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $space-5;
+
+    margin-bottom: $space-5;
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: $color-accent;
+
+    font-size: 0.64rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  &__title {
+    margin: 0;
+
+    color: $color-text;
+    font-size: 2rem;
+  }
+
+  &__refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 42px;
+    padding-inline: 13px;
+
+    color: $color-text-soft;
+
+    font: inherit;
+    font-size: 0.67rem;
+    font-weight: $font-weight-bold;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    svg {
+      width: 16px;
+      height: 16px;
+
+      color: $color-accent;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// ======================================================
+// Filters
+// ======================================================
+
+.admin-dish-option-filters {
+  display: grid;
+  gap: 10px;
+
+  margin-bottom: $space-5;
+}
+
+.admin-dish-option-search {
+  position: relative;
+
+  svg {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    left: 14px;
+
+    width: 18px;
+    height: 18px;
+
+    color: $color-accent;
+
+    pointer-events: none;
+
+    transform: translateY(-50%);
+  }
+
+  input {
+    padding-left: 43px;
+  }
+}
+
+.admin-dish-option-filter-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+
+  padding: 6px;
+
+  background: rgba(255, 255, 255, 0.022);
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+
+  &__button {
+    min-height: 42px;
+
+    color: $color-text-muted;
+
+    font: inherit;
+    font-size: 0.66rem;
+    font-weight: $font-weight-bold;
+
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    &--active {
+      color: #11140f;
+
+      background: linear-gradient(135deg, $color-accent, #efb829);
+
+      border-color: $color-accent;
+    }
+  }
+}
+
+.admin-dish-option-inactive-filter {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  width: fit-content;
+
+  color: $color-text-muted;
+
+  font-size: 0.63rem;
+
+  cursor: pointer;
+
+  > input {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    overflow: hidden;
+
+    opacity: 0;
+  }
+
+  &__control {
+    display: grid;
+    place-items: center;
+
+    width: 22px;
+    height: 22px;
+
+    color: transparent;
+
+    font-size: 0.62rem;
+    font-weight: $font-weight-black;
+
+    background: rgba(0, 0, 0, 0.24);
+    border: 1px solid $color-border-strong;
+    border-radius: 6px;
+  }
+}
+
+.admin-dish-option-inactive-filter
+  > input:checked
+  + .admin-dish-option-inactive-filter__control {
+  color: #11140f;
+
+  background: $color-accent;
+  border-color: $color-accent;
+}
+
+// ======================================================
+// Cards
+// ======================================================
+
+.admin-dish-option-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-dish-option-card {
+  display: flex;
+  flex-direction: column;
+
+  min-width: 0;
+  min-height: 255px;
+  padding: 18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.047),
+      rgba(255, 255, 255, 0.015)
+    ),
+    $color-bg-soft;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+
+  box-shadow:
+    0 15px 36px rgba(0, 0, 0, 0.19),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  &--inactive {
+    opacity: 0.68;
+  }
+
+  &--editing {
+    border-color: rgba($color-accent, 0.48);
+
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.24),
+      0 0 0 3px rgba($color-accent, 0.06);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    margin-bottom: $space-4;
+  }
+
+  &__order {
+    display: grid;
+    place-items: center;
+
+    width: 38px;
+    height: 38px;
+
+    color: $color-accent;
+
+    font-family: $font-family-display;
+    font-size: 0.85rem;
+    font-weight: $font-weight-black;
+
+    background: rgba($color-accent, 0.06);
+    border: 1px solid rgba($color-accent, 0.14);
+    border-radius: $radius-md;
+  }
+
+  &__title {
+    margin: $space-3 0 0;
+
+    color: $color-text;
+    font-size: 1.35rem;
+  }
+
+  &__rule {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    margin-top: $space-5;
+    padding: 12px;
+
+    background: rgba(0, 0, 0, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: $radius-md;
+
+    span {
+      color: $color-text-muted;
+      font-size: 0.6rem;
+    }
+
+    strong {
+      color: $color-accent;
+
+      font-size: 0.65rem;
+      text-align: right;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin-top: auto;
+    padding-top: $space-5;
+  }
+
+  &__action {
+    flex: 1;
+
+    min-height: 38px;
+    padding-inline: 9px;
+
+    font: inherit;
+    font-size: 0.6rem;
+    font-weight: $font-weight-extra-bold;
+
+    border: 1px solid transparent;
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    &--edit {
+      color: $color-text-soft;
+
+      background: rgba(255, 255, 255, 0.035);
+      border-color: $color-border;
+    }
+
+    &--activate {
+      color: #b8f3c9;
+
+      background: rgba(46, 134, 70, 0.12);
+      border-color: rgba(84, 210, 121, 0.18);
+    }
+
+    &--deactivate {
+      color: #ffd29c;
+
+      background: rgba(153, 90, 23, 0.12);
+      border-color: rgba(235, 156, 75, 0.17);
+    }
+  }
+}
+
+.admin-dish-option-type,
+.admin-dish-option-status {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 28px;
+  padding-inline: 9px;
+
+  font-size: 0.57rem;
+  font-weight: $font-weight-extra-bold;
+
+  border: 1px solid transparent;
+  border-radius: $radius-pill;
+}
+
+.admin-dish-option-type {
+  align-self: flex-start;
+
+  &--side {
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.07);
+    border-color: rgba($color-accent, 0.14);
+  }
+
+  &--spice {
+    color: #9fd7ff;
+
+    background: rgba(40, 102, 148, 0.14);
+    border-color: rgba(93, 173, 231, 0.2);
+  }
+}
+
+.admin-dish-option-status {
+  gap: 7px;
+
+  &__dot {
+    width: 7px;
+    height: 7px;
+
+    background: currentColor;
+    border-radius: 50%;
+  }
+
+  &--active {
+    color: #9be3ae;
+
+    background: rgba(38, 139, 68, 0.13);
+    border-color: rgba(84, 210, 121, 0.19);
+  }
+
+  &--inactive {
+    color: #ffaaaa;
+
+    background: rgba(137, 29, 29, 0.13);
+    border-color: rgba(255, 91, 91, 0.19);
+  }
+}
+
+// ======================================================
+// States
+// ======================================================
+
+.admin-dish-options-state,
+.admin-dish-options-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 320px;
+  padding: 40px;
+
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed $color-border;
+  border-radius: $radius-xl;
+}
+
+.admin-dish-options-state {
+  gap: 14px;
+
+  &__spinner {
+    width: 34px;
+    height: 34px;
+
+    border: 3px solid rgba($color-accent, 0.12);
+    border-top-color: $color-accent;
+    border-radius: 50%;
+
+    animation: admin-dish-option-spin 700ms linear infinite;
+  }
+
+  strong {
+    display: block;
+
+    color: $color-text;
+    font-size: 0.8rem;
+  }
+
+  p {
+    margin: 4px 0 0;
+
+    color: $color-text-muted;
+    font-size: 0.64rem;
+  }
+}
+
+.admin-dish-options-empty {
+  flex-direction: column;
+
+  text-align: center;
+
+  &__icon {
+    display: grid;
+    place-items: center;
+
+    width: 68px;
+    height: 68px;
+
+    margin-bottom: $space-4;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.055);
+    border: 1px solid rgba($color-accent, 0.13);
+    border-radius: 50%;
+
+    svg {
+      width: 30px;
+      height: 30px;
+    }
+  }
+
+  &__eyebrow {
+    color: $color-accent;
+
+    font-size: 0.6rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  &__title {
+    margin: $space-3 0 0;
+
+    color: $color-text;
+    font-size: 1.4rem;
+  }
+
+  &__description {
+    margin: $space-3 0 0;
+
+    color: $color-text-muted;
+    font-size: 0.68rem;
+  }
+}
+
+@keyframes admin-dish-option-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ======================================================
+// Responsive
+// ======================================================
+
+@media (max-width: 1200px) {
+  .admin-dish-options-layout {
+    grid-template-columns:
+      350px
+      minmax(0, 1fr);
+  }
+
+  .admin-dish-option-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: $breakpoint-laptop) {
+  .admin-dish-option-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: $breakpoint-tablet) {
+  .admin-dish-options-page {
+    &__header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    &__new-button {
+      width: 100%;
+    }
+  }
+
+  .admin-dish-options-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dish-option-editor {
+    position: static;
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .admin-dish-option-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dish-option-editor {
+    padding: $space-5;
+  }
+
+  .admin-dish-option-catalog__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-dish-option-catalog__refresh {
+    width: 100%;
+  }
+
+  .admin-dish-option-filter-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dish-option-payment {
+    align-items: flex-start;
+  }
+
+  .admin-dish-option-form__actions,
+  .admin-dish-option-card__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-dish-option-button,
+  .admin-dish-option-card__action {
+    width: 100%;
+  }
+}

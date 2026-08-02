@@ -1299,3 +1299,9 @@
     }
   }
 }
+
+@media (min-width: 1100px) {
+  .home-hero__title {
+    font-size: clamp(6.5rem, 8.5vw, 8rem);
+  }
+}

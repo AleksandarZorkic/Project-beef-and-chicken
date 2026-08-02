@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 import {
   activateDishOption,
   createDishOption,
@@ -9,8 +15,11 @@ import {
   type DishOptionDto,
   type DishOptionType,
 } from "../api/dishOptionsApi";
+import "../styles/AdminDishOptionsPage.scss";
 
 type DishOptionFormValue = CreateDishOptionRequest;
+
+type TypeFilter = "all" | DishOptionType;
 
 const emptyForm: DishOptionFormValue = {
   name: "",
@@ -20,12 +29,12 @@ const emptyForm: DishOptionFormValue = {
   sortOrder: 0,
 };
 
-function getErrorMessage(e: any, fallback: string) {
+function getErrorMessage(error: any, fallback: string) {
   return (
-    e?.response?.data?.error ??
-    e?.response?.data?.message ??
-    e?.response?.data?.title ??
-    e?.message ??
+    error?.response?.data?.error ??
+    error?.response?.data?.message ??
+    error?.response?.data?.title ??
+    error?.message ??
     fallback
   );
 }
@@ -73,7 +82,9 @@ function normalizeForm(value: DishOptionFormValue): DishOptionFormValue {
 function validateForm(value: DishOptionFormValue) {
   const name = value.name.trim();
 
-  if (!name) return "Naziv je obavezan.";
+  if (!name) {
+    return "Naziv je obavezan.";
+  }
 
   if (name.length > 100) {
     return "Naziv može imati najviše 100 karaktera.";
@@ -104,60 +115,150 @@ function validateForm(value: DishOptionFormValue) {
 
 export default function AdminDishOptionsPage() {
   const [options, setOptions] = useState<DishOptionDto[]>([]);
+
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
   const [saving, setSaving] = useState(false);
+
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
 
   const [editingId, setEditingId] = useState<number | null>(null);
+
   const [formValue, setFormValue] = useState<DishOptionFormValue>(emptyForm);
 
-  const [typeFilter, setTypeFilter] = useState<"all" | DishOptionType>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+
   const [includeInactive, setIncludeInactive] = useState(true);
 
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [error, setError] = useState<string | null>(null);
+
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadOptions();
-  }, [typeFilter, includeInactive]);
+  const isEditing = editingId !== null;
+
+  const loadOptions = useCallback(
+    async (showInitialLoading = true) => {
+      try {
+        setError(null);
+
+        if (showInitialLoading) {
+          setLoading(true);
+        } else {
+          setRefreshing(true);
+        }
+
+        const data = await getAdminDishOptions({
+          includeInactive,
+          type: typeFilter === "all" ? undefined : typeFilter,
+        });
+
+        setOptions(data);
+      } catch (error: any) {
+        setError(getErrorMessage(error, "Greška pri učitavanju opcija."));
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [includeInactive, typeFilter],
+  );
 
   useEffect(() => {
-    if (!successMessage) return;
+    void loadOptions();
+  }, [loadOptions]);
 
-    const timer = setTimeout(() => {
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
       setSuccessMessage(null);
     }, 2500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [successMessage]);
 
-  async function loadOptions() {
-    try {
-      setError(null);
-      setLoading(true);
+  const visibleOptions = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLocaleLowerCase("sr-RS");
 
-      const data = await getAdminDishOptions({
-        includeInactive,
-        type: typeFilter === "all" ? undefined : typeFilter,
+    return [...options]
+      .filter((option) => {
+        if (!normalizedSearch) {
+          return true;
+        }
+
+        return option.name
+          .toLocaleLowerCase("sr-RS")
+          .includes(normalizedSearch);
+      })
+      .sort((firstOption, secondOption) => {
+        if (firstOption.sortOrder !== secondOption.sortOrder) {
+          return firstOption.sortOrder - secondOption.sortOrder;
+        }
+
+        return firstOption.name.localeCompare(secondOption.name, "sr-RS");
       });
+  }, [options, searchTerm]);
 
-      setOptions(data);
-    } catch (e: any) {
-      setError(getErrorMessage(e, "Greška pri učitavanju opcija."));
-    } finally {
-      setLoading(false);
-    }
+  const optionCounts = useMemo(() => {
+    const active = options.filter((option) => option.isActive).length;
+
+    const sideDishes = options.filter(
+      (option) => option.type === "SideDish",
+    ).length;
+
+    const spices = options.filter((option) => option.type === "Spice").length;
+
+    return {
+      all: options.length,
+      active,
+      inactive: options.length - active,
+      sideDishes,
+      spices,
+    };
+  }, [options]);
+
+  function clearForm() {
+    setEditingId(null);
+    setFormValue(emptyForm);
   }
 
   function resetForm() {
-    setEditingId(null);
-    setFormValue(emptyForm);
+    clearForm();
+    setError(null);
+    setSuccessMessage(null);
+  }
+
+  function scrollToEditor() {
+    const editor = document.getElementById("admin-dish-option-editor");
+
+    if (!editor) {
+      return;
+    }
+
+    editor.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
+  function startNewOption() {
+    resetForm();
+
+    window.setTimeout(scrollToEditor, 0);
   }
 
   function handleEdit(option: DishOptionDto) {
     setError(null);
     setSuccessMessage(null);
     setEditingId(option.id);
+
     setFormValue({
       name: option.name,
       type: option.type,
@@ -165,13 +266,27 @@ export default function AdminDishOptionsPage() {
       isAlwaysPaid: option.isAlwaysPaid,
       sortOrder: option.sortOrder,
     });
+
+    window.setTimeout(scrollToEditor, 0);
   }
 
-  async function handleSave() {
+  function handleTypeChange(nextType: DishOptionType) {
+    setFormValue((current) => ({
+      ...current,
+      type: nextType,
+      price: nextType === "Spice" ? 0 : current.price,
+      isAlwaysPaid: nextType === "Spice" ? false : current.isAlwaysPaid,
+    }));
+  }
+
+  async function handleSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
     setError(null);
     setSuccessMessage(null);
 
     const validationError = validateForm(formValue);
+
     if (validationError) {
       setError(validationError);
       return;
@@ -182,18 +297,23 @@ export default function AdminDishOptionsPage() {
     try {
       setSaving(true);
 
+      const message =
+        editingId === null
+          ? "Opcija je uspešno dodata."
+          : "Opcija je uspešno izmenjena.";
+
       if (editingId === null) {
         await createDishOption(payload);
-        setSuccessMessage("Opcija je uspešno dodata.");
       } else {
         await updateDishOption(editingId, payload);
-        setSuccessMessage("Opcija je uspešno izmenjena.");
       }
 
-      await loadOptions();
-      resetForm();
-    } catch (e: any) {
-      setError(getErrorMessage(e, "Greška pri čuvanju opcije."));
+      await loadOptions(false);
+      clearForm();
+
+      setSuccessMessage(message);
+    } catch (error: any) {
+      setError(getErrorMessage(error, "Greška pri čuvanju opcije."));
     } finally {
       setSaving(false);
     }
@@ -204,7 +324,9 @@ export default function AdminDishOptionsPage() {
       `Da li želiš da deaktiviraš opciju "${option.name}"?`,
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
       setError(null);
@@ -212,11 +334,16 @@ export default function AdminDishOptionsPage() {
       setActionLoadingId(option.id);
 
       await deactivateDishOption(option.id);
-      await loadOptions();
+
+      if (editingId === option.id) {
+        clearForm();
+      }
+
+      await loadOptions(false);
 
       setSuccessMessage(`Opcija "${option.name}" je deaktivirana.`);
-    } catch (e: any) {
-      setError(getErrorMessage(e, "Greška pri deaktivaciji opcije."));
+    } catch (error: any) {
+      setError(getErrorMessage(error, "Greška pri deaktivaciji opcije."));
     } finally {
       setActionLoadingId(null);
     }
@@ -229,262 +356,634 @@ export default function AdminDishOptionsPage() {
       setActionLoadingId(option.id);
 
       await activateDishOption(option.id);
-      await loadOptions();
+      await loadOptions(false);
 
       setSuccessMessage(`Opcija "${option.name}" je aktivirana.`);
-    } catch (e: any) {
-      setError(getErrorMessage(e, "Greška pri aktivaciji opcije."));
+    } catch (error: any) {
+      setError(getErrorMessage(error, "Greška pri aktivaciji opcije."));
     } finally {
       setActionLoadingId(null);
     }
   }
 
   return (
-    <div>
-      <h2>Prilozi i začini</h2>
+    <main className="admin-dish-options-page">
+      <header className="admin-dish-options-page__header">
+        <div className="admin-dish-options-page__heading">
+          <span className="admin-dish-options-page__eyebrow">
+            DODACI UZ JELA
+          </span>
 
-      <div
-        style={{
-          display: "grid",
-          gap: 12,
-          padding: 16,
-          border: "1px solid #ccc",
-          borderRadius: 8,
-          marginTop: 12,
-        }}
-      >
-        <h3>{editingId === null ? "Nova opcija" : "Izmena opcije"}</h3>
+          <h1 className="admin-dish-options-page__title">Prilozi i začini</h1>
 
-        <input
-          type="text"
-          placeholder="Naziv"
-          value={formValue.name}
-          maxLength={100}
-          disabled={saving}
-          onChange={(e) =>
-            setFormValue((prev) => ({ ...prev, name: e.target.value }))
-          }
-        />
+          <p className="admin-dish-options-page__description">
+            Kreirajte priloge i začine, odredite redosled prikaza i podesite
+            koje opcije se dodatno naplaćuju.
+          </p>
+        </div>
 
-        <select
-          value={formValue.type}
-          disabled={saving}
-          onChange={(e) => {
-            const nextType = e.target.value as DishOptionType;
-
-            setFormValue((prev) => ({
-              ...prev,
-              type: nextType,
-              price: nextType === "Spice" ? 0 : prev.price,
-              isAlwaysPaid: nextType === "Spice" ? false : prev.isAlwaysPaid,
-            }));
-          }}
+        <button
+          type="button"
+          className="admin-dish-options-page__new-button"
+          onClick={startNewOption}
         >
-          <option value="SideDish">Prilog</option>
-          <option value="Spice">Začin</option>
-        </select>
+          <span aria-hidden="true">+</span>
+          Nova opcija
+        </button>
+      </header>
 
-        {formValue.type === "SideDish" && (
-          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={formValue.isAlwaysPaid}
-              disabled={saving}
-              onChange={(e) =>
-                setFormValue((prev) => ({
-                  ...prev,
-                  isAlwaysPaid: e.target.checked,
-                  price: e.target.checked ? prev.price : 0,
-                }))
-              }
-            />
-            Ovaj prilog se odmah naplaćuje
-          </label>
+      <section className="admin-dish-option-stats" aria-label="Pregled opcija">
+        <article className="admin-dish-option-stat">
+          <span className="admin-dish-option-stat__label">Prikazano</span>
+
+          <strong className="admin-dish-option-stat__value">
+            {optionCounts.all}
+          </strong>
+
+          <span className="admin-dish-option-stat__description">
+            Opcije trenutnog filtera
+          </span>
+        </article>
+
+        <article className="admin-dish-option-stat admin-dish-option-stat--active">
+          <span className="admin-dish-option-stat__label">Aktivne</span>
+
+          <strong className="admin-dish-option-stat__value">
+            {optionCounts.active}
+          </strong>
+
+          <span className="admin-dish-option-stat__description">
+            Dostupne za izbor
+          </span>
+        </article>
+
+        <article className="admin-dish-option-stat admin-dish-option-stat--side">
+          <span className="admin-dish-option-stat__label">Prilozi</span>
+
+          <strong className="admin-dish-option-stat__value">
+            {optionCounts.sideDishes}
+          </strong>
+
+          <span className="admin-dish-option-stat__description">
+            Besplatni ili plaćeni
+          </span>
+        </article>
+
+        <article className="admin-dish-option-stat admin-dish-option-stat--spice">
+          <span className="admin-dish-option-stat__label">Začini</span>
+
+          <strong className="admin-dish-option-stat__value">
+            {optionCounts.spices}
+          </strong>
+
+          <span className="admin-dish-option-stat__description">
+            Uvek bez doplate
+          </span>
+        </article>
+      </section>
+
+      <div className="admin-dish-options-page__messages" aria-live="polite">
+        {successMessage && (
+          <div className="admin-dish-option-alert admin-dish-option-alert--success">
+            <span className="admin-dish-option-alert__icon" aria-hidden="true">
+              ✓
+            </span>
+
+            <div>
+              <strong>Uspešno završeno</strong>
+              <p>{successMessage}</p>
+            </div>
+          </div>
         )}
 
-        {formValue.type === "SideDish" && formValue.isAlwaysPaid && (
-          <input
-            type="number"
-            min={0}
-            placeholder="Cena"
-            value={formValue.price}
-            disabled={saving}
-            onChange={(e) =>
-              setFormValue((prev) => ({
-                ...prev,
-                price: Number(e.target.value),
-              }))
-            }
-          />
-        )}
-
-        <input
-          type="number"
-          min={0}
-          placeholder="Redosled prikaza"
-          value={formValue.sortOrder}
-          disabled={saving}
-          onChange={(e) =>
-            setFormValue((prev) => ({
-              ...prev,
-              sortOrder: Number(e.target.value),
-            }))
-          }
-        />
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" disabled={saving} onClick={handleSave}>
-            {saving
-              ? "Čuvam..."
-              : editingId === null
-                ? "Dodaj opciju"
-                : "Sačuvaj izmene"}
-          </button>
-
-          {editingId !== null && (
-            <button type="button" disabled={saving} onClick={resetForm}>
-              Otkaži izmenu
-            </button>
-          )}
-        </div>
-      </div>
-
-      {successMessage && (
-        <div
-          style={{
-            color: "green",
-            marginTop: 12,
-            padding: 10,
-            border: "1px solid green",
-            borderRadius: 8,
-            background: "#f0fff0",
-          }}
-        >
-          {successMessage}
-        </div>
-      )}
-
-      {error && (
-        <div
-          style={{
-            color: "crimson",
-            marginTop: 12,
-            padding: 10,
-            border: "1px solid crimson",
-            borderRadius: 8,
-            background: "#fff5f5",
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          alignItems: "center",
-          marginTop: 20,
-          flexWrap: "wrap",
-        }}
-      >
-        <label>
-          Tip:{" "}
-          <select
-            value={typeFilter}
-            onChange={(e) =>
-              setTypeFilter(e.target.value as "all" | DishOptionType)
-            }
+        {error && (
+          <div
+            className="admin-dish-option-alert admin-dish-option-alert--error"
+            role="alert"
           >
-            <option value="all">Sve</option>
-            <option value="SideDish">Prilozi</option>
-            <option value="Spice">Začini</option>
-          </select>
-        </label>
+            <span className="admin-dish-option-alert__icon" aria-hidden="true">
+              !
+            </span>
 
-        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input
-            type="checkbox"
-            checked={includeInactive}
-            onChange={(e) => setIncludeInactive(e.target.checked)}
-          />
-          Prikaži neaktivne
-        </label>
+            <div>
+              <strong>Došlo je do greške</strong>
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {loading ? (
-        <div style={{ marginTop: 16 }}>Učitavam opcije...</div>
-      ) : options.length === 0 ? (
-        <div style={{ marginTop: 16 }}>Nema opcija za prikaz.</div>
-      ) : (
-        <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
-          {options.map((option) => (
-            <div
-              key={option.id}
-              style={{
-                border: option.isActive ? "1px solid #ccc" : "1px solid #ddd",
-                background: option.isActive ? "white" : "#f5f5f5",
-                borderRadius: 8,
-                padding: 12,
-                opacity: option.isActive ? 1 : 0.65,
-              }}
+      <div className="admin-dish-options-layout">
+        <section
+          id="admin-dish-option-editor"
+          className={[
+            "admin-dish-option-editor",
+            isEditing ? "admin-dish-option-editor--editing" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
+          <header className="admin-dish-option-editor__header">
+            <div>
+              <span className="admin-dish-option-editor__eyebrow">
+                {isEditing ? "IZMENA OPCIJE" : "NOVA OPCIJA"}
+              </span>
+
+              <h2 className="admin-dish-option-editor__title">
+                {isEditing ? "Izmeni opciju" : "Dodaj opciju"}
+              </h2>
+            </div>
+
+            <span className="admin-dish-option-editor__mode">
+              {isEditing ? "Izmena" : "Kreiranje"}
+            </span>
+          </header>
+
+          <form className="form admin-dish-option-form" onSubmit={handleSave}>
+            <div className="form-field">
+              <label className="form-label" htmlFor="dish-option-name">
+                Naziv
+                <span className="form-label__required">*</span>
+              </label>
+
+              <input
+                id="dish-option-name"
+                className="form-control"
+                type="text"
+                value={formValue.name}
+                maxLength={100}
+                disabled={saving}
+                placeholder="Na primer: Pomfrit"
+                onChange={(event) =>
+                  setFormValue((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
+                }
+              />
+
+              <p className="form-help">{formValue.name.length}/100 karaktera</p>
+            </div>
+
+            <div className="form-field">
+              <label className="form-label" htmlFor="dish-option-type">
+                Tip opcije
+                <span className="form-label__required">*</span>
+              </label>
+
+              <select
+                id="dish-option-type"
+                className="form-select"
+                value={formValue.type}
+                disabled={saving}
+                onChange={(event) =>
+                  handleTypeChange(event.target.value as DishOptionType)
+                }
+              >
+                <option value="SideDish">Prilog</option>
+
+                <option value="Spice">Začin</option>
+              </select>
+            </div>
+
+            <div className="admin-dish-option-type-info">
+              <strong>
+                {formValue.type === "SideDish" ? "Prilog" : "Začin"}
+              </strong>
+
+              <p>
+                {formValue.type === "SideDish"
+                  ? "Prilog može biti deo pravila za besplatne dodatke ili se može uvek dodatno naplaćivati."
+                  : "Začin je uvek besplatan i ne može imati cenu."}
+              </p>
+            </div>
+
+            {formValue.type === "SideDish" && (
+              <section className="admin-dish-option-payment">
+                <div className="admin-dish-option-payment__content">
+                  <strong>Uvek se dodatno naplaćuje</strong>
+
+                  <p>
+                    Kada je isključeno, prilog ulazi u pravilo za prve četiri
+                    besplatne opcije.
+                  </p>
+                </div>
+
+                <label className="admin-dish-option-switch">
+                  <input
+                    type="checkbox"
+                    checked={formValue.isAlwaysPaid}
+                    disabled={saving}
+                    aria-label="Prilog se uvek naplaćuje"
+                    onChange={(event) =>
+                      setFormValue((current) => ({
+                        ...current,
+                        isAlwaysPaid: event.target.checked,
+                        price: event.target.checked ? current.price : 0,
+                      }))
+                    }
+                  />
+
+                  <span
+                    className="admin-dish-option-switch__control"
+                    aria-hidden="true"
+                  >
+                    <span className="admin-dish-option-switch__thumb" />
+                  </span>
+                </label>
+              </section>
+            )}
+
+            {formValue.type === "SideDish" && formValue.isAlwaysPaid && (
+              <div className="form-field">
+                <label className="form-label" htmlFor="dish-option-price">
+                  Cena
+                  <span className="form-label__required">*</span>
+                </label>
+
+                <div className="admin-dish-option-money-control">
+                  <input
+                    id="dish-option-price"
+                    className="form-control"
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={formValue.price}
+                    disabled={saving}
+                    onChange={(event) =>
+                      setFormValue((current) => ({
+                        ...current,
+                        price: Number(event.target.value),
+                      }))
+                    }
+                  />
+
+                  <span>RSD</span>
+                </div>
+
+                <p className="form-help">Cena mora biti veća od nule.</p>
+              </div>
+            )}
+
+            <div className="form-field">
+              <label className="form-label" htmlFor="dish-option-sort-order">
+                Redosled prikaza
+              </label>
+
+              <input
+                id="dish-option-sort-order"
+                className="form-control"
+                type="number"
+                min={0}
+                step={1}
+                value={formValue.sortOrder}
+                disabled={saving}
+                onChange={(event) =>
+                  setFormValue((current) => ({
+                    ...current,
+                    sortOrder: Number(event.target.value),
+                  }))
+                }
+              />
+
+              <p className="form-help">Manji broj znači ranije prikazivanje.</p>
+            </div>
+
+            <div className="admin-dish-option-form__actions">
+              <button
+                type="submit"
+                className="admin-dish-option-button admin-dish-option-button--primary"
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <span
+                      className="admin-dish-option-button__spinner"
+                      aria-hidden="true"
+                    />
+                    Čuvam...
+                  </>
+                ) : isEditing ? (
+                  "Sačuvaj izmene"
+                ) : (
+                  "Dodaj opciju"
+                )}
+              </button>
+
+              {isEditing && (
+                <button
+                  type="button"
+                  className="admin-dish-option-button admin-dish-option-button--secondary"
+                  disabled={saving}
+                  onClick={resetForm}
+                >
+                  Otkaži izmenu
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+
+        <section className="admin-dish-option-catalog">
+          <header className="admin-dish-option-catalog__header">
+            <div>
+              <span className="admin-dish-option-catalog__eyebrow">
+                PREGLED OPCIJA
+              </span>
+
+              <h2 className="admin-dish-option-catalog__title">
+                Dostupni dodaci
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              className="admin-dish-option-catalog__refresh"
+              disabled={refreshing}
+              onClick={() => void loadOptions(false)}
             >
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div>
-                  <strong>{option.name}</strong>
-                  {!option.isActive && (
-                    <span style={{ marginLeft: 8, color: "crimson" }}>
-                      (Neaktivno)
-                    </span>
-                  )}
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M20 7v5h-5M4 17v-5h5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
 
-                  <div style={{ marginTop: 4 }}>
-                    Tip: {formatType(option.type)}
-                  </div>
+                <path
+                  d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
 
-                  <div>Redosled: {option.sortOrder}</div>
+              {refreshing ? "Osvežavam..." : "Osveži"}
+            </button>
+          </header>
 
-                  {option.type === "SideDish" && option.isAlwaysPaid && (
-                    <div>Naplaćuje se odmah: {formatPrice(option.price)}</div>
-                  )}
+          <div className="admin-dish-option-filters">
+            <div className="admin-dish-option-search">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                />
 
-                  {option.type === "SideDish" && !option.isAlwaysPaid && (
-                    <div>Običan prilog: ulazi u pravilo prva 4 besplatna</div>
-                  )}
+                <path
+                  d="m16.2 16.2 4 4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                />
+              </svg>
 
-                  {option.type === "Spice" && <div>Začin: uvek besplatan</div>}
-                </div>
+              <input
+                className="form-control"
+                type="search"
+                value={searchTerm}
+                placeholder="Pretraži opcije..."
+                aria-label="Pretraži opcije"
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
 
-                <div style={{ display: "flex", gap: 8, alignItems: "start" }}>
-                  <button type="button" onClick={() => handleEdit(option)}>
-                    Izmeni
-                  </button>
+            <div
+              className="admin-dish-option-filter-tabs"
+              role="group"
+              aria-label="Tip opcije"
+            >
+              <button
+                type="button"
+                className={[
+                  "admin-dish-option-filter-tabs__button",
+                  typeFilter === "all"
+                    ? "admin-dish-option-filter-tabs__button--active"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-pressed={typeFilter === "all"}
+                onClick={() => setTypeFilter("all")}
+              >
+                Sve
+              </button>
 
-                  {option.isActive ? (
-                    <button
-                      type="button"
-                      disabled={actionLoadingId === option.id}
-                      onClick={() => handleDeactivate(option)}
-                    >
-                      {actionLoadingId === option.id
-                        ? "Radim..."
-                        : "Deaktiviraj"}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={actionLoadingId === option.id}
-                      onClick={() => handleActivate(option)}
-                    >
-                      {actionLoadingId === option.id ? "Radim..." : "Aktiviraj"}
-                    </button>
-                  )}
-                </div>
+              <button
+                type="button"
+                className={[
+                  "admin-dish-option-filter-tabs__button",
+                  typeFilter === "SideDish"
+                    ? "admin-dish-option-filter-tabs__button--active"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-pressed={typeFilter === "SideDish"}
+                onClick={() => setTypeFilter("SideDish")}
+              >
+                Prilozi
+              </button>
+
+              <button
+                type="button"
+                className={[
+                  "admin-dish-option-filter-tabs__button",
+                  typeFilter === "Spice"
+                    ? "admin-dish-option-filter-tabs__button--active"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-pressed={typeFilter === "Spice"}
+                onClick={() => setTypeFilter("Spice")}
+              >
+                Začini
+              </button>
+            </div>
+
+            <label className="admin-dish-option-inactive-filter">
+              <input
+                type="checkbox"
+                checked={includeInactive}
+                onChange={(event) => setIncludeInactive(event.target.checked)}
+              />
+
+              <span
+                className="admin-dish-option-inactive-filter__control"
+                aria-hidden="true"
+              >
+                ✓
+              </span>
+
+              <span>Prikaži neaktivne opcije</span>
+            </label>
+          </div>
+
+          {loading ? (
+            <div className="admin-dish-options-state">
+              <span
+                className="admin-dish-options-state__spinner"
+                aria-hidden="true"
+              />
+
+              <div>
+                <strong>Učitavamo opcije</strong>
+                <p>Sačekajte trenutak.</p>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+          ) : visibleOptions.length === 0 ? (
+            <div className="admin-dish-options-empty">
+              <div
+                className="admin-dish-options-empty__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M5 6h14v12H5V6Zm3 4h8M8 14h5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+
+              <span className="admin-dish-options-empty__eyebrow">
+                NEMA REZULTATA
+              </span>
+
+              <h3 className="admin-dish-options-empty__title">
+                Nema opcija za prikaz
+              </h3>
+
+              <p className="admin-dish-options-empty__description">
+                Promenite filter ili dodajte novu opciju.
+              </p>
+            </div>
+          ) : (
+            <div className="admin-dish-option-cards">
+              {visibleOptions.map((option) => {
+                const isActionLoading = actionLoadingId === option.id;
+
+                return (
+                  <article
+                    key={option.id}
+                    className={[
+                      "admin-dish-option-card",
+                      !option.isActive
+                        ? "admin-dish-option-card--inactive"
+                        : "",
+                      editingId === option.id
+                        ? "admin-dish-option-card--editing"
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    <header className="admin-dish-option-card__header">
+                      <span className="admin-dish-option-card__order">
+                        {String(option.sortOrder).padStart(2, "0")}
+                      </span>
+
+                      <span
+                        className={[
+                          "admin-dish-option-status",
+                          option.isActive
+                            ? "admin-dish-option-status--active"
+                            : "admin-dish-option-status--inactive",
+                        ].join(" ")}
+                      >
+                        <span
+                          className="admin-dish-option-status__dot"
+                          aria-hidden="true"
+                        />
+
+                        {option.isActive ? "Aktivna" : "Neaktivna"}
+                      </span>
+                    </header>
+
+                    <span
+                      className={[
+                        "admin-dish-option-type",
+                        option.type === "SideDish"
+                          ? "admin-dish-option-type--side"
+                          : "admin-dish-option-type--spice",
+                      ].join(" ")}
+                    >
+                      {formatType(option.type)}
+                    </span>
+
+                    <h3 className="admin-dish-option-card__title">
+                      {option.name}
+                    </h3>
+
+                    <div className="admin-dish-option-card__rule">
+                      {option.type === "Spice" ? (
+                        <>
+                          <span>Pravilo naplate</span>
+                          <strong>Uvek besplatno</strong>
+                        </>
+                      ) : option.isAlwaysPaid ? (
+                        <>
+                          <span>Uvek se naplaćuje</span>
+                          <strong>{formatPrice(option.price)}</strong>
+                        </>
+                      ) : (
+                        <>
+                          <span>Pravilo naplate</span>
+                          <strong>Prva 4 besplatna</strong>
+                        </>
+                      )}
+                    </div>
+
+                    <footer className="admin-dish-option-card__actions">
+                      <button
+                        type="button"
+                        className="admin-dish-option-card__action admin-dish-option-card__action--edit"
+                        disabled={saving || isActionLoading}
+                        onClick={() => handleEdit(option)}
+                      >
+                        Izmeni
+                      </button>
+
+                      {option.isActive ? (
+                        <button
+                          type="button"
+                          className="admin-dish-option-card__action admin-dish-option-card__action--deactivate"
+                          disabled={saving || isActionLoading}
+                          onClick={() => handleDeactivate(option)}
+                        >
+                          {isActionLoading ? "Obrađujem..." : "Deaktiviraj"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="admin-dish-option-card__action admin-dish-option-card__action--activate"
+                          disabled={saving || isActionLoading}
+                          onClick={() => handleActivate(option)}
+                        >
+                          {isActionLoading ? "Obrađujem..." : "Aktiviraj"}
+                        </button>
+                      )}
+                    </footer>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
   );
 }

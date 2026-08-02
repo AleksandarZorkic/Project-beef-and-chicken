@@ -16,11 +16,15 @@ type AdminUserFormProps = {
   saving: boolean;
   onChange: (form: AdminUserFormState) => void;
   onToggleRole: (role: AppRole) => void;
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCancel: () => void;
 };
 
-const roleOptions = Object.values(AppRoles);
+const roleOptions = Object.values(AppRoles) as AppRole[];
+
+function formatRoleLabel(role: AppRole) {
+  return String(role).replace(/([a-z])([A-Z])/g, "$1 $2");
+}
 
 export function AdminUserForm({
   form,
@@ -32,123 +36,220 @@ export function AdminUserForm({
   onCancel,
 }: AdminUserFormProps) {
   return (
-    <form
-      onSubmit={onSubmit}
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: 8,
-        padding: 16,
-        marginBottom: 24,
-        display: "grid",
-        gap: 12,
-      }}
-    >
-      <h3>{isEditing ? "Izmeni korisnika" : "Kreiraj korisnika"}</h3>
+    <>
+      <header className="admin-user-editor__header">
+        <div>
+          <span className="admin-user-editor__eyebrow">
+            {isEditing ? "IZMENA NALOGA" : "NOVI NALOG"}
+          </span>
 
-      <label>
-        Korisničko ime
-        <input
-          value={form.userName}
-          onChange={(e) => onChange({ ...form, userName: e.target.value })}
-          placeholder="npr. worker1"
-          style={{ display: "block", width: "100%", marginTop: 4 }}
-        />
-      </label>
-
-      <label>
-        Email
-        <input
-          value={form.email}
-          onChange={(e) => onChange({ ...form, email: e.target.value })}
-          placeholder="npr. worker@test.com"
-          style={{ display: "block", width: "100%", marginTop: 4 }}
-        />
-      </label>
-
-      {!isEditing && (
-        <label>
-          Lozinka
-          <input
-            type="password"
-            value={form.password}
-            onChange={(e) => onChange({ ...form, password: e.target.value })}
-            placeholder="npr. Test123!"
-            style={{ display: "block", width: "100%", marginTop: 4 }}
-          />
-        </label>
-      )}
-
-      <label>
-        Ime
-        <input
-          value={form.firstName}
-          onChange={(e) => onChange({ ...form, firstName: e.target.value })}
-          placeholder="Ime"
-          style={{ display: "block", width: "100%", marginTop: 4 }}
-        />
-      </label>
-
-      <label>
-        Prezime
-        <input
-          value={form.lastName}
-          onChange={(e) => onChange({ ...form, lastName: e.target.value })}
-          placeholder="Prezime"
-          style={{ display: "block", width: "100%", marginTop: 4 }}
-        />
-      </label>
-
-      <div>
-        <strong>Role</strong>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            flexWrap: "wrap",
-            marginTop: 8,
-          }}
-        >
-          {roleOptions.map((role) => (
-            <label
-              key={role}
-              style={{
-                display: "flex",
-                gap: 6,
-                alignItems: "center",
-                border: form.roles.includes(role)
-                  ? "1px solid #333"
-                  : "1px solid #ddd",
-                borderRadius: 999,
-                padding: "6px 10px",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={form.roles.includes(role)}
-                onChange={() => onToggleRole(role)}
-              />
-              {role}
-            </label>
-          ))}
+          <h2 className="admin-user-editor__title">
+            {isEditing ? "Izmeni korisnika" : "Kreiraj korisnika"}
+          </h2>
         </div>
-      </div>
 
-      <div style={{ display: "flex", gap: 8 }}>
-        <button type="submit" disabled={saving}>
-          {saving
-            ? "Čuvam..."
-            : isEditing
-              ? "Sačuvaj izmene"
-              : "Kreiraj korisnika"}
-        </button>
+        <span className="admin-user-editor__mode">
+          {isEditing ? "Izmena" : "Kreiranje"}
+        </span>
+      </header>
 
-        {isEditing && (
-          <button type="button" onClick={onCancel} disabled={saving}>
-            Odustani
-          </button>
+      <form className="form admin-user-form" onSubmit={onSubmit}>
+        <div className="form-field">
+          <label className="form-label" htmlFor="admin-user-username">
+            Korisničko ime
+            <span className="form-label__required">*</span>
+          </label>
+
+          <input
+            id="admin-user-username"
+            className="form-control"
+            type="text"
+            value={form.userName}
+            placeholder="Na primer: worker1"
+            autoComplete="off"
+            onChange={(event) =>
+              onChange({
+                ...form,
+                userName: event.target.value,
+              })
+            }
+          />
+        </div>
+
+        <div className="form-field">
+          <label className="form-label" htmlFor="admin-user-email">
+            Email
+            <span className="form-label__required">*</span>
+          </label>
+
+          <input
+            id="admin-user-email"
+            className="form-control"
+            type="email"
+            value={form.email}
+            placeholder="worker@example.com"
+            autoComplete="email"
+            onChange={(event) =>
+              onChange({
+                ...form,
+                email: event.target.value,
+              })
+            }
+          />
+        </div>
+
+        {!isEditing && (
+          <div className="form-field">
+            <label className="form-label" htmlFor="admin-user-password">
+              Lozinka
+              <span className="form-label__required">*</span>
+            </label>
+
+            <input
+              id="admin-user-password"
+              className="form-control"
+              type="password"
+              value={form.password}
+              placeholder="Najmanje 8 karaktera"
+              autoComplete="new-password"
+              onChange={(event) =>
+                onChange({
+                  ...form,
+                  password: event.target.value,
+                })
+              }
+            />
+
+            <p className="form-help">
+              Lozinka mora imati najmanje osam karaktera.
+            </p>
+          </div>
         )}
-      </div>
-    </form>
+
+        <div className="form-grid">
+          <div className="form-field">
+            <label className="form-label" htmlFor="admin-user-first-name">
+              Ime
+              <span className="form-label__required">*</span>
+            </label>
+
+            <input
+              id="admin-user-first-name"
+              className="form-control"
+              type="text"
+              value={form.firstName}
+              placeholder="Ime"
+              autoComplete="given-name"
+              onChange={(event) =>
+                onChange({
+                  ...form,
+                  firstName: event.target.value,
+                })
+              }
+            />
+          </div>
+
+          <div className="form-field">
+            <label className="form-label" htmlFor="admin-user-last-name">
+              Prezime
+              <span className="form-label__required">*</span>
+            </label>
+
+            <input
+              id="admin-user-last-name"
+              className="form-control"
+              type="text"
+              value={form.lastName}
+              placeholder="Prezime"
+              autoComplete="family-name"
+              onChange={(event) =>
+                onChange({
+                  ...form,
+                  lastName: event.target.value,
+                })
+              }
+            />
+          </div>
+        </div>
+
+        <fieldset className="admin-user-roles">
+          <legend>Role korisnika</legend>
+
+          <p className="admin-user-roles__description">
+            Izaberite najmanje jednu rolu. Role određuju kojim delovima
+            aplikacije korisnik može da pristupi.
+          </p>
+
+          <div className="admin-user-roles__grid">
+            {roleOptions.map((role) => {
+              const selected = form.roles.includes(role);
+
+              return (
+                <label
+                  key={String(role)}
+                  className={[
+                    "admin-user-role",
+                    selected ? "admin-user-role--selected" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => onToggleRole(role)}
+                  />
+
+                  <span className="admin-user-role__control" aria-hidden="true">
+                    ✓
+                  </span>
+
+                  <span className="admin-user-role__content">
+                    <strong>{formatRoleLabel(role)}</strong>
+
+                    <small>
+                      {selected ? "Rola je dodeljena" : "Rola nije dodeljena"}
+                    </small>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <div className="admin-user-form__actions">
+          <button
+            type="submit"
+            className="admin-user-button admin-user-button--primary"
+            disabled={saving}
+          >
+            {saving ? (
+              <>
+                <span
+                  className="admin-user-button__spinner"
+                  aria-hidden="true"
+                />
+                Čuvam...
+              </>
+            ) : isEditing ? (
+              "Sačuvaj izmene"
+            ) : (
+              "Kreiraj korisnika"
+            )}
+          </button>
+
+          {isEditing && (
+            <button
+              type="button"
+              className="admin-user-button admin-user-button--secondary"
+              disabled={saving}
+              onClick={onCancel}
+            >
+              Odustani
+            </button>
+          )}
+        </div>
+      </form>
+    </>
   );
 }

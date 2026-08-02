@@ -1,21 +1,44 @@
 import type { AdminUserDto } from "../../../api/adminUsersApi";
 
-function getUserStatusLabel(user: AdminUserDto) {
-  if (user.isAnonymized) return "Anonimizovan";
-  if (user.isBlocked) return "Blokiran";
-  return "Aktivan";
-}
+type UserStatus = {
+  label: string;
+  modifier: "active" | "blocked" | "anonymized";
+};
 
-function getUserStatusColor(user: AdminUserDto) {
-  if (user.isAnonymized) return "#777";
-  if (user.isBlocked) return "crimson";
-  return "green";
+function getUserStatus(user: AdminUserDto): UserStatus {
+  if (user.isAnonymized) {
+    return {
+      label: "Anonimizovan",
+      modifier: "anonymized",
+    };
+  }
+
+  if (user.isBlocked) {
+    return {
+      label: "Blokiran",
+      modifier: "blocked",
+    };
+  }
+
+  return {
+    label: "Aktivan",
+    modifier: "active",
+  };
 }
 
 export function UserStatusBadge({ user }: { user: AdminUserDto }) {
+  const status = getUserStatus(user);
+
   return (
-    <strong style={{ color: getUserStatusColor(user) }}>
-      {getUserStatusLabel(user)}
-    </strong>
+    <span
+      className={[
+        "admin-user-status",
+        `admin-user-status--${status.modifier}`,
+      ].join(" ")}
+    >
+      <span className="admin-user-status__dot" aria-hidden="true" />
+
+      {status.label}
+    </span>
   );
 }

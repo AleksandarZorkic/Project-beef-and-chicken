@@ -1,0 +1,962 @@
+@use "./abstracts/variables" as *;
+
+// ======================================================
+// Page
+// ======================================================
+
+.admin-settings-page {
+  width: 100%;
+  padding-block: clamp(46px, 6vw, 82px);
+
+  color: $color-text;
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $space-7;
+
+    margin-bottom: clamp(30px, 5vw, 48px);
+  }
+
+  &__heading {
+    max-width: 730px;
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: $space-2;
+
+    color: $color-accent;
+
+    font-size: 0.72rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.17em;
+  }
+
+  &__title {
+    margin: 0;
+
+    font-family: $font-family-display;
+    font-size: clamp(3.2rem, 7vw, 5.8rem);
+    font-weight: $font-weight-black;
+    line-height: 0.9;
+    text-transform: uppercase;
+  }
+
+  &__description {
+    max-width: 660px;
+
+    margin: $space-4 0 0;
+
+    color: $color-text-soft;
+
+    font-size: 0.96rem;
+    line-height: 1.7;
+  }
+
+  &__refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    min-height: 46px;
+    padding-inline: 15px;
+
+    color: $color-text-soft;
+
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: $font-weight-bold;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    transition:
+      color $transition-fast,
+      background-color $transition-fast,
+      border-color $transition-fast,
+      transform $transition-base;
+
+    &:hover:not(:disabled) {
+      color: $color-text;
+
+      background: rgba(255, 255, 255, 0.065);
+      border-color: rgba($color-accent, 0.22);
+
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__refresh-icon {
+    color: $color-accent;
+
+    font-size: 1rem;
+    line-height: 1;
+
+    &--spinning {
+      animation: admin-settings-spin 700ms linear infinite;
+    }
+  }
+
+  &__messages {
+    display: grid;
+    gap: 10px;
+
+    margin-bottom: $space-6;
+
+    &:empty {
+      display: none;
+    }
+  }
+}
+
+// ======================================================
+// Statistics
+// ======================================================
+
+.admin-settings-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+
+  margin-bottom: $space-6;
+}
+
+.admin-settings-stat {
+  position: relative;
+
+  display: grid;
+  align-content: space-between;
+  gap: 5px;
+
+  min-height: 128px;
+  padding: 19px 21px;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.015)
+    ),
+    $color-bg-soft;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  &__label {
+    color: $color-text-muted;
+
+    font-size: 0.63rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  &__value {
+    color: $color-text;
+
+    font-family: $font-family-display;
+    font-size: clamp(1.25rem, 2vw, 1.75rem);
+    font-weight: $font-weight-black;
+    line-height: 1.1;
+
+    &--text {
+      font-size: clamp(1.45rem, 2vw, 2rem);
+    }
+  }
+
+  &__description {
+    color: $color-text-muted;
+
+    font-size: 0.63rem;
+  }
+
+  &--active {
+    border-color: rgba(84, 210, 121, 0.17);
+
+    .admin-settings-stat__value {
+      color: #9be3ae;
+    }
+  }
+
+  &--inactive {
+    border-color: rgba(255, 91, 91, 0.17);
+
+    .admin-settings-stat__value {
+      color: #ffaaaa;
+    }
+  }
+
+  &--free {
+    border-color: rgba($color-accent, 0.18);
+
+    .admin-settings-stat__value {
+      color: $color-accent;
+    }
+  }
+}
+
+// ======================================================
+// Alerts
+// ======================================================
+
+.admin-settings-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  padding: 14px 16px;
+
+  border: 1px solid transparent;
+  border-radius: $radius-lg;
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 25px;
+
+    width: 25px;
+    height: 25px;
+
+    font-size: 0.75rem;
+    font-weight: $font-weight-black;
+
+    border: 1px solid currentColor;
+    border-radius: 50%;
+  }
+
+  strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 0.8rem;
+  }
+
+  p {
+    margin: 0;
+
+    font-size: 0.72rem;
+    line-height: 1.55;
+  }
+
+  &--success {
+    color: #b8f3c9;
+
+    background: rgba(46, 134, 70, 0.12);
+    border-color: rgba(84, 210, 121, 0.2);
+  }
+
+  &--error {
+    color: #ffb3b3;
+
+    background: rgba(137, 29, 29, 0.14);
+    border-color: rgba(255, 91, 91, 0.22);
+  }
+}
+
+// ======================================================
+// Layout
+// ======================================================
+
+.admin-settings-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(380px, 500px)
+    minmax(0, 1fr);
+
+  align-items: start;
+  gap: $space-6;
+}
+
+// ======================================================
+// Editor
+// ======================================================
+
+.admin-settings-editor {
+  padding: clamp(22px, 4vw, 29px);
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba($color-primary, 0.08),
+      transparent 24rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.048),
+      rgba(255, 255, 255, 0.015)
+    ),
+    $color-bg-soft;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-4;
+
+    margin-bottom: $space-6;
+    padding-bottom: $space-5;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: $color-accent;
+
+    font-size: 0.62rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  &__title {
+    margin: 0;
+
+    color: $color-text;
+
+    font-size: clamp(1.45rem, 3vw, 1.9rem);
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 29px;
+    padding-inline: 9px;
+
+    color: $color-text-soft;
+
+    font-size: 0.59rem;
+    font-weight: $font-weight-bold;
+    white-space: nowrap;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+    border-radius: $radius-pill;
+  }
+}
+
+.admin-settings-form {
+  &__updated {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-4;
+
+    padding: 12px 14px;
+
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: $radius-md;
+
+    span {
+      color: $color-text-muted;
+
+      font-size: 0.62rem;
+    }
+
+    strong {
+      color: $color-text-soft;
+
+      font-size: 0.64rem;
+      text-align: right;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+.admin-settings-money-control {
+  position: relative;
+
+  input {
+    padding-right: 62px;
+  }
+
+  > span {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+
+    color: $color-accent;
+
+    font-size: 0.64rem;
+    font-weight: $font-weight-extra-bold;
+
+    pointer-events: none;
+
+    transform: translateY(-50%);
+  }
+}
+
+// ======================================================
+// Delivery switch
+// ======================================================
+
+.admin-settings-delivery-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-5;
+
+  padding: 15px 16px;
+
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: $radius-lg;
+
+  &__content {
+    strong {
+      display: block;
+
+      color: $color-text;
+
+      font-size: 0.76rem;
+    }
+
+    p {
+      max-width: 310px;
+
+      margin: 5px 0 0;
+
+      color: $color-text-muted;
+
+      font-size: 0.62rem;
+      line-height: 1.5;
+    }
+  }
+}
+
+.admin-settings-switch {
+  position: relative;
+
+  display: inline-flex;
+  flex: 0 0 auto;
+
+  cursor: pointer;
+
+  > input {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    overflow: hidden;
+
+    opacity: 0;
+  }
+
+  &__control {
+    position: relative;
+
+    display: block;
+
+    width: 50px;
+    height: 28px;
+
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid $color-border-strong;
+    border-radius: $radius-pill;
+
+    transition:
+      background-color $transition-fast,
+      border-color $transition-fast,
+      box-shadow $transition-fast;
+  }
+
+  &__thumb {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+
+    width: 18px;
+    height: 18px;
+
+    background: $color-text-muted;
+    border-radius: 50%;
+
+    transition:
+      background-color $transition-fast,
+      transform $transition-base;
+  }
+}
+
+.admin-settings-switch > input:checked + .admin-settings-switch__control {
+  background: rgba($color-accent, 0.21);
+  border-color: rgba($color-accent, 0.56);
+
+  box-shadow: 0 0 0 3px rgba($color-accent, 0.06);
+}
+
+.admin-settings-switch
+  > input:checked
+  + .admin-settings-switch__control
+  .admin-settings-switch__thumb {
+  background: $color-accent;
+
+  transform: translateX(22px);
+}
+
+.admin-settings-switch > input:focus-visible + .admin-settings-switch__control {
+  outline: 3px solid rgba($color-accent, 0.3);
+  outline-offset: 3px;
+}
+
+// ======================================================
+// Buttons
+// ======================================================
+
+.admin-settings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  min-height: 47px;
+  padding-inline: 16px;
+
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: $font-weight-extra-bold;
+
+  border: 1px solid transparent;
+  border-radius: $radius-md;
+
+  cursor: pointer;
+
+  transition:
+    color $transition-fast,
+    background-color $transition-fast,
+    border-color $transition-fast,
+    filter $transition-fast,
+    transform $transition-base;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    color: #11140f;
+
+    background: linear-gradient(135deg, $color-accent, #efb829);
+
+    border-color: rgba(255, 255, 255, 0.15);
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.06);
+    }
+  }
+
+  &--secondary {
+    color: $color-text-soft;
+
+    background: rgba(255, 255, 255, 0.035);
+    border-color: $color-border;
+
+    &:hover:not(:disabled) {
+      color: $color-text;
+
+      background: rgba(255, 255, 255, 0.065);
+      border-color: rgba($color-accent, 0.2);
+    }
+  }
+
+  &__spinner {
+    width: 16px;
+    height: 16px;
+
+    border: 2px solid rgba(17, 20, 15, 0.25);
+    border-top-color: #11140f;
+    border-radius: 50%;
+
+    animation: admin-settings-spin 700ms linear infinite;
+  }
+}
+
+// ======================================================
+// Preview
+// ======================================================
+
+.admin-settings-preview {
+  min-width: 0;
+  padding: clamp(22px, 4vw, 30px);
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba($color-accent, 0.055),
+      transparent 25rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.038),
+      rgba(255, 255, 255, 0.012)
+    ),
+    $color-bg-soft;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  &__header {
+    margin-bottom: $space-6;
+    padding-bottom: $space-5;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+  }
+
+  &__eyebrow {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: $color-accent;
+
+    font-size: 0.62rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  &__title {
+    margin: 0;
+
+    color: $color-text;
+
+    font-size: clamp(1.55rem, 3vw, 2.15rem);
+  }
+
+  &__description {
+    max-width: 570px;
+
+    margin: $space-3 0 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.67rem;
+    line-height: 1.6;
+  }
+
+  &__rules {
+    display: grid;
+    gap: 11px;
+  }
+
+  &__warning {
+    margin-top: $space-5;
+    padding: 13px 14px;
+
+    color: #ffd29c;
+
+    background: rgba(153, 90, 23, 0.12);
+    border: 1px solid rgba(235, 156, 75, 0.2);
+    border-radius: $radius-md;
+
+    strong {
+      display: block;
+
+      margin-bottom: 4px;
+
+      font-size: 0.72rem;
+    }
+
+    p {
+      margin: 0;
+
+      font-size: 0.63rem;
+      line-height: 1.5;
+    }
+  }
+}
+
+.admin-settings-delivery-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  margin-bottom: $space-5;
+  padding: 15px 16px;
+
+  border: 1px solid transparent;
+  border-radius: $radius-lg;
+
+  &__dot {
+    flex: 0 0 10px;
+
+    width: 10px;
+    height: 10px;
+    margin-top: 4px;
+
+    background: currentColor;
+    border-radius: 50%;
+
+    box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.03);
+  }
+
+  strong {
+    display: block;
+
+    color: currentColor;
+
+    font-size: 0.77rem;
+  }
+
+  p {
+    margin: 5px 0 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.64rem;
+    line-height: 1.5;
+  }
+
+  &--active {
+    color: #9be3ae;
+
+    background: rgba(46, 134, 70, 0.11);
+    border-color: rgba(84, 210, 121, 0.19);
+  }
+
+  &--inactive {
+    color: #ffaaaa;
+
+    background: rgba(137, 29, 29, 0.12);
+    border-color: rgba(255, 91, 91, 0.2);
+  }
+}
+
+.admin-settings-rule {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 13px;
+
+  padding: 15px;
+
+  background: rgba(255, 255, 255, 0.022);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: $radius-lg;
+
+  &__number {
+    display: grid;
+    place-items: center;
+
+    width: 39px;
+    height: 39px;
+
+    color: $color-accent;
+
+    font-family: $font-family-display;
+    font-size: 0.82rem;
+    font-weight: $font-weight-black;
+
+    background: rgba($color-accent, 0.06);
+    border: 1px solid rgba($color-accent, 0.13);
+    border-radius: $radius-md;
+  }
+
+  strong {
+    display: block;
+
+    color: $color-text;
+
+    font-size: 0.75rem;
+  }
+
+  p {
+    margin: 6px 0 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.64rem;
+    line-height: 1.55;
+  }
+
+  b {
+    color: $color-accent;
+    font-weight: $font-weight-bold;
+  }
+}
+
+// ======================================================
+// Loading
+// ======================================================
+
+.admin-settings-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+
+  min-height: 360px;
+  padding: 40px;
+
+  background: rgba(255, 255, 255, 0.022);
+  border: 1px dashed $color-border;
+  border-radius: $radius-xl;
+
+  &__spinner {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+
+    border: 3px solid rgba($color-accent, 0.12);
+    border-top-color: $color-accent;
+    border-radius: 50%;
+
+    animation: admin-settings-spin 700ms linear infinite;
+  }
+
+  strong {
+    display: block;
+
+    color: $color-text;
+
+    font-size: 0.84rem;
+  }
+
+  p {
+    margin: 4px 0 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.67rem;
+  }
+}
+
+@keyframes admin-settings-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ======================================================
+// Responsive
+// ======================================================
+
+@media (max-width: $breakpoint-laptop) {
+  .admin-settings-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: $breakpoint-tablet) {
+  .admin-settings-page {
+    &__header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    &__refresh {
+      width: 100%;
+    }
+  }
+
+  .admin-settings-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .admin-settings-page {
+    &__title {
+      font-size: 3rem;
+    }
+  }
+
+  .admin-settings-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-settings-editor,
+  .admin-settings-preview {
+    padding: $space-5;
+
+    border-radius: $radius-lg;
+  }
+
+  .admin-settings-editor__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-settings-form {
+    &__updated {
+      align-items: flex-start;
+      flex-direction: column;
+
+      strong {
+        text-align: left;
+      }
+    }
+
+    &__actions {
+      align-items: stretch;
+      flex-direction: column;
+    }
+  }
+
+  .admin-settings-button {
+    width: 100%;
+  }
+
+  .admin-settings-delivery-toggle {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-settings-loading__spinner,
+  .admin-settings-button__spinner,
+  .admin-settings-page__refresh-icon--spinning {
+    animation-duration: 0.01ms;
+  }
+
+  .admin-settings-page__refresh,
+  .admin-settings-switch__control,
+  .admin-settings-switch__thumb,
+  .admin-settings-button {
+    transition-duration: 0.01ms;
+  }
+}

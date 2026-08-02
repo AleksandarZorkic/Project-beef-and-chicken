@@ -626,15 +626,6 @@
     }
   }
 
-  > input:checked + &__control &__radio {
-    border-color: $color-accent;
-
-    &::after {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
   &__payment-icon {
     display: inline-flex;
     align-items: center;
@@ -671,6 +662,21 @@
       line-height: 1.4;
     }
   }
+}
+
+.checkout-choice
+  > input:checked
+  + .checkout-choice__control
+  .checkout-choice__radio {
+  border-color: $color-accent;
+}
+
+.checkout-choice
+  > input:checked
+  + .checkout-choice__control
+  .checkout-choice__radio::after {
+  opacity: 1;
+  transform: scale(1);
 }
 
 // ======================================================
