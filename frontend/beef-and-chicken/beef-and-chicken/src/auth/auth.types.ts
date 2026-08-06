@@ -30,3 +30,9 @@ export interface UserProfileDto {
 export interface UpdatePhoneNumberRequestDto {
   phoneNumber: string;
 }
+
+export interface UpdateUserProfileRequestDto {
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string | null;
+}

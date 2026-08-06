@@ -278,8 +278,8 @@ namespace beef_and_chicken.Application.Services
         }
 
         public async Task<UserProfileDto> GetProfileAsync(
-    int userId,
-    CancellationToken ct = default)
+            int userId,
+            CancellationToken ct = default)
         {
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
@@ -288,16 +288,7 @@ namespace beef_and_chicken.Application.Services
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            return new UserProfileDto
-            {
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email ?? string.Empty,
-                UserName = user.UserName ?? string.Empty,
-                PhoneNumber = user.PhoneNumber,
-                Roles = roles.ToList()
-            };
+            return await BuildUserProfileDtoAsync(user);
         }
 
         public async Task<UserProfileDto> UpdatePhoneNumberAsync(
@@ -332,16 +323,55 @@ namespace beef_and_chicken.Application.Services
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            return new UserProfileDto
+            return await BuildUserProfileDtoAsync(user);
+        }
+
+        public async Task<UserProfileDto> UpdateProfileAsync(
+            int userId,
+            UpdateUserProfileDto data,
+            CancellationToken ct = default)
+        {
+            if (data == null)
+                throw new BadRequestException("Podaci za izmenu profila su obavezni.");
+
+            var firstName = NormalizeProfileName(data.FirstName, "Ime");
+            var lastName = NormalizeProfileName(data.LastName, "Prezime");
+            var phoneNumber = NormalizeOptionalPhoneNumber(data.PhoneNumber);
+
+            if (phoneNumber != null)
             {
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email ?? string.Empty,
-                UserName = user.UserName ?? string.Empty,
-                PhoneNumber = user.PhoneNumber,
-                Roles = roles.ToList()
-            };
+                ValidatePhoneNumber(phoneNumber);
+            }
+
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+
+            if (user == null)
+                throw new NotFoundException("Korisnik nije pronađen.");
+
+            user.FirstName = firstName;
+            user.LastName = lastName;
+            user.PhoneNumber = phoneNumber;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(error => error.Code switch
+                {
+                    "InvalidPhoneNumber" => "Broj telefona nije ispravan.",
+                    _ => error.Description
+                });
+
+                throw new BadRequestException(string.Join(", ", errors.Distinct()));
+            }
+
+            _logger.LogInformation(
+                "User profile updated. UserId={UserId}, Username={Username}",
+                user.Id,
+                user.UserName
+            );
+
+            return await BuildUserProfileDtoAsync(user);
         }
 
         private async Task<string> GenerateJwtAsync(User user)
@@ -443,6 +473,46 @@ namespace beef_and_chicken.Application.Services
                     "Broj telefona može sadržati samo brojeve, razmake i znakove + - / ( )."
                 );
             }
+        }
+
+        private static string NormalizeProfileName(string value, string fieldName)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new BadRequestException($"{fieldName} je obavezno.");
+
+            var trimmed = value.Trim();
+
+            if (trimmed.Length < 2)
+                throw new BadRequestException($"{fieldName} mora imati najmanje 2 karaktera.");
+
+            if (trimmed.Length > 50)
+                throw new BadRequestException($"{fieldName} može imati najviše 50 karaktera.");
+
+            return trimmed;
+        }
+
+        private static string? NormalizeOptionalPhoneNumber(string? phoneNumber)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                return null;
+
+            return phoneNumber.Trim();
+        }
+
+        private async Task<UserProfileDto> BuildUserProfileDtoAsync(User user)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return new UserProfileDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email ?? string.Empty,
+                UserName = user.UserName ?? string.Empty,
+                PhoneNumber = user.PhoneNumber,
+                Roles = roles.ToList()
+            };
         }
     }
 }

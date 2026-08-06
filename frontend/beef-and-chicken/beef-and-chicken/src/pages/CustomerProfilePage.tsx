@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { updatePhoneNumber } from "../api/authApi";
+import { updateProfile } from "../api/authApi";
 import { useAuth } from "../auth/AuthContext";
 import "../styles/CustomerProfilePage.scss";
 
-function validatePhoneNumber(phoneNumber: string) {
+function validateOptionalPhoneNumber(phoneNumber: string) {
   const trimmed = phoneNumber.trim();
 
   if (!trimmed) {
-    return "Broj telefona je obavezan.";
+    return null;
   }
 
   if (trimmed.length < 6 || trimmed.length > 20) {
@@ -17,6 +17,24 @@ function validatePhoneNumber(phoneNumber: string) {
 
   if (!/^[0-9+\-/() ]+$/.test(trimmed)) {
     return "Broj telefona može sadržati samo brojeve, razmake i znakove + - / ( ).";
+  }
+
+  return null;
+}
+
+function validateProfileName(value: string, fieldName: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return `${fieldName} je obavezno.`;
+  }
+
+  if (trimmed.length < 2) {
+    return `${fieldName} mora imati najmanje 2 karaktera.`;
+  }
+
+  if (trimmed.length > 50) {
+    return `${fieldName} može imati najviše 50 karaktera.`;
   }
 
   return null;
@@ -42,17 +60,27 @@ function getErrorMessage(error: any, fallback: string) {
 export default function CustomerProfilePage() {
   const { user, setUserProfile, refreshProfile } = useAuth();
 
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [editingPhone, setEditingPhone] = useState(false);
-  const [savingPhone, setSavingPhone] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+  });
+
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+
   const [refreshingProfile, setRefreshingProfile] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setPhoneNumber(user?.phoneNumber ?? "");
-  }, [user?.phoneNumber]);
+    setProfileForm({
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+      phoneNumber: user?.phoneNumber ?? "",
+    });
+  }, [user?.firstName, user?.lastName, user?.phoneNumber]);
 
   useEffect(() => {
     if (!successMessage) {
@@ -82,52 +110,90 @@ export default function CustomerProfilePage() {
     }
   }
 
-  async function onSavePhoneNumber() {
-    const validationError = validatePhoneNumber(phoneNumber);
+  function startProfileEdit() {
+    setProfileForm({
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+      phoneNumber: user?.phoneNumber ?? "",
+    });
 
-    if (validationError) {
-      setError(validationError);
+    setEditingProfile(true);
+    setError(null);
+    setSuccessMessage(null);
+  }
+
+  function cancelProfileEdit() {
+    setEditingProfile(false);
+
+    setProfileForm({
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+      phoneNumber: user?.phoneNumber ?? "",
+    });
+
+    setError(null);
+    setSuccessMessage(null);
+  }
+
+  async function onSaveProfile() {
+    const firstNameError = validateProfileName(profileForm.firstName, "Ime");
+
+    if (firstNameError) {
+      setError(firstNameError);
       return;
     }
 
-    if (phoneNumber.trim() === (user?.phoneNumber ?? "").trim()) {
-      setEditingPhone(false);
+    const lastNameError = validateProfileName(profileForm.lastName, "Prezime");
+
+    if (lastNameError) {
+      setError(lastNameError);
+      return;
+    }
+
+    const phoneError = validateOptionalPhoneNumber(profileForm.phoneNumber);
+
+    if (phoneError) {
+      setError(phoneError);
+      return;
+    }
+
+    const normalizedFirstName = profileForm.firstName.trim();
+    const normalizedLastName = profileForm.lastName.trim();
+    const normalizedPhoneNumber = profileForm.phoneNumber.trim() || null;
+
+    const currentPhoneNumber = user?.phoneNumber?.trim() || null;
+
+    const hasChanges =
+      normalizedFirstName !== user?.firstName ||
+      normalizedLastName !== user?.lastName ||
+      normalizedPhoneNumber !== currentPhoneNumber;
+
+    if (!hasChanges) {
+      setEditingProfile(false);
       setError(null);
       setSuccessMessage(null);
       return;
     }
 
     try {
-      setSavingPhone(true);
+      setSavingProfile(true);
       setError(null);
       setSuccessMessage(null);
 
-      const updatedProfile = await updatePhoneNumber({
-        phoneNumber: phoneNumber.trim(),
+      const updatedProfile = await updateProfile({
+        firstName: normalizedFirstName,
+        lastName: normalizedLastName,
+        phoneNumber: normalizedPhoneNumber,
       });
 
       setUserProfile(updatedProfile);
-      setEditingPhone(false);
-      setSuccessMessage("Broj telefona je uspešno promenjen.");
+      setEditingProfile(false);
+      setSuccessMessage("Profil je uspešno izmenjen.");
     } catch (error: any) {
-      setError(getErrorMessage(error, "Greška pri promeni broja telefona."));
+      setError(getErrorMessage(error, "Greška pri izmeni profila."));
     } finally {
-      setSavingPhone(false);
+      setSavingProfile(false);
     }
-  }
-
-  function cancelPhoneEdit() {
-    setEditingPhone(false);
-    setPhoneNumber(user?.phoneNumber ?? "");
-    setError(null);
-    setSuccessMessage(null);
-  }
-
-  function startPhoneEdit() {
-    setPhoneNumber(user?.phoneNumber ?? "");
-    setEditingPhone(true);
-    setError(null);
-    setSuccessMessage(null);
   }
 
   if (!user) {
@@ -163,7 +229,7 @@ export default function CustomerProfilePage() {
           <h1 className="customer-profile-page__title">Moj profil</h1>
 
           <p className="customer-profile-page__description">
-            Pregledajte podatke svog naloga, uredite kontakt telefon i brzo
+            Pregledajte podatke svog naloga, uredite lične podatke i brzo
             pristupite adresama, alergenima i porudžbinama.
           </p>
         </div>
@@ -171,7 +237,7 @@ export default function CustomerProfilePage() {
         <button
           type="button"
           className="customer-profile-page__refresh-button"
-          disabled={refreshingProfile}
+          disabled={refreshingProfile || savingProfile}
           onClick={onRefreshProfile}
         >
           {refreshingProfile ? (
@@ -240,37 +306,179 @@ export default function CustomerProfilePage() {
       )}
 
       <div className="customer-profile-page__grid">
-        <section className="profile-card">
+        <section className="profile-card profile-card--wide">
           <header className="profile-card__header">
             <div className="profile-card__avatar" aria-hidden="true">
-              {getInitials(user.firstName, user.lastName)}
+              {getInitials(
+                editingProfile ? profileForm.firstName : user.firstName,
+                editingProfile ? profileForm.lastName : user.lastName,
+              )}
             </div>
 
             <div className="profile-card__identity">
               <span className="profile-card__eyebrow">LIČNI PODACI</span>
 
               <h2 className="profile-card__name">
-                {user.firstName} {user.lastName}
+                {editingProfile
+                  ? `${profileForm.firstName || user.firstName} ${
+                      profileForm.lastName || user.lastName
+                    }`
+                  : `${user.firstName} ${user.lastName}`}
               </h2>
 
               <span className="profile-card__email">{user.email}</span>
             </div>
+
+            <button
+              type="button"
+              className="profile-phone-card__edit-button"
+              disabled={savingProfile}
+              onClick={editingProfile ? cancelProfileEdit : startProfileEdit}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="m14.5 5.5 4 4M4 20l4.2-1 10.3-10.3a1.4 1.4 0 0 0 0-2l-1.2-1.2a1.4 1.4 0 0 0-2 0L5 15.8 4 20Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+
+              <span>{editingProfile ? "Otkaži izmenu" : "Izmeni profil"}</span>
+            </button>
           </header>
 
           <div className="profile-card__details">
-            <div className="profile-detail">
-              <span className="profile-detail__label">Ime</span>
+            {editingProfile ? (
+              <>
+                <label className="profile-detail profile-detail--wide">
+                  <span className="profile-detail__label">Ime</span>
 
-              <strong className="profile-detail__value">
-                {user.firstName}
-              </strong>
-            </div>
+                  <input
+                    className="profile-phone-form__input"
+                    type="text"
+                    value={profileForm.firstName}
+                    disabled={savingProfile}
+                    maxLength={50}
+                    autoComplete="given-name"
+                    placeholder="Unesite ime"
+                    onChange={(event) => {
+                      setProfileForm((current) => ({
+                        ...current,
+                        firstName: event.target.value,
+                      }));
+                      setError(null);
+                      setSuccessMessage(null);
+                    }}
+                  />
+                </label>
 
-            <div className="profile-detail">
-              <span className="profile-detail__label">Prezime</span>
+                <label className="profile-detail profile-detail--wide">
+                  <span className="profile-detail__label">Prezime</span>
 
-              <strong className="profile-detail__value">{user.lastName}</strong>
-            </div>
+                  <input
+                    className="profile-phone-form__input"
+                    type="text"
+                    value={profileForm.lastName}
+                    disabled={savingProfile}
+                    maxLength={50}
+                    autoComplete="family-name"
+                    placeholder="Unesite prezime"
+                    onChange={(event) => {
+                      setProfileForm((current) => ({
+                        ...current,
+                        lastName: event.target.value,
+                      }));
+                      setError(null);
+                      setSuccessMessage(null);
+                    }}
+                  />
+                </label>
+
+                <label className="profile-detail profile-detail--wide">
+                  <span className="profile-detail__label">Broj telefona</span>
+
+                  <input
+                    className="profile-phone-form__input"
+                    type="tel"
+                    value={profileForm.phoneNumber}
+                    disabled={savingProfile}
+                    autoComplete="tel"
+                    placeholder="060 123 4567"
+                    onChange={(event) => {
+                      setProfileForm((current) => ({
+                        ...current,
+                        phoneNumber: event.target.value,
+                      }));
+                      setError(null);
+                      setSuccessMessage(null);
+                    }}
+                  />
+
+                  <small className="profile-phone-form__hint">
+                    Telefon je opcionalan na profilu. Dozvoljeni su brojevi,
+                    razmaci i znakovi + - / ( ).
+                  </small>
+                </label>
+
+                <div className="profile-phone-form__actions">
+                  <button
+                    type="button"
+                    className="profile-phone-form__cancel-button"
+                    disabled={savingProfile}
+                    onClick={cancelProfileEdit}
+                  >
+                    Otkaži
+                  </button>
+
+                  <button
+                    type="button"
+                    className="profile-phone-form__save-button"
+                    disabled={savingProfile}
+                    onClick={onSaveProfile}
+                  >
+                    {savingProfile && (
+                      <span
+                        className="profile-phone-form__spinner"
+                        aria-hidden="true"
+                      />
+                    )}
+
+                    <span>{savingProfile ? "Čuvam..." : "Sačuvaj profil"}</span>
+
+                    {!savingProfile && <span aria-hidden="true">→</span>}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="profile-detail">
+                  <span className="profile-detail__label">Ime</span>
+
+                  <strong className="profile-detail__value">
+                    {user.firstName}
+                  </strong>
+                </div>
+
+                <div className="profile-detail">
+                  <span className="profile-detail__label">Prezime</span>
+
+                  <strong className="profile-detail__value">
+                    {user.lastName}
+                  </strong>
+                </div>
+
+                <div className="profile-detail">
+                  <span className="profile-detail__label">Broj telefona</span>
+
+                  <strong className="profile-detail__value">
+                    {user.phoneNumber || "Nije unet"}
+                  </strong>
+                </div>
+              </>
+            )}
 
             <div className="profile-detail profile-detail--wide">
               <span className="profile-detail__label">Email adresa</span>
@@ -302,147 +510,6 @@ export default function CustomerProfilePage() {
               </div>
             </div>
           </div>
-        </section>
-
-        <section className="profile-phone-card">
-          <header className="profile-phone-card__header">
-            <div className="profile-phone-card__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M8.2 3.5 10 7.7a1.4 1.4 0 0 1-.3 1.5L8.3 10.6a15.5 15.5 0 0 0 5.1 5.1l1.4-1.4a1.4 1.4 0 0 1 1.5-.3l4.2 1.8a1.4 1.4 0 0 1 .8 1.3v2.2a2 2 0 0 1-2 2C10.1 20.7 3.3 13.9 2.7 4.7a2 2 0 0 1 2-2h2.2a1.4 1.4 0 0 1 1.3.8Z"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-
-            <div>
-              <span className="profile-phone-card__eyebrow">
-                KONTAKT ZA DOSTAVU
-              </span>
-
-              <h2 className="profile-phone-card__title">Broj telefona</h2>
-            </div>
-          </header>
-
-          <p className="profile-phone-card__description">
-            Ovaj broj se automatski koristi kao kontakt telefon prilikom
-            poručivanja.
-          </p>
-
-          {!editingPhone ? (
-            <div className="profile-phone-card__display">
-              <div className="profile-phone-card__current">
-                <span className="profile-phone-card__current-label">
-                  Trenutni broj
-                </span>
-
-                {user.phoneNumber ? (
-                  <a
-                    href={`tel:${user.phoneNumber}`}
-                    className="profile-phone-card__number"
-                  >
-                    {user.phoneNumber}
-                  </a>
-                ) : (
-                  <span className="profile-phone-card__missing">
-                    Broj telefona nije unet
-                  </span>
-                )}
-              </div>
-
-              <button
-                type="button"
-                className="profile-phone-card__edit-button"
-                onClick={startPhoneEdit}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="m14.5 5.5 4 4M4 20l4.2-1 10.3-10.3a1.4 1.4 0 0 0 0-2l-1.2-1.2a1.4 1.4 0 0 0-2 0L5 15.8 4 20Z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-
-                <span>{user.phoneNumber ? "Promeni broj" : "Dodaj broj"}</span>
-              </button>
-            </div>
-          ) : (
-            <form
-              className="profile-phone-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                onSavePhoneNumber();
-              }}
-            >
-              <label className="profile-phone-form__field">
-                <span className="profile-phone-form__label">
-                  Novi broj telefona
-                </span>
-
-                <div className="profile-phone-form__input-wrapper">
-                  <span
-                    className="profile-phone-form__input-icon"
-                    aria-hidden="true"
-                  >
-                    +
-                  </span>
-
-                  <input
-                    className="profile-phone-form__input"
-                    type="tel"
-                    value={phoneNumber}
-                    disabled={savingPhone}
-                    autoComplete="tel"
-                    placeholder="060 123 4567"
-                    onChange={(event) => {
-                      setPhoneNumber(event.target.value);
-                      setError(null);
-                      setSuccessMessage(null);
-                    }}
-                  />
-                </div>
-
-                <small className="profile-phone-form__hint">
-                  Dozvoljeni su brojevi, razmaci i znakovi + - / ( ).
-                </small>
-              </label>
-
-              <div className="profile-phone-form__actions">
-                <button
-                  type="button"
-                  className="profile-phone-form__cancel-button"
-                  disabled={savingPhone}
-                  onClick={cancelPhoneEdit}
-                >
-                  Otkaži
-                </button>
-
-                <button
-                  type="submit"
-                  className="profile-phone-form__save-button"
-                  disabled={savingPhone}
-                >
-                  {savingPhone && (
-                    <span
-                      className="profile-phone-form__spinner"
-                      aria-hidden="true"
-                    />
-                  )}
-
-                  <span>{savingPhone ? "Čuvam..." : "Sačuvaj broj"}</span>
-
-                  {!savingPhone && <span aria-hidden="true">→</span>}
-                </button>
-              </div>
-            </form>
-          )}
         </section>
       </div>
 

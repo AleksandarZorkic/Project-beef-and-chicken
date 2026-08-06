@@ -44,7 +44,19 @@ function formatPrice(value: number) {
 }
 
 function formatType(type: DishOptionType) {
-  return type === "SideDish" ? "Prilog" : "Začin";
+  switch (type) {
+    case "SideDish":
+      return "Prilog";
+
+    case "Spice":
+      return "Začin";
+
+    case "SweetAddition":
+      return "Slatki dodatak";
+
+    default:
+      return type;
+  }
 }
 
 function normalizeForm(value: DishOptionFormValue): DishOptionFormValue {
@@ -56,6 +68,16 @@ function normalizeForm(value: DishOptionFormValue): DishOptionFormValue {
       type: "Spice",
       price: 0,
       isAlwaysPaid: false,
+      sortOrder: value.sortOrder,
+    };
+  }
+
+  if (value.type === "SweetAddition") {
+    return {
+      name,
+      type: "SweetAddition",
+      price: value.price,
+      isAlwaysPaid: true,
       sortOrder: value.sortOrder,
     };
   }
@@ -78,7 +100,6 @@ function normalizeForm(value: DishOptionFormValue): DishOptionFormValue {
     sortOrder: value.sortOrder,
   };
 }
-
 function validateForm(value: DishOptionFormValue) {
   const name = value.name.trim();
 
@@ -108,6 +129,10 @@ function validateForm(value: DishOptionFormValue) {
 
   if (value.type === "SideDish" && value.isAlwaysPaid && value.price <= 0) {
     return "Prilog koji se odmah naplaćuje mora imati cenu veću od 0.";
+  }
+
+  if (value.type === "SweetAddition" && value.price <= 0) {
+    return "Slatki dodatak mora imati cenu veću od 0.";
   }
 
   return null;
@@ -215,12 +240,17 @@ export default function AdminDishOptionsPage() {
 
     const spices = options.filter((option) => option.type === "Spice").length;
 
+    const sweetAdditions = options.filter(
+      (option) => option.type === "SweetAddition",
+    ).length;
+
     return {
       all: options.length,
       active,
       inactive: options.length - active,
       sideDishes,
       spices,
+      sweetAdditions,
     };
   }, [options]);
 
@@ -275,7 +305,12 @@ export default function AdminDishOptionsPage() {
       ...current,
       type: nextType,
       price: nextType === "Spice" ? 0 : current.price,
-      isAlwaysPaid: nextType === "Spice" ? false : current.isAlwaysPaid,
+      isAlwaysPaid:
+        nextType === "Spice"
+          ? false
+          : nextType === "SweetAddition"
+            ? true
+            : current.isAlwaysPaid,
     }));
   }
 
@@ -543,18 +578,23 @@ export default function AdminDishOptionsPage() {
                 <option value="SideDish">Prilog</option>
 
                 <option value="Spice">Začin</option>
+
+                <option value="SweetAddition">Slatki dodatak</option>
               </select>
             </div>
 
             <div className="admin-dish-option-type-info">
-              <strong>
-                {formValue.type === "SideDish" ? "Prilog" : "Začin"}
-              </strong>
+              <strong>{formatType(formValue.type)}</strong>
 
               <p>
-                {formValue.type === "SideDish"
-                  ? "Prilog može biti deo pravila za besplatne dodatke ili se može uvek dodatno naplaćivati."
-                  : "Začin je uvek besplatan i ne može imati cenu."}
+                {formValue.type === "SideDish" &&
+                  "Prilog može biti deo pravila za besplatne dodatke ili se može uvek dodatno naplaćivati."}
+
+                {formValue.type === "Spice" &&
+                  "Začin je uvek besplatan i ne može imati cenu."}
+
+                {formValue.type === "SweetAddition" &&
+                  "Slatki dodatak se koristi za palačinke i uvek se dodatno naplaćuje."}
               </p>
             </div>
 
@@ -594,7 +634,8 @@ export default function AdminDishOptionsPage() {
               </section>
             )}
 
-            {formValue.type === "SideDish" && formValue.isAlwaysPaid && (
+            {((formValue.type === "SideDish" && formValue.isAlwaysPaid) ||
+              formValue.type === "SweetAddition") && (
               <div className="form-field">
                 <label className="form-label" htmlFor="dish-option-price">
                   Cena
@@ -621,7 +662,11 @@ export default function AdminDishOptionsPage() {
                   <span>RSD</span>
                 </div>
 
-                <p className="form-help">Cena mora biti veća od nule.</p>
+                <p className="form-help">
+                  {formValue.type === "SweetAddition"
+                    ? "Slatki dodatak mora imati cenu veću od nule."
+                    : "Cena mora biti veća od nule."}
+                </p>
               </div>
             )}
 
@@ -809,6 +854,22 @@ export default function AdminDishOptionsPage() {
               >
                 Začini
               </button>
+
+              <button
+                type="button"
+                className={[
+                  "admin-dish-option-filter-tabs__button",
+                  typeFilter === "SweetAddition"
+                    ? "admin-dish-option-filter-tabs__button--active"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-pressed={typeFilter === "SweetAddition"}
+                onClick={() => setTypeFilter("SweetAddition")}
+              >
+                Slatki dodaci
+              </button>
             </div>
 
             <label className="admin-dish-option-inactive-filter">
@@ -918,7 +979,9 @@ export default function AdminDishOptionsPage() {
                         "admin-dish-option-type",
                         option.type === "SideDish"
                           ? "admin-dish-option-type--side"
-                          : "admin-dish-option-type--spice",
+                          : option.type === "Spice"
+                            ? "admin-dish-option-type--spice"
+                            : "admin-dish-option-type--sweet",
                       ].join(" ")}
                     >
                       {formatType(option.type)}
@@ -933,6 +996,11 @@ export default function AdminDishOptionsPage() {
                         <>
                           <span>Pravilo naplate</span>
                           <strong>Uvek besplatno</strong>
+                        </>
+                      ) : option.type === "SweetAddition" ? (
+                        <>
+                          <span>Uvek se naplaćuje</span>
+                          <strong>{formatPrice(option.price)}</strong>
                         </>
                       ) : option.isAlwaysPaid ? (
                         <>

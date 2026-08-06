@@ -29,6 +29,11 @@ namespace beef_and_chicken.Application.Interfaces.Services
             int changedByUserId,
             CancellationToken ct = default);
 
+        Task<OrderDetailsDto> CompletePickupOrderAsync(
+            int orderId,
+            int changedByUserId,
+            CancellationToken ct = default);
+
         Task<IEnumerable<OrderDetailsDto>> GetReadyForPickupOrdersAsync(CancellationToken ct = default);
         Task<IEnumerable<OrderDetailsDto>> GetCourierOrdersAsync(int courierId, CancellationToken ct = default);
 

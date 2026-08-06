@@ -13,7 +13,7 @@ namespace beef_and_chicken.Application.DTOs
 
         public int? CourierId { get; set; }
 
-        public DateTime CreatedAt {  get; set; }
+        public DateTime CreatedAt { get; set; }
 
         public DateTime? AcceptedAt { get; set; }
 
@@ -41,8 +41,10 @@ namespace beef_and_chicken.Application.DTOs
 
         public PaymentStatus PaymentStatus { get; set; }
 
-        public OrderStatus Status { get; set;  }
+        public OrderStatus Status { get; set; }
 
-        public List<OrderItemDto> Items { get; set; } = new ();
+        public FulfillmentType FulfillmentType { get; set; }
+
+        public List<OrderItemDto> Items { get; set; } = new();
     }
 }

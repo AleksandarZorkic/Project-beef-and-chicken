@@ -28,5 +28,11 @@ namespace beef_and_chicken.Application.Interfaces.Services
             UpdatePhoneNumberDto data,
             CancellationToken ct = default
         );
+
+        Task<UserProfileDto> UpdateProfileAsync(
+            int userId,
+            UpdateUserProfileDto data,
+            CancellationToken ct = default
+        );
     }
 }

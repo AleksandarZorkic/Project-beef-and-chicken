@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../state/cart/CartContext";
-import { createOrder, type PaymentMethod } from "../api/orderApi";
+import {
+  createOrder,
+  type FulfillmentType,
+  type PaymentMethod,
+} from "../api/orderApi";
 import {
   getAllAddresses,
   createAddress,
@@ -43,6 +47,9 @@ export default function CheckoutPage() {
     useState("");
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
+
+  const [fulfillmentType, setFulfillmentType] =
+    useState<FulfillmentType>("Delivery");
 
   const [deliveryPhoneMode, setDeliveryPhoneMode] =
     useState<DeliveryPhoneMode>("Profile");
@@ -205,16 +212,22 @@ export default function CheckoutPage() {
     }
   }
 
-  const deliveryFee =
-    restaurantSettings?.freeDeliveryThreshold &&
-    subtotal >= restaurantSettings.freeDeliveryThreshold
+  const isDelivery = fulfillmentType === "Delivery";
+  const isPickup = fulfillmentType === "Pickup";
+
+  const deliveryFee = isPickup
+    ? 0
+    : restaurantSettings?.freeDeliveryThreshold &&
+        subtotal >= restaurantSettings.freeDeliveryThreshold
       ? 0
       : (restaurantSettings?.deliveryFee ?? 0);
 
   const totalAmount = subtotal + deliveryFee;
 
   const missingForMinimum =
-    restaurantSettings && subtotal < restaurantSettings.minimumOrderAmount
+    isDelivery &&
+    restaurantSettings &&
+    subtotal < restaurantSettings.minimumOrderAmount
       ? restaurantSettings.minimumOrderAmount - subtotal
       : 0;
 
@@ -239,14 +252,16 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!restaurantSettings.isDeliveryEnabled) {
-      setError("Dostava trenutno nije dostupna. Pokušajte kasnije.");
+    if (isDelivery && !restaurantSettings.isDeliveryEnabled) {
+      setError(
+        "Dostava trenutno nije dostupna. Možete izabrati lično preuzimanje.",
+      );
       return;
     }
 
-    if (subtotal < restaurantSettings.minimumOrderAmount) {
+    if (isDelivery && subtotal < restaurantSettings.minimumOrderAmount) {
       setError(
-        `Minimalna vrednost porudžbine je ${restaurantSettings.minimumOrderAmount.toLocaleString(
+        `Minimalna vrednost porudžbine za dostavu je ${restaurantSettings.minimumOrderAmount.toLocaleString(
           "sr-RS",
         )} RSD. Dodajte još ${missingForMinimum.toLocaleString(
           "sr-RS",
@@ -256,10 +271,11 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!selectedAddressId) {
+    if (isDelivery && !selectedAddressId) {
       setError("Morate izabrati adresu za dostavu.");
       return;
     }
+
     const selectedPhoneNumber =
       deliveryPhoneMode === "Profile"
         ? (user?.phoneNumber ?? "")
@@ -268,7 +284,7 @@ export default function CheckoutPage() {
     const trimmedPhoneNumber = selectedPhoneNumber.trim();
 
     if (!trimmedPhoneNumber) {
-      setError("Broj telefona za dostavu je obavezan.");
+      setError("Broj telefona je obavezan.");
       return;
     }
 
@@ -290,9 +306,10 @@ export default function CheckoutPage() {
       setLoadingOrder(true);
 
       const payload = {
-        customerAddressId: selectedAddressId,
+        customerAddressId: isDelivery ? selectedAddressId : null,
         deliveryContactPhoneNumber: trimmedPhoneNumber,
         paymentMethod,
+        fulfillmentType,
         notes: state.notes.trim() || undefined,
         items: state.items.map((i) => ({
           dishId: i.dishId,
@@ -372,13 +389,27 @@ export default function CheckoutPage() {
           <div className="checkout-steps__item">
             <span className="checkout-steps__number">1</span>
 
-            <span className="checkout-steps__label">Adresa</span>
+            <span className="checkout-steps__label">Preuzimanje</span>
           </div>
 
           <span className="checkout-steps__divider" aria-hidden="true" />
 
+          {isDelivery && (
+            <>
+              <div className="checkout-steps__item">
+                <span className="checkout-steps__number">2</span>
+
+                <span className="checkout-steps__label">Adresa</span>
+              </div>
+
+              <span className="checkout-steps__divider" aria-hidden="true" />
+            </>
+          )}
+
           <div className="checkout-steps__item">
-            <span className="checkout-steps__number">2</span>
+            <span className="checkout-steps__number">
+              {isDelivery ? "3" : "2"}
+            </span>
 
             <span className="checkout-steps__label">Kontakt</span>
           </div>
@@ -386,7 +417,9 @@ export default function CheckoutPage() {
           <span className="checkout-steps__divider" aria-hidden="true" />
 
           <div className="checkout-steps__item">
-            <span className="checkout-steps__number">3</span>
+            <span className="checkout-steps__number">
+              {isDelivery ? "4" : "3"}
+            </span>
 
             <span className="checkout-steps__label">Plaćanje</span>
           </div>
@@ -427,7 +460,7 @@ export default function CheckoutPage() {
         <div className="checkout-form-column">
           <section
             className="checkout-card"
-            aria-labelledby="checkout-address-title"
+            aria-labelledby="checkout-fulfillment-title"
           >
             <header className="checkout-card__header">
               <span className="checkout-card__number" aria-hidden="true">
@@ -435,96 +468,184 @@ export default function CheckoutPage() {
               </span>
 
               <div>
-                <span className="checkout-card__eyebrow">MESTO DOSTAVE</span>
+                <span className="checkout-card__eyebrow">
+                  NAČIN PREUZIMANJA
+                </span>
 
                 <h2
-                  id="checkout-address-title"
+                  id="checkout-fulfillment-title"
                   className="checkout-card__title"
                 >
-                  Izaberite adresu
+                  Kako želite da preuzmete porudžbinu?
                 </h2>
 
                 <p className="checkout-card__description">
-                  Porudžbina će biti dostavljena na izabranu adresu.
+                  Izaberite dostavu na adresu ili lično preuzimanje u restoranu.
                 </p>
               </div>
             </header>
 
-            {loadingAddresses && (
-              <div
-                className="checkout-loading"
-                role="status"
-                aria-live="polite"
-              >
-                <span
-                  className="checkout-loading__spinner"
-                  aria-hidden="true"
+            <div className="checkout-choice-group checkout-choice-group--payment">
+              <label className="checkout-choice">
+                <input
+                  type="radio"
+                  name="fulfillmentType"
+                  value="Delivery"
+                  checked={fulfillmentType === "Delivery"}
+                  onChange={() => {
+                    setFulfillmentType("Delivery");
+                    setError(null);
+                  }}
                 />
 
-                <span>Učitavamo sačuvane adrese...</span>
-              </div>
-            )}
+                <span className="checkout-choice__control">
+                  <span className="checkout-choice__radio" />
 
-            {!loadingAddresses && addresses.length === 0 && (
-              <div className="checkout-address-warning">
-                <span
-                  className="checkout-address-warning__icon"
-                  aria-hidden="true"
-                >
-                  !
+                  <span
+                    className="checkout-choice__payment-icon"
+                    aria-hidden="true"
+                  ></span>
+
+                  <span className="checkout-choice__content">
+                    <span>{isPickup ? "Preuzimanje" : "Dostava"}</span>
+
+                    <small>Porudžbina stiže na izabranu adresu</small>
+                  </span>
+                </span>
+              </label>
+
+              <label className="checkout-choice">
+                <input
+                  type="radio"
+                  name="fulfillmentType"
+                  value="Pickup"
+                  checked={fulfillmentType === "Pickup"}
+                  onChange={() => {
+                    setFulfillmentType("Pickup");
+                    setError(null);
+                  }}
+                />
+
+                <span className="checkout-choice__control">
+                  <span className="checkout-choice__radio" />
+
+                  <span
+                    className="checkout-choice__payment-icon"
+                    aria-hidden="true"
+                  ></span>
+
+                  <span className="checkout-choice__content">
+                    <strong>Lično preuzimanje</strong>
+
+                    <small>Preuzimate porudžbinu direktno u restoranu</small>
+                  </span>
+                </span>
+              </label>
+            </div>
+          </section>
+
+          {isDelivery && (
+            <section
+              className="checkout-card"
+              aria-labelledby="checkout-address-title"
+            >
+              <header className="checkout-card__header">
+                <span className="checkout-card__number" aria-hidden="true">
+                  1
                 </span>
 
                 <div>
-                  <strong>Nema sačuvanih adresa</strong>
+                  <span className="checkout-card__eyebrow">MESTO DOSTAVE</span>
 
-                  <p>Dodajte adresu pre nastavka porudžbine.</p>
+                  <h2
+                    id="checkout-address-title"
+                    className="checkout-card__title"
+                  >
+                    Izaberite adresu
+                  </h2>
+
+                  <p className="checkout-card__description">
+                    Porudžbina će biti dostavljena na izabranu adresu.
+                  </p>
                 </div>
-              </div>
-            )}
+              </header>
 
-            {!loadingAddresses && addresses.length > 0 && (
-              <div className="checkout-address-selector">
-                <AddressSelector
-                  addresses={addresses}
-                  selectedAddressId={selectedAddressId}
-                  onSelect={setSelectedAddressId}
-                />
-              </div>
-            )}
+              {loadingAddresses && (
+                <div
+                  className="checkout-loading"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span
+                    className="checkout-loading__spinner"
+                    aria-hidden="true"
+                  />
 
-            <button
-              type="button"
-              className={[
-                "checkout-address-toggle",
-                showNewAddressForm ? "checkout-address-toggle--open" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              onClick={() => setShowNewAddressForm((prev) => !prev)}
-            >
-              <span
-                className="checkout-address-toggle__icon"
-                aria-hidden="true"
+                  <span>Učitavamo sačuvane adrese...</span>
+                </div>
+              )}
+
+              {!loadingAddresses && addresses.length === 0 && (
+                <div className="checkout-address-warning">
+                  <span
+                    className="checkout-address-warning__icon"
+                    aria-hidden="true"
+                  >
+                    !
+                  </span>
+
+                  <div>
+                    <strong>Nema sačuvanih adresa</strong>
+
+                    <p>Dodajte adresu pre nastavka porudžbine.</p>
+                  </div>
+                </div>
+              )}
+
+              {!loadingAddresses && addresses.length > 0 && (
+                <div className="checkout-address-selector">
+                  <AddressSelector
+                    addresses={addresses}
+                    selectedAddressId={selectedAddressId}
+                    onSelect={setSelectedAddressId}
+                  />
+                </div>
+              )}
+
+              <button
+                type="button"
+                className={[
+                  "checkout-address-toggle",
+                  showNewAddressForm ? "checkout-address-toggle--open" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onClick={() => setShowNewAddressForm((prev) => !prev)}
               >
-                {showNewAddressForm ? "−" : "+"}
-              </span>
+                <span
+                  className="checkout-address-toggle__icon"
+                  aria-hidden="true"
+                >
+                  {showNewAddressForm ? "−" : "+"}
+                </span>
 
-              <span>
-                {showNewAddressForm ? "Zatvori formu" : "Dodaj novu adresu"}
-              </span>
-            </button>
+                <span>
+                  {showNewAddressForm ? "Zatvori formu" : "Dodaj novu adresu"}
+                </span>
+              </button>
 
-            {showNewAddressForm && (
-              <div className="checkout-address-form">
-                <AddressForm
-                  value={newAddress}
-                  onChange={setNewAddress}
-                  onSubmit={onCreateAddress}
-                  saving={savingAddress}
-                />
-              </div>
-            )}
-          </section>
+              {showNewAddressForm && (
+                <div className="checkout-address-form">
+                  <AddressForm
+                    value={newAddress}
+                    onChange={setNewAddress}
+                    onSubmit={onCreateAddress}
+                    saving={savingAddress}
+                  />
+                </div>
+              )}
+            </section>
+          )}
 
           <section
             className="checkout-card"
@@ -536,17 +657,15 @@ export default function CheckoutPage() {
               </span>
 
               <div>
-                <span className="checkout-card__eyebrow">
-                  KONTAKT ZA DOSTAVU
-                </span>
+                <span className="checkout-card__eyebrow">KONTAKT TELEFON</span>
 
                 <h2 id="checkout-phone-title" className="checkout-card__title">
                   Broj telefona
                 </h2>
 
                 <p className="checkout-card__description">
-                  Kurir može koristiti ovaj broj ako mu je potrebna pomoć pri
-                  dostavi.
+                  Restoran može koristiti ovaj broj ako je potrebna potvrda
+                  porudžbine.
                 </p>
               </div>
             </header>
@@ -611,8 +730,8 @@ export default function CheckoutPage() {
                 </span>
 
                 <p>
-                  Nemate broj telefona na profilu. Unesite broj koji će kurir
-                  koristiti za ovu dostavu.
+                  Nemate broj telefona na profilu. Unesite broj koji restoran
+                  može koristiti za ovu porudžbinu.
                 </p>
               </div>
             )}
@@ -646,7 +765,7 @@ export default function CheckoutPage() {
             )}
 
             <p className="checkout-card__hint">
-              Broj se koristi isključivo u vezi sa ovom dostavom.
+              Broj se koristi isključivo u vezi sa ovom porudžbinom.
             </p>
           </section>
 
@@ -698,7 +817,11 @@ export default function CheckoutPage() {
                   <span className="checkout-choice__content">
                     <strong>Gotovina</strong>
 
-                    <small>Plaćanje kuriru prilikom dostave</small>
+                    <small>
+                      {isPickup
+                        ? "Plaćanje u restoranu prilikom preuzimanja"
+                        : "Plaćanje kuriru prilikom dostave"}
+                    </small>
                   </span>
                 </span>
               </label>
@@ -723,9 +846,17 @@ export default function CheckoutPage() {
                   </span>
 
                   <span className="checkout-choice__content">
-                    <strong>Kartica pri dostavi</strong>
+                    <strong>
+                      {isPickup
+                        ? "Kartica pri preuzimanju"
+                        : "Kartica pri dostavi"}
+                    </strong>
 
-                    <small>Plaćanje putem terminala kuriru</small>
+                    <small>
+                      {isPickup
+                        ? "Plaćanje karticom u restoranu"
+                        : "Plaćanje putem terminala kuriru"}
+                    </small>
                   </span>
                 </span>
               </label>
@@ -770,11 +901,11 @@ export default function CheckoutPage() {
 
           {!loadingSettings && restaurantSettings && (
             <>
-              {!restaurantSettings.isDeliveryEnabled && (
+              {isDelivery && !restaurantSettings.isDeliveryEnabled && (
                 <div className="checkout-summary__notice checkout-summary__notice--error">
                   <strong>Dostava trenutno nije dostupna</strong>
 
-                  <p>Porudžbinu trenutno nije moguće potvrditi.</p>
+                  <p>Možete izabrati lično preuzimanje.</p>
                 </div>
               )}
 
@@ -789,26 +920,18 @@ export default function CheckoutPage() {
                   <span>Dostava</span>
 
                   <strong>
-                    {deliveryFee === 0
-                      ? "Besplatna"
-                      : `${deliveryFee.toLocaleString("sr-RS")} RSD`}
+                    {isPickup
+                      ? "Besplatno"
+                      : deliveryFee === 0
+                        ? "Besplatna"
+                        : `${deliveryFee.toLocaleString("sr-RS")} RSD`}
                   </strong>
                 </div>
               </div>
 
               <div className="checkout-summary__rules">
-                <div>
-                  <span>Minimalna porudžbina</span>
-
-                  <strong>
-                    {restaurantSettings.minimumOrderAmount.toLocaleString(
-                      "sr-RS",
-                    )}{" "}
-                    RSD
-                  </strong>
-                </div>
-
-                {restaurantSettings.freeDeliveryThreshold && (
+                Minimalna porudžbina
+                {isDelivery && restaurantSettings.freeDeliveryThreshold && (
                   <div>
                     <span>Besplatna dostava preko</span>
 
@@ -835,18 +958,21 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {missingForMinimum === 0 && missingForFreeDelivery > 0 && (
-                <div className="checkout-summary__notice checkout-summary__notice--warning">
-                  <strong>
-                    Još {missingForFreeDelivery.toLocaleString("sr-RS")} RSD do
-                    besplatne dostave
-                  </strong>
+              {isDelivery &&
+                missingForMinimum === 0 &&
+                missingForFreeDelivery > 0 && (
+                  <div className="checkout-summary__notice checkout-summary__notice--warning">
+                    <strong>
+                      Još {missingForFreeDelivery.toLocaleString("sr-RS")} RSD
+                      do besplatne dostave
+                    </strong>
 
-                  <p>Porudžbinu već možete potvrditi.</p>
-                </div>
-              )}
+                    <p>Porudžbinu već možete potvrditi.</p>
+                  </div>
+                )}
 
-              {missingForMinimum === 0 &&
+              {isDelivery &&
+                missingForMinimum === 0 &&
                 missingForFreeDelivery === 0 &&
                 restaurantSettings.isDeliveryEnabled && (
                   <div className="checkout-summary__notice checkout-summary__notice--success">
@@ -869,10 +995,10 @@ export default function CheckoutPage() {
             className="checkout-summary__submit-button"
             disabled={
               loadingOrder ||
-              loadingAddresses ||
+              (isDelivery && loadingAddresses) ||
               loadingSettings ||
-              !selectedAddressId ||
-              !restaurantSettings?.isDeliveryEnabled ||
+              (isDelivery && !selectedAddressId) ||
+              (isDelivery && !restaurantSettings?.isDeliveryEnabled) ||
               missingForMinimum > 0
             }
             onClick={onSubmit}

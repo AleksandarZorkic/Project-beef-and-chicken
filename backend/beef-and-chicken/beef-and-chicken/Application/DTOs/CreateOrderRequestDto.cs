@@ -4,11 +4,13 @@ namespace beef_and_chicken.Application.DTOs
 {
     public class CreateOrderRequestDto
     {
-        public int CustomerAddressId { get; set; }
+        public int? CustomerAddressId { get; set; }
 
         public string DeliveryContactPhoneNumber { get; set; } = string.Empty;
 
         public PaymentMethod? PaymentMethod { get; set; }
+
+        public FulfillmentType FulfillmentType { get; set; } = FulfillmentType.Delivery;
 
         public string? Notes { get; set; } = null;
 

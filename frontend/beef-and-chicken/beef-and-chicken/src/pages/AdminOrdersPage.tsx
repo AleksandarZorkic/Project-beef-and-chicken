@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   acceptOrder,
+  completePickupOrder,
   getActiveOrders,
   markReadyForPickup,
   rejectOrder,
@@ -265,6 +266,38 @@ export default function AdminOrdersPage() {
         getErrorMessage(
           error,
           "Greška pri označavanju porudžbine kao spremne.",
+        ),
+      );
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleCompletePickup(order: OrderDetailsDto) {
+    const confirmed = window.confirm(
+      `Da li je kupac preuzeo porudžbinu #${getOrderLabel(order)}?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setSuccessMessage(null);
+      setActionLoadingId(order.id);
+
+      await completePickupOrder(order.id);
+      await loadOrders(false);
+
+      setSuccessMessage(
+        `Porudžbina #${getOrderLabel(order)} je označena kao preuzeta.`,
+      );
+    } catch (error: any) {
+      setError(
+        getErrorMessage(
+          error,
+          "Greška pri označavanju porudžbine kao preuzete.",
         ),
       );
     } finally {
@@ -597,20 +630,56 @@ export default function AdminOrdersPage() {
                         </button>
                       )}
 
-                      {order.status === "Spremna_za_preuzimanje" && (
-                        <div className="admin-order-notice admin-order-notice--ready">
-                          <span
-                            className="admin-order-notice__dot"
-                            aria-hidden="true"
-                          />
+                      {order.status === "Spremna_za_preuzimanje" &&
+                        order.fulfillmentType === "Pickup" && (
+                          <button
+                            type="button"
+                            className="admin-order-action admin-order-action--ready"
+                            disabled={isProcessing}
+                            onClick={() => handleCompletePickup(order)}
+                          >
+                            {isProcessing && (
+                              <span
+                                className="admin-order-action__spinner"
+                                aria-hidden="true"
+                              />
+                            )}
 
-                          <div>
-                            <strong>Čeka preuzimanje</strong>
+                            {!isProcessing && (
+                              <span
+                                className="admin-order-action__icon"
+                                aria-hidden="true"
+                              >
+                                ✓
+                              </span>
+                            )}
 
-                            <span>Porudžbina je spremna i čeka kurira.</span>
+                            <span>
+                              {isProcessing ? "Obrađujem..." : "Kupac preuzeo"}
+                            </span>
+
+                            {!isProcessing && <span aria-hidden="true">→</span>}
+                          </button>
+                        )}
+
+                      {order.status === "Spremna_za_preuzimanje" &&
+                        order.fulfillmentType === "Delivery" && (
+                          <div className="admin-order-notice admin-order-notice--ready">
+                            <span
+                              className="admin-order-notice__dot"
+                              aria-hidden="true"
+                            />
+
+                            <div>
+                              <strong>Čeka kurira</strong>
+
+                              <span>
+                                Porudžbina je spremna i čeka preuzimanje za
+                                dostavu.
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {order.status === "Dostava_u_toku" && (
                         <div className="admin-order-notice admin-order-notice--delivery">

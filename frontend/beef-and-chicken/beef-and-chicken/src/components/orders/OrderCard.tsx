@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
-import type { OrderDetailsDto, OrderStatus } from "../../api/orderApi";
+import type {
+  FulfillmentType,
+  OrderDetailsDto,
+  OrderStatus,
+} from "../../api/orderApi";
 import "./OrderCard.scss";
 
 type OrderCardProps = {
@@ -54,6 +58,23 @@ function formatStatus(status: OrderStatus) {
   }
 }
 
+function formatFulfillmentType(type?: FulfillmentType) {
+  switch (type) {
+    case "Pickup":
+      return "Lično preuzimanje";
+
+    case "Delivery":
+      return "Dostava";
+
+    default:
+      return "Dostava";
+  }
+}
+
+function getFulfillmentModifier(type?: FulfillmentType) {
+  return type === "Pickup" ? "pickup" : "delivery";
+}
+
 function getStatusModifier(status: OrderStatus) {
   switch (status) {
     case "Na_Cekanju":
@@ -105,13 +126,18 @@ function getPhoneHref(phoneNumber: string) {
   return `tel:${cleaned}`;
 }
 
-function formatPaymentMethod(paymentMethod: string) {
+function formatPaymentMethod(
+  paymentMethod: string,
+  fulfillmentType?: FulfillmentType,
+) {
+  const isPickup = fulfillmentType === "Pickup";
+
   switch (paymentMethod) {
     case "Cash":
-      return "Gotovina";
+      return isPickup ? "Gotovina pri preuzimanju" : "Gotovina pri dostavi";
 
     case "CardOnDelivery":
-      return "Kartica pri dostavi";
+      return isPickup ? "Kartica pri preuzimanju" : "Kartica pri dostavi";
 
     default:
       return paymentMethod;
@@ -160,6 +186,9 @@ export default function OrderCard({
   const statusModifier = getStatusModifier(order.status);
   const paymentStatusModifier = getPaymentStatusModifier(order.paymentStatus);
 
+  const isPickup = order.fulfillmentType === "Pickup";
+  const fulfillmentModifier = getFulfillmentModifier(order.fulfillmentType);
+
   return (
     <article className="shared-order-card">
       <header className="shared-order-card__header">
@@ -175,6 +204,12 @@ export default function OrderCard({
               <span className="shared-order-status__dot" aria-hidden="true" />
 
               {formatStatus(order.status)}
+            </span>
+
+            <span
+              className={`shared-order-fulfillment shared-order-fulfillment--${fulfillmentModifier}`}
+            >
+              {formatFulfillmentType(order.fulfillmentType)}
             </span>
 
             {showCreatedAt && (
@@ -250,25 +285,37 @@ export default function OrderCard({
               </span>
 
               <div>
-                <span className="shared-order-panel__eyebrow">LOKACIJA</span>
+                <span className="shared-order-panel__eyebrow">
+                  {isPickup ? "PREUZIMANJE" : "LOKACIJA"}
+                </span>
 
-                <h3 className="shared-order-panel__title">Adresa dostave</h3>
+                <h3 className="shared-order-panel__title">
+                  {isPickup ? "Lično preuzimanje" : "Adresa dostave"}
+                </h3>
               </div>
             </header>
 
-            <div className="shared-order-address">
-              <strong>
-                {order.deliveryAddress.street}{" "}
-                {order.deliveryAddress.houseNumber}
-              </strong>
+            {isPickup ? (
+              <div className="shared-order-address">
+                <strong>Preuzimanje u restoranu</strong>
 
-              <span>
-                {order.deliveryAddress.postalCode
-                  ? `${order.deliveryAddress.postalCode} `
-                  : ""}
-                {order.deliveryAddress.city}
-              </span>
-            </div>
+                <span>Kupac dolazi po porudžbinu kada bude spremna.</span>
+              </div>
+            ) : (
+              <div className="shared-order-address">
+                <strong>
+                  {order.deliveryAddress.street}{" "}
+                  {order.deliveryAddress.houseNumber}
+                </strong>
+
+                <span>
+                  {order.deliveryAddress.postalCode
+                    ? `${order.deliveryAddress.postalCode} `
+                    : ""}
+                  {order.deliveryAddress.city}
+                </span>
+              </div>
+            )}
 
             {order.deliveryAddress.note && (
               <div className="shared-order-note">
@@ -282,7 +329,7 @@ export default function OrderCard({
 
             {(showGoogleMapsLink || order.deliveryContactPhoneNumber) && (
               <div className="shared-order-panel__links">
-                {showGoogleMapsLink && (
+                {showGoogleMapsLink && !isPickup && (
                   <a
                     className="shared-order-action-link"
                     href={getGoogleMapsDirectionsUrl(order)}
@@ -373,7 +420,12 @@ export default function OrderCard({
                 Način plaćanja
               </span>
 
-              <strong>{formatPaymentMethod(order.paymentMethod)}</strong>
+              <strong>
+                {formatPaymentMethod(
+                  order.paymentMethod,
+                  order.fulfillmentType,
+                )}
+              </strong>
             </div>
 
             <div className="shared-order-payment__item">
@@ -449,9 +501,15 @@ export default function OrderCard({
 
           <section className="shared-order-totals">
             <div className="shared-order-totals__row">
-              <span>Međuzbir</span>
+              <span>{isPickup ? "Preuzimanje" : "Dostava"}</span>
 
-              <strong>{formatPrice(order.subtotal)}</strong>
+              <strong>
+                {isPickup
+                  ? "Besplatno"
+                  : order.deliveryFee === 0
+                    ? "Besplatna"
+                    : formatPrice(order.deliveryFee)}
+              </strong>
             </div>
 
             <div className="shared-order-totals__row">

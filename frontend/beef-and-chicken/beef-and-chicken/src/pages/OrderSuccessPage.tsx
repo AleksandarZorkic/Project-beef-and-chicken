@@ -1,8 +1,52 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { getOrderById, type OrderDetailsDto } from "../api/orderApi";
 import "../styles/OrderSuccessPage.scss";
 
 export default function OrderSuccessPage() {
   const { orderId } = useParams();
+
+  const [order, setOrder] = useState<OrderDetailsDto | null>(null);
+  const [loadingOrder, setLoadingOrder] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+
+  const isPickup = order?.fulfillmentType === "Pickup";
+
+  useEffect(() => {
+    async function loadOrder() {
+      if (!orderId) {
+        return;
+      }
+
+      const parsedOrderId = Number(orderId);
+
+      if (!Number.isFinite(parsedOrderId)) {
+        setOrderError("Broj porudžbine nije validan.");
+        return;
+      }
+
+      try {
+        setLoadingOrder(true);
+        setOrderError(null);
+
+        const data = await getOrderById(parsedOrderId);
+
+        setOrder(data);
+      } catch (error: any) {
+        setOrderError(
+          error?.response?.data?.error ??
+            error?.response?.data?.message ??
+            error?.response?.data?.title ??
+            error?.message ??
+            "Detalji porudžbine nisu učitani.",
+        );
+      } finally {
+        setLoadingOrder(false);
+      }
+    }
+
+    loadOrder();
+  }, [orderId]);
 
   return (
     <main className="order-success-page">
@@ -34,26 +78,65 @@ export default function OrderSuccessPage() {
         </h1>
 
         <p className="order-success-card__description">
-          Vaša porudžbina je uspešno kreirana. Status i ostale detalje možete
-          pratiti u sekciji „Moje porudžbine“.
+          {isPickup
+            ? "Vaša porudžbina je uspešno kreirana za lično preuzimanje. Status možete pratiti u sekciji „Moje porudžbine“."
+            : "Vaša porudžbina je uspešno kreirana. Status i ostale detalje možete pratiti u sekciji „Moje porudžbine“."}
         </p>
 
         <div className="order-success-card__number">
           <span>Broj porudžbine</span>
 
-          <strong>#{orderId}</strong>
+          <strong>#{order?.orderNumber ?? orderId}</strong>
         </div>
 
-        <div className="order-success-card__info">
-          <span className="order-success-card__info-icon" aria-hidden="true">
-            i
-          </span>
+        {loadingOrder && (
+          <div className="order-success-card__info">
+            <span className="order-success-card__info-icon" aria-hidden="true">
+              i
+            </span>
 
-          <p>
-            Sačuvajte broj porudžbine radi lakšeg praćenja i komunikacije sa
-            restoranom.
-          </p>
-        </div>
+            <p>Učitavamo detalje porudžbine...</p>
+          </div>
+        )}
+
+        {!loadingOrder && order && (
+          <div className="order-success-card__info">
+            <span className="order-success-card__info-icon" aria-hidden="true">
+              {isPickup ? "P" : "D"}
+            </span>
+
+            <p>
+              <strong>Tip porudžbine: </strong>
+              {isPickup ? "Lično preuzimanje" : "Dostava na adresu"}
+            </p>
+          </div>
+        )}
+
+        {!loadingOrder && orderError && (
+          <div className="order-success-card__info">
+            <span className="order-success-card__info-icon" aria-hidden="true">
+              i
+            </span>
+
+            <p>
+              Sačuvajte broj porudžbine radi lakšeg praćenja i komunikacije sa
+              restoranom.
+            </p>
+          </div>
+        )}
+
+        {!loadingOrder && !orderError && !order && (
+          <div className="order-success-card__info">
+            <span className="order-success-card__info-icon" aria-hidden="true">
+              i
+            </span>
+
+            <p>
+              Sačuvajte broj porudžbine radi lakšeg praćenja i komunikacije sa
+              restoranom.
+            </p>
+          </div>
+        )}
 
         <div className="order-success-card__actions">
           <Link

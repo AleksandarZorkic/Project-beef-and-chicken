@@ -116,6 +116,23 @@ namespace beef_and_chicken.Presentation.Controllers
         }
 
         [Authorize(Roles = AppRoles.AdminOrEmployee)]
+        [HttpPatch("{orderId:int}/complete-pickup")]
+        public async Task<ActionResult<OrderDetailsDto>> CompletePickupOrder(
+            int orderId,
+            CancellationToken ct = default)
+        {
+            var userId = GetCurrentUserId();
+
+            var order = await _orderService.CompletePickupOrderAsync(
+                orderId,
+                userId,
+                ct
+            );
+
+            return Ok(order);
+        }
+
+        [Authorize(Roles = AppRoles.AdminOrEmployee)]
         [HttpGet("history")]
         public async Task<ActionResult<PagedResultDto<OrderDetailsDto>>> GetOrderHistory(
             [FromQuery] OrderHistoryQueryDto query,

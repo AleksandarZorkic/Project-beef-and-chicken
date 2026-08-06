@@ -48,5 +48,7 @@ namespace beef_and_chicken.Domain.Entities
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
         public ICollection<OrderStatusHistory> StatusHistory { get; set; } = new List<OrderStatusHistory>();
+
+        public FulfillmentType FulfillmentType { get; set; } = FulfillmentType.Delivery;
     }
 }

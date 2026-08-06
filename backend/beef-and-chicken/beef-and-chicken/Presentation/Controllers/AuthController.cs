@@ -40,6 +40,19 @@ namespace beef_and_chicken.Presentation.Controllers
         }
 
         [Authorize]
+        [HttpPut("profile")]
+        public async Task<ActionResult<UserProfileDto>> UpdateProfile(
+            [FromBody] UpdateUserProfileDto data,
+            CancellationToken ct = default)
+        {
+            var userId = GetCurrentUserId();
+
+            var profile = await _authService.UpdateProfileAsync(userId, data, ct);
+
+            return Ok(profile);
+        }
+
+        [Authorize]
         [HttpPatch("profile/phone-number")]
         public async Task<ActionResult<UserProfileDto>> UpdatePhoneNumber(
             [FromBody] UpdatePhoneNumberDto data,

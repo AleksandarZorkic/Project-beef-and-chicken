@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   cancelMyOrder,
   getMyOrders,
+  type FulfillmentType,
   type OrderDetailsDto,
   type OrderStatus,
 } from "../api/orderApi";
@@ -54,6 +55,10 @@ function formatStatus(status: OrderStatus) {
     default:
       return status;
   }
+}
+
+function formatFulfillmentType(type?: FulfillmentType) {
+  return type === "Pickup" ? "Lično preuzimanje" : "Dostava";
 }
 
 function getStatusModifier(status: OrderStatus) {
@@ -216,6 +221,8 @@ export default function MyOrdersPage() {
           {orders.map((order) => {
             const statusModifier = getStatusModifier(order.status);
 
+            const isPickup = order.fulfillmentType === "Pickup";
+
             return (
               <article key={order.id} className="order-card">
                 <header className="order-card__header">
@@ -238,6 +245,10 @@ export default function MyOrdersPage() {
                       {formatStatus(order.status)}
                     </span>
 
+                    <span className="order-status order-status--accepted">
+                      {formatFulfillmentType(order.fulfillmentType)}
+                    </span>
+
                     <strong className="order-card__header-total">
                       {formatPrice(order.totalAmount)}
                     </strong>
@@ -247,7 +258,9 @@ export default function MyOrdersPage() {
                 <div className="order-card__body">
                   <section
                     className="order-card__section order-card__section--address"
-                    aria-label="Adresa dostave"
+                    aria-label={
+                      isPickup ? "Lično preuzimanje" : "Adresa dostave"
+                    }
                   >
                     <div
                       className="order-card__section-icon"
@@ -276,25 +289,39 @@ export default function MyOrdersPage() {
 
                     <div>
                       <span className="order-card__section-label">
-                        Adresa dostave
+                        {isPickup ? "Lično preuzimanje" : "Adresa dostave"}
                       </span>
 
-                      <strong className="order-card__address-main">
-                        {order.deliveryAddress.street}{" "}
-                        {order.deliveryAddress.houseNumber}
-                      </strong>
+                      {isPickup ? (
+                        <>
+                          <strong className="order-card__address-main">
+                            Preuzimanje u restoranu
+                          </strong>
 
-                      <span className="order-card__address-city">
-                        {order.deliveryAddress.postalCode
-                          ? `${order.deliveryAddress.postalCode} `
-                          : ""}
-                        {order.deliveryAddress.city}
-                      </span>
+                          <span className="order-card__address-city">
+                            Dođite po porudžbinu kada bude označena kao spremna.
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <strong className="order-card__address-main">
+                            {order.deliveryAddress.street}{" "}
+                            {order.deliveryAddress.houseNumber}
+                          </strong>
 
-                      {order.deliveryAddress.note && (
-                        <p className="order-card__address-note">
-                          {order.deliveryAddress.note}
-                        </p>
+                          <span className="order-card__address-city">
+                            {order.deliveryAddress.postalCode
+                              ? `${order.deliveryAddress.postalCode} `
+                              : ""}
+                            {order.deliveryAddress.city}
+                          </span>
+
+                          {order.deliveryAddress.note && (
+                            <p className="order-card__address-note">
+                              {order.deliveryAddress.note}
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
                   </section>
@@ -380,12 +407,14 @@ export default function MyOrdersPage() {
                     </div>
 
                     <div className="order-totals__row">
-                      <span>Dostava</span>
+                      <span>{isPickup ? "Preuzimanje" : "Dostava"}</span>
 
                       <strong>
-                        {order.deliveryFee === 0
-                          ? "Besplatna"
-                          : formatPrice(order.deliveryFee)}
+                        {isPickup
+                          ? "Besplatno"
+                          : order.deliveryFee === 0
+                            ? "Besplatna"
+                            : formatPrice(order.deliveryFee)}
                       </strong>
                     </div>
 

@@ -154,7 +154,10 @@ namespace beef_and_chicken.Infrastructure.Repositories
                 .Include(o => o.Customer)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Options)
-                .Where(o => o.Status == OrderStatus.Spremna_za_preuzimanje)
+                .Where(o =>
+                    o.Status == OrderStatus.Spremna_za_preuzimanje &&
+                    o.FulfillmentType == FulfillmentType.Delivery
+                )
                 .OrderBy(o => o.CreatedAt)
                 .ToListAsync(ct);
         }

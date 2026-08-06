@@ -4,6 +4,7 @@ import type {
   LoginRequestDto,
   RegisterRequestDto,
   UpdatePhoneNumberRequestDto,
+  UpdateUserProfileRequestDto,
   UserProfileDto,
 } from "../auth/auth.types";
 
@@ -19,6 +20,11 @@ export async function register(data: RegisterRequestDto) {
 
 export async function getProfile() {
   const res = await api.get<UserProfileDto>("/auth/profile");
+  return res.data;
+}
+
+export async function updateProfile(data: UpdateUserProfileRequestDto) {
+  const res = await api.put<UserProfileDto>("/auth/profile", data);
   return res.data;
 }
 

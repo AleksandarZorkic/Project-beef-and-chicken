@@ -9,6 +9,8 @@ export type OrderStatus =
   | "Dostava_u_toku"
   | "Dostavljena";
 
+export type FulfillmentType = "Delivery" | "Pickup";
+
 export type PaymentMethod = "Cash" | "CardOnDelivery";
 
 export type PaymentStatus = "Pending" | "Paid" | "Cancelled";
@@ -49,9 +51,10 @@ export interface CreateOrderItemDto {
 }
 
 export interface CreateOrderRequestDto {
-  customerAddressId: number;
+  customerAddressId?: number | null;
   deliveryContactPhoneNumber: string;
   paymentMethod: PaymentMethod;
+  fulfillmentType: FulfillmentType;
   notes?: string | null;
   items: CreateOrderItemDto[];
 }
@@ -71,6 +74,7 @@ export interface OrderDetailsDto {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   status: OrderStatus;
+  fulfillmentType: FulfillmentType;
   items: OrderItemDto[];
 }
 
@@ -190,6 +194,14 @@ export async function getActiveOrders() {
 export async function markReadyForPickup(orderId: number) {
   const res = await api.patch<OrderDetailsDto>(
     `${ORDERS_ENDPOINT}/${orderId}/ready-for-pickup`,
+  );
+
+  return res.data;
+}
+
+export async function completePickupOrder(orderId: number) {
+  const res = await api.patch<OrderDetailsDto>(
+    `${ORDERS_ENDPOINT}/${orderId}/complete-pickup`,
   );
 
   return res.data;
