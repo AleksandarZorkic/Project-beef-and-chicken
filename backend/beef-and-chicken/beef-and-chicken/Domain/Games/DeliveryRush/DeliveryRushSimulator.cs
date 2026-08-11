@@ -10,7 +10,9 @@
 
             var random = new DeliveryRushRandom(seed);
 
-            var playerLane = DeliveryRushGameRules.StartingLane;
+            var playerLane =
+                DeliveryRushGameRules.StartingLane;
+
             var inputIndex = 0;
             var nextObstacleTick =
                 DeliveryRushGameRules.FirstObstacleTick;
@@ -21,12 +23,15 @@
             var currentCombo = 0;
             var maxCombo = 0;
             var slowdownTicksRemaining = 0;
+            var completedTicks = 0;
 
-            for (var tick = 0;
-                 tick < DeliveryRushGameRules.TotalTicks;
-                 tick++)
+            for (
+                var tick = 0;
+                tick < DeliveryRushGameRules.TotalTicks;
+                tick++)
             {
-                if (inputIndex < inputs.Count &&
+                if (
+                    inputIndex < inputs.Count &&
                     inputs[inputIndex].Tick == tick)
                 {
                     var input = inputs[inputIndex];
@@ -44,7 +49,10 @@
 
                 if (slowdownTicksRemaining > 0)
                 {
-                    distance += Math.Max(1, distancePerTick / 2);
+                    distance += Math.Max(
+                        1,
+                        distancePerTick / 2);
+
                     slowdownTicksRemaining--;
                 }
                 else
@@ -52,14 +60,18 @@
                     distance += distancePerTick;
                 }
 
+                completedTicks = tick + 1;
+
                 if (tick != nextObstacleTick)
                 {
                     continue;
                 }
 
-                var blockedLaneMask = GenerateBlockedLaneMask(random, tick);
+                var blockedLaneMask =
+                    GenerateBlockedLaneMask(random, tick);
 
                 var playerLaneMask = 1 << playerLane;
+
                 var collision =
                     (blockedLaneMask & playerLaneMask) != 0;
 
@@ -82,6 +94,13 @@
                         currentCombo);
                 }
 
+                if (
+                    collisionCount >=
+                    DeliveryRushGameRules.MaximumCollisions)
+                {
+                    break;
+                }
+
                 nextObstacleTick +=
                     DeliveryRushGameRules
                         .GetObstacleInterval(tick);
@@ -97,23 +116,87 @@
                 DeliveryRushGameRules.CollisionPenalty;
 
             return new DeliveryRushSimulationResult(
-                Score: Math.Max(0, score),
-                Distance: distance,
-                AvoidedObstacles: avoidedObstacles,
-                CollisionCount: collisionCount,
-                MaxCombo: maxCombo);
+                Math.Max(0, score),
+                distance,
+                avoidedObstacles,
+                collisionCount,
+                maxCombo,
+                completedTicks);
+        }
+
+        private static void ValidateInputs(
+            IReadOnlyList<DeliveryRushInput> inputs)
+        {
+            if (inputs == null)
+            {
+                throw new ArgumentNullException(nameof(inputs));
+            }
+
+            if (
+                inputs.Count >
+                DeliveryRushGameRules.MaximumInputEvents)
+            {
+                throw new ArgumentException(
+                    "Too many input events.",
+                    nameof(inputs));
+            }
+
+            var previousTick = -1;
+
+            foreach (var input in inputs)
+            {
+                if (
+                    input == null ||
+                    input.Tick < 0 ||
+                    input.Tick >=
+                    DeliveryRushGameRules.TotalTicks)
+                {
+                    throw new ArgumentException(
+                        "Input tick is outside the game duration.",
+                        nameof(inputs));
+                }
+
+                if (
+                    input.Direction != -1 &&
+                    input.Direction != 1)
+                {
+                    throw new ArgumentException(
+                        "Input direction must be -1 or 1.",
+                        nameof(inputs));
+                }
+
+                if (input.Tick <= previousTick)
+                {
+                    throw new ArgumentException(
+                        "Input ticks must be strictly increasing.",
+                        nameof(inputs));
+                }
+
+                if (
+                    previousTick >= 0 &&
+                    input.Tick - previousTick <
+                    DeliveryRushGameRules
+                        .MinimumTicksBetweenInputs)
+                {
+                    throw new ArgumentException(
+                        "Input events are too close together.",
+                        nameof(inputs));
+                }
+
+                previousTick = input.Tick;
+            }
         }
 
         private static int GenerateBlockedLaneMask(
-            DeliveryRushRandom random, int tick)
+            DeliveryRushRandom random,
+            int tick)
         {
             var twoLaneBlockChance =
                 DeliveryRushGameRules
                     .GetTwoLaneBlockChancePercent(tick);
 
             var shouldBlockTwoLanes =
-                random.NextInt(100) <
-                twoLaneBlockChance;
+                random.NextInt(100) < twoLaneBlockChance;
 
             if (shouldBlockTwoLanes)
             {
@@ -130,58 +213,6 @@
                 DeliveryRushGameRules.LaneCount);
 
             return 1 << blockedLane;
-        }
-
-        private static void ValidateInputs(
-            IReadOnlyList<DeliveryRushInput> inputs)
-        {
-            ArgumentNullException.ThrowIfNull(inputs);
-
-            if (inputs.Count >
-                DeliveryRushGameRules.MaximumInputEvents)
-            {
-                throw new ArgumentException(
-                    "Too many input events.",
-                    nameof(inputs));
-            }
-
-            var previousTick = -1;
-
-            foreach (var input in inputs)
-            {
-                if (input.Tick < 0 ||
-                    input.Tick >= DeliveryRushGameRules.TotalTicks)
-                {
-                    throw new ArgumentException(
-                        "Input tick is outside the game duration.",
-                        nameof(inputs));
-                }
-
-                if (input.Direction is not (-1 or 1))
-                {
-                    throw new ArgumentException(
-                        "Input direction must be -1 or 1.",
-                        nameof(inputs));
-                }
-
-                if (input.Tick <= previousTick)
-                {
-                    throw new ArgumentException(
-                        "Input ticks must be strictly increasing.",
-                        nameof(inputs));
-                }
-
-                if (previousTick >= 0 &&
-                    input.Tick - previousTick <
-                    DeliveryRushGameRules.MinimumTicksBetweenInputs)
-                {
-                    throw new ArgumentException(
-                        "Input events are too close together.",
-                        nameof(inputs));
-                }
-
-                previousTick = input.Tick;
-            }
         }
     }
 }

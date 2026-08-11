@@ -151,16 +151,6 @@ namespace beef_and_chicken.Application.Services
                     "Verzija igrice je promenjena. Pokrenite novu partiju.");
             }
 
-            var earliestFinishUtc = run.StartedAtUtc.AddSeconds(
-                DeliveryRushGameRules.DurationSeconds -
-                DeliveryRushGameRules.FinishToleranceSeconds);
-
-            if (nowUtc < earliestFinishUtc)
-            {
-                throw new BadRequestException(
-                    "Partija još uvek nije završena.");
-            }
-
             if (nowUtc > run.ExpiresAtUtc)
             {
                 run.Status = DeliveryRushRunStatus.Expired;
@@ -195,6 +185,23 @@ namespace beef_and_chicken.Application.Services
 
                 throw new BadRequestException(
                     "Poslate komande partije nisu ispravne.");
+            }
+
+            var simulatedDurationSeconds =
+                simulation.CompletedTicks /
+                (double)DeliveryRushGameRules.TickRate;
+
+            var earliestFinishUtc =
+                run.StartedAtUtc.AddSeconds(
+                    Math.Max(
+                        0,
+                        simulatedDurationSeconds -
+                        DeliveryRushGameRules.FinishToleranceSeconds));
+
+            if (nowUtc < earliestFinishUtc)
+            {
+                throw new BadRequestException(
+                    "Partija još uvek nije završena.");
             }
 
             var previousBestScore =

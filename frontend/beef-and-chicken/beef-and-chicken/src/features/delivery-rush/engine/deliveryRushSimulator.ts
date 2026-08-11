@@ -41,9 +41,7 @@ export function simulateDeliveryRushUntilTick(
   const random = new DeliveryRushRandom(seed);
 
   let playerLane: number = deliveryRushGameRules.startingLane;
-
   let inputIndex = 0;
-
   let nextObstacleTick: number = deliveryRushGameRules.firstObstacleTick;
 
   let distance = 0;
@@ -70,7 +68,6 @@ export function simulateDeliveryRushUntilTick(
 
     if (slowdownTicksRemaining > 0) {
       distance += Math.max(1, Math.trunc(distancePerTick / 2));
-
       slowdownTicksRemaining--;
     } else {
       distance += distancePerTick;
@@ -81,21 +78,21 @@ export function simulateDeliveryRushUntilTick(
     }
 
     const blockedLaneMask = generateBlockedLaneMask(random, tick);
-
     const playerLaneMask = 1 << playerLane;
-
     const collision = (blockedLaneMask & playerLaneMask) !== 0;
 
     if (collision) {
       collisionCount++;
       currentCombo = 0;
-
       slowdownTicksRemaining = deliveryRushGameRules.collisionSlowdownTicks;
     } else {
       avoidedObstacles++;
       currentCombo++;
-
       maxCombo = Math.max(maxCombo, currentCombo);
+    }
+
+    if (collisionCount >= deliveryRushGameRules.maximumCollisions) {
+      break;
     }
 
     nextObstacleTick += getObstacleInterval(tick);

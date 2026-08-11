@@ -5,5 +5,6 @@
         int Distance,
         int AvoidedObstacles,
         int CollisionCount,
-        int MaxCombo);
+        int MaxCombo,
+        int CompletedTicks);
 }

@@ -1,17 +1,18 @@
 export const deliveryRushGameRules = {
-  gameVersion: "1.1.0",
+  gameVersion: "2.0.0",
 
-  durationSeconds: 60,
+  durationSeconds: 120,
   tickRate: 30,
-  totalTicks: 60 * 30,
+  totalTicks: 120 * 30,
 
   laneCount: 3,
   startingLane: 1,
 
   firstObstacleTick: 90,
+  maximumCollisions: 3,
   collisionSlowdownTicks: 45,
 
-  maximumInputEvents: 600,
+  maximumInputEvents: 900,
   minimumTicksBetweenInputs: 2,
 
   avoidedObstaclePoints: 20,
@@ -27,56 +28,82 @@ export type DeliveryRushDifficultyLevel =
   | "easy"
   | "medium"
   | "hard"
-  | "extreme";
+  | "very-hard"
+  | "extreme"
+  | "rush-hour";
 
 export function getDeliveryRushDifficultyLevel(
   tick: number,
 ): DeliveryRushDifficultyLevel {
-  if (tick < 450) {
+  if (tick < 600) {
     return "easy";
   }
 
-  if (tick < 900) {
+  if (tick < 1200) {
     return "medium";
   }
 
-  if (tick < 1350) {
+  if (tick < 1800) {
     return "hard";
   }
 
-  return "extreme";
+  if (tick < 2400) {
+    return "very-hard";
+  }
+
+  if (tick < 3000) {
+    return "extreme";
+  }
+
+  return "rush-hour";
 }
 
 export function getObstacleInterval(tick: number): number {
-  if (tick < 450) {
-    return 45;
+  if (tick < 600) {
+    return 42;
   }
 
-  if (tick < 900) {
-    return 39;
+  if (tick < 1200) {
+    return 36;
   }
 
-  if (tick < 1350) {
-    return 33;
+  if (tick < 1800) {
+    return 30;
   }
 
-  return 27;
+  if (tick < 2400) {
+    return 25;
+  }
+
+  if (tick < 3000) {
+    return 21;
+  }
+
+  return 18;
 }
 
 export function getDistancePerTick(tick: number): number {
-  if (tick < 450) {
+  if (tick < 600) {
     return 2;
   }
 
-  if (tick < 900) {
+  if (tick < 1200) {
     return 3;
   }
 
-  if (tick < 1350) {
+  if (tick < 1800) {
     return 4;
   }
 
-  return 5;
+  if (tick < 2400) {
+    return 5;
+  }
+
+  if (tick < 3000) {
+    return 6;
+  }
+
+  return 7;
 }
 
 export function getTwoLaneBlockChancePercent(tick: number): number {
@@ -87,12 +114,18 @@ export function getTwoLaneBlockChancePercent(tick: number): number {
       return 20;
 
     case "medium":
-      return 30;
+      return 32;
 
     case "hard":
-      return 40;
+      return 45;
+
+    case "very-hard":
+      return 58;
 
     case "extreme":
-      return 50;
+      return 72;
+
+    case "rush-hour":
+      return 85;
   }
 }

@@ -31,11 +31,12 @@ namespace beef_and_chicken.Tests.Domain.Games.DeliveryRush
                 123456,
                 Array.Empty<DeliveryRushInput>());
 
-            Assert.Equal(3109, result.Score);
-            Assert.Equal(4029, result.Distance);
-            Assert.Equal(22, result.AvoidedObstacles);
-            Assert.Equal(28, result.CollisionCount);
-            Assert.Equal(4, result.MaxCombo);
+            Assert.Equal(341, result.Score);
+            Assert.Equal(431, result.Distance);
+            Assert.Equal(2, result.AvoidedObstacles);
+            Assert.Equal(3, result.CollisionCount);
+            Assert.Equal(2, result.MaxCombo);
+            Assert.Equal(259, result.CompletedTicks);
         }
 
         [Fact]
@@ -81,23 +82,27 @@ namespace beef_and_chicken.Tests.Domain.Games.DeliveryRush
         {
             Assert.Equal(
                 20,
-                DeliveryRushGameRules
-                    .GetTwoLaneBlockChancePercent(0));
+                DeliveryRushGameRules.GetTwoLaneBlockChancePercent(0));
 
             Assert.Equal(
-                30,
-                DeliveryRushGameRules
-                    .GetTwoLaneBlockChancePercent(450));
+                32,
+                DeliveryRushGameRules.GetTwoLaneBlockChancePercent(600));
 
             Assert.Equal(
-                40,
-                DeliveryRushGameRules
-                    .GetTwoLaneBlockChancePercent(900));
+                45,
+                DeliveryRushGameRules.GetTwoLaneBlockChancePercent(1200));
 
             Assert.Equal(
-                50,
-                DeliveryRushGameRules
-                    .GetTwoLaneBlockChancePercent(1350));
+                58,
+                DeliveryRushGameRules.GetTwoLaneBlockChancePercent(1800));
+
+            Assert.Equal(
+                72,
+                DeliveryRushGameRules.GetTwoLaneBlockChancePercent(2400));
+
+            Assert.Equal(
+                85,
+                DeliveryRushGameRules.GetTwoLaneBlockChancePercent(3000));
         }
     }
 }

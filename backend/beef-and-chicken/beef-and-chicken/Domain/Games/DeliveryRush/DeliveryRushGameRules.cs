@@ -2,9 +2,9 @@
 {
     public static class DeliveryRushGameRules
     {
-        public const string GameVersion = "1.1.0";
+        public const string GameVersion = "2.0.0";
 
-        public const int DurationSeconds = 60;
+        public const int DurationSeconds = 120;
         public const int TickRate = 30;
         public const int TotalTicks = DurationSeconds * TickRate;
 
@@ -12,9 +12,10 @@
         public const int StartingLane = 1;
 
         public const int FirstObstacleTick = 90;
+        public const int MaximumCollisions = 3;
         public const int CollisionSlowdownTicks = 45;
 
-        public const int MaximumInputEvents = 600;
+        public const int MaximumInputEvents = 900;
         public const int MinimumTicksBetweenInputs = 2;
 
         public const int AvoidedObstaclePoints = 20;
@@ -23,67 +24,96 @@
 
         public const int ExpirationGraceSeconds = 15;
         public const int LeaderboardSize = 10;
-
         public const int FinishToleranceSeconds = 3;
 
         public static int GetObstacleInterval(int tick)
         {
-            if (tick < 450)
+            if (tick < 600)
             {
-                return 45;
+                return 42;
             }
 
-            if (tick < 900)
+            if (tick < 1200)
             {
-                return 39;
+                return 36;
             }
 
-            if (tick < 1350)
-            {
-                return 33;
-            }
-
-            return 27;
-        }
-
-        public static int GetDistancePerTick(int tick)
-        {
-            if (tick < 450)
-            {
-                return 2;
-            }
-
-            if (tick < 900)
-            {
-                return 3;
-            }
-
-            if (tick < 1350)
-            {
-                return 4;
-            }
-
-            return 5;
-        }
-
-        public static int GetTwoLaneBlockChancePercent(int tick)
-        {
-            if (tick < 450)
-            {
-                return 20;
-            }
-
-            if (tick < 900)
+            if (tick < 1800)
             {
                 return 30;
             }
 
-            if (tick < 1350)
+            if (tick < 2400)
             {
-                return 40;
+                return 25;
             }
 
-            return 50;
+            if (tick < 3000)
+            {
+                return 21;
+            }
+
+            return 18;
+        }
+
+        public static int GetDistancePerTick(int tick)
+        {
+            if (tick < 600)
+            {
+                return 2;
+            }
+
+            if (tick < 1200)
+            {
+                return 3;
+            }
+
+            if (tick < 1800)
+            {
+                return 4;
+            }
+
+            if (tick < 2400)
+            {
+                return 5;
+            }
+
+            if (tick < 3000)
+            {
+                return 6;
+            }
+
+            return 7;
+        }
+
+        public static int GetTwoLaneBlockChancePercent(int tick)
+        {
+            if (tick < 600)
+            {
+                return 20;
+            }
+
+            if (tick < 1200)
+            {
+                return 32;
+            }
+
+            if (tick < 1800)
+            {
+                return 45;
+            }
+
+            if (tick < 2400)
+            {
+                return 58;
+            }
+
+            if (tick < 3000)
+            {
+                return 72;
+            }
+
+            return 85;
         }
     }
 }

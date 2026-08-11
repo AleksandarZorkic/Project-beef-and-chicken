@@ -242,7 +242,7 @@ namespace beef_and_chicken.Tests.Application.Services
 
             var startedRun = await service.StartRunAsync();
 
-            timeProvider.Advance(TimeSpan.FromSeconds(30));
+            timeProvider.Advance(TimeSpan.FromSeconds(1));
 
             var request = new FinishDeliveryRushRunRequestDto
             {
@@ -472,22 +472,22 @@ namespace beef_and_chicken.Tests.Application.Services
                 DeliveryRushRunStatus.Completed,
                 savedRun.Status);
 
-            Assert.Equal(3109, savedRun.Score);
-            Assert.Equal(4029, savedRun.Distance);
-            Assert.Equal(22, savedRun.AvoidedObstacles);
-            Assert.Equal(28, savedRun.CollisionCount);
-            Assert.Equal(4, savedRun.MaxCombo);
+            Assert.Equal(341, savedRun.Score);
+            Assert.Equal(431, savedRun.Distance);
+            Assert.Equal(2, savedRun.AvoidedObstacles);
+            Assert.Equal(3, savedRun.CollisionCount);
+            Assert.Equal(2, savedRun.MaxCombo);
 
             Assert.Equal(
                 currentTime.AddSeconds(
                     DeliveryRushGameRules.DurationSeconds),
                 savedRun.FinishedAtUtc);
 
-            Assert.Equal(3109, result.Score);
-            Assert.Equal(4029, result.Distance);
-            Assert.Equal(22, result.AvoidedObstacles);
-            Assert.Equal(28, result.CollisionCount);
-            Assert.Equal(4, result.MaxCombo);
+            Assert.Equal(341, result.Score);
+            Assert.Equal(431, result.Distance);
+            Assert.Equal(2, result.AvoidedObstacles);
+            Assert.Equal(3, result.CollisionCount);
+            Assert.Equal(2, result.MaxCombo);
 
             Assert.True(result.IsPersonalBest);
             Assert.Equal(1, result.WeeklyRank);
@@ -530,10 +530,15 @@ namespace beef_and_chicken.Tests.Application.Services
                 GameVersion = DeliveryRushGameRules.GameVersion,
                 Status = DeliveryRushRunStatus.Completed,
                 StartedAtUtc = currentTime.AddDays(-1),
+
                 ExpiresAtUtc = currentTime.AddDays(-1)
-                    .AddSeconds(75),
-                FinishedAtUtc = currentTime.AddDays(-1)
-                    .AddSeconds(60),
+                    .AddSeconds(
+                        DeliveryRushGameRules.DurationSeconds +
+                        DeliveryRushGameRules.ExpirationGraceSeconds),
+
+                                FinishedAtUtc = currentTime.AddDays(-1)
+                    .AddSeconds(
+                        DeliveryRushGameRules.DurationSeconds),
                 WeekStartDate = weekStartDate,
                 Score = 5000,
                 Distance = 4500,
@@ -573,7 +578,7 @@ namespace beef_and_chicken.Tests.Application.Services
                 startedRun.RunId,
                 request);
 
-            Assert.Equal(3109, result.Score);
+            Assert.Equal(341, result.Score);
             Assert.False(result.IsPersonalBest);
             Assert.Equal(1, result.WeeklyRank);
 
@@ -584,7 +589,7 @@ namespace beef_and_chicken.Tests.Application.Services
                 DeliveryRushRunStatus.Completed,
                 finishedRun.Status);
 
-            Assert.Equal(3109, finishedRun.Score);
+            Assert.Equal(341, finishedRun.Score);
 
             var bestRuns =
                 await repository.GetWeeklyBestRunsAsync(
@@ -1046,8 +1051,11 @@ namespace beef_and_chicken.Tests.Application.Services
                 Seed = 123456,
                 GameVersion = DeliveryRushGameRules.GameVersion,
                 Status = DeliveryRushRunStatus.Completed,
-                StartedAtUtc = finishedAtUtc.AddSeconds(-60),
-                ExpiresAtUtc = finishedAtUtc.AddSeconds(15),
+                StartedAtUtc = finishedAtUtc.AddSeconds(
+                    -DeliveryRushGameRules.DurationSeconds),
+
+                                ExpiresAtUtc = finishedAtUtc.AddSeconds(
+                    DeliveryRushGameRules.ExpirationGraceSeconds),
                 FinishedAtUtc = finishedAtUtc,
                 WeekStartDate = weekStartDate,
                 Score = score,

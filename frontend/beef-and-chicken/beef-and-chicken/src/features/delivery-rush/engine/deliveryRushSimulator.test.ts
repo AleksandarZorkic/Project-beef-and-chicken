@@ -17,11 +17,11 @@ describe("Delivery Rush simulator", () => {
     const result = simulateDeliveryRush(123456, []);
 
     expect(result).toEqual({
-      score: 3109,
-      distance: 4029,
-      avoidedObstacles: 22,
-      collisionCount: 28,
-      maxCombo: 4,
+      score: 341,
+      distance: 431,
+      avoidedObstacles: 2,
+      collisionCount: 3,
+      maxCombo: 2,
     });
   });
 
@@ -42,7 +42,6 @@ describe("Delivery Rush simulator", () => {
     ];
 
     const firstResult = simulateDeliveryRush(987654, inputs);
-
     const secondResult = simulateDeliveryRush(987654, inputs);
 
     expect(secondResult).toEqual(firstResult);
@@ -80,13 +79,10 @@ describe("Delivery Rush simulator", () => {
 
   it("generates a deterministic obstacle schedule", () => {
     const firstSchedule = generateDeliveryRushObstacles(123456);
-
     const secondSchedule = generateDeliveryRushObstacles(123456);
 
     expect(secondSchedule).toEqual(firstSchedule);
-
-    expect(firstSchedule).toHaveLength(50);
-
+    expect(firstSchedule).toHaveLength(135);
     expect(firstSchedule[0].tick).toBe(90);
 
     for (const obstacle of firstSchedule) {
@@ -108,38 +104,61 @@ describe("Delivery Rush simulator", () => {
       maxCombo: 0,
     });
 
-    const finalLiveResult = simulateDeliveryRushUntilTick(123456, [], 1800);
+    const finalLiveResult = simulateDeliveryRushUntilTick(
+      123456,
+      [],
+      deliveryRushGameRules.totalTicks,
+    );
 
-    const { currentCombo: _currentCombo, ...finalResult } = finalLiveResult;
-
-    expect(finalResult).toEqual(simulateDeliveryRush(123456, []));
+    expect(finalLiveResult).toEqual({
+      score: 341,
+      distance: 431,
+      avoidedObstacles: 2,
+      collisionCount: 3,
+      currentCombo: 0,
+      maxCombo: 2,
+    });
   });
 
   it("increases difficulty as the game progresses", () => {
-    expect(deliveryRushGameRules.gameVersion).toBe("1.1.0");
+    expect(deliveryRushGameRules.gameVersion).toBe("2.0.0");
+    expect(deliveryRushGameRules.durationSeconds).toBe(120);
+    expect(deliveryRushGameRules.totalTicks).toBe(3600);
 
     expect(getTwoLaneBlockChancePercent(0)).toBe(20);
-    expect(getTwoLaneBlockChancePercent(449)).toBe(20);
+    expect(getTwoLaneBlockChancePercent(599)).toBe(20);
 
-    expect(getTwoLaneBlockChancePercent(450)).toBe(30);
-    expect(getTwoLaneBlockChancePercent(899)).toBe(30);
+    expect(getTwoLaneBlockChancePercent(600)).toBe(32);
+    expect(getTwoLaneBlockChancePercent(1199)).toBe(32);
 
-    expect(getTwoLaneBlockChancePercent(900)).toBe(40);
-    expect(getTwoLaneBlockChancePercent(1349)).toBe(40);
+    expect(getTwoLaneBlockChancePercent(1200)).toBe(45);
+    expect(getTwoLaneBlockChancePercent(1799)).toBe(45);
 
-    expect(getTwoLaneBlockChancePercent(1350)).toBe(50);
-    expect(getTwoLaneBlockChancePercent(1799)).toBe(50);
+    expect(getTwoLaneBlockChancePercent(1800)).toBe(58);
+    expect(getTwoLaneBlockChancePercent(2399)).toBe(58);
+
+    expect(getTwoLaneBlockChancePercent(2400)).toBe(72);
+    expect(getTwoLaneBlockChancePercent(2999)).toBe(72);
+
+    expect(getTwoLaneBlockChancePercent(3000)).toBe(85);
+    expect(getTwoLaneBlockChancePercent(3599)).toBe(85);
 
     expect(getDeliveryRushDifficultyLevel(0)).toBe("easy");
-    expect(getDeliveryRushDifficultyLevel(449)).toBe("easy");
+    expect(getDeliveryRushDifficultyLevel(599)).toBe("easy");
 
-    expect(getDeliveryRushDifficultyLevel(450)).toBe("medium");
-    expect(getDeliveryRushDifficultyLevel(899)).toBe("medium");
+    expect(getDeliveryRushDifficultyLevel(600)).toBe("medium");
+    expect(getDeliveryRushDifficultyLevel(1199)).toBe("medium");
 
-    expect(getDeliveryRushDifficultyLevel(900)).toBe("hard");
-    expect(getDeliveryRushDifficultyLevel(1349)).toBe("hard");
+    expect(getDeliveryRushDifficultyLevel(1200)).toBe("hard");
+    expect(getDeliveryRushDifficultyLevel(1799)).toBe("hard");
 
-    expect(getDeliveryRushDifficultyLevel(1350)).toBe("extreme");
-    expect(getDeliveryRushDifficultyLevel(1799)).toBe("extreme");
+    expect(getDeliveryRushDifficultyLevel(1800)).toBe("very-hard");
+    expect(getDeliveryRushDifficultyLevel(2399)).toBe("very-hard");
+
+    expect(getDeliveryRushDifficultyLevel(2400)).toBe("extreme");
+    expect(getDeliveryRushDifficultyLevel(2999)).toBe("extreme");
+
+    expect(getDeliveryRushDifficultyLevel(3000)).toBe("rush-hour");
+    expect(getDeliveryRushDifficultyLevel(3599)).toBe("rush-hour");
   });
 });

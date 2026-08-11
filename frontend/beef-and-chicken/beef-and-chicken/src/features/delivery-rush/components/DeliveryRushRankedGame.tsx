@@ -154,8 +154,8 @@ export default function DeliveryRushRankedGame({
       {canPlayRanked && !activeRun && !result && (
         <>
           <p>
-            Imaš 60 sekundi da izbegneš što više prepreka i postaviš najbolji
-            rezultat.
+            Vozi najduže 120 sekundi i izbegni što više prepreka. Težina
+            postepeno raste, a treći sudar završava partiju.
           </p>
 
           <button

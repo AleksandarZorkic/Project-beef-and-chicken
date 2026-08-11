@@ -41,7 +41,9 @@ const difficultyLabels: Record<DeliveryRushDifficultyLevel, string> = {
   easy: "Lagano",
   medium: "Srednje",
   hard: "Teško",
+  "very-hard": "Vrlo teško",
   extreme: "Ekstremno",
+  "rush-hour": "Špic",
 };
 
 function getDeliveryRushDifficulty(
@@ -241,6 +243,8 @@ export default function DeliveryRushGame({
 
       currentTickRef.current = calculatedTick;
 
+      let reachedCollisionLimit = false;
+
       if (calculatedTick !== lastProcessedTickRef.current) {
         processPassedObstacles(
           obstacles,
@@ -262,6 +266,10 @@ export default function DeliveryRushGame({
         );
 
         setLiveStats(calculatedStats);
+
+        reachedCollisionLimit =
+          calculatedStats.collisionCount >=
+          deliveryRushGameRules.maximumCollisions;
 
         lastProcessedTickRef.current = calculatedTick;
       }
@@ -286,11 +294,12 @@ export default function DeliveryRushGame({
         collisionFlashUntilTickRef.current,
       );
 
-      if (calculatedTick >= deliveryRushGameRules.totalTicks) {
+      if (
+        reachedCollisionLimit ||
+        calculatedTick >= deliveryRushGameRules.totalTicks
+      ) {
         finishedRef.current = true;
-
         onFinishedRef.current([...inputsRef.current]);
-
         return;
       }
 
