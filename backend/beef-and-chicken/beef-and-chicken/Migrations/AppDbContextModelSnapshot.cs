@@ -396,6 +396,71 @@ namespace beef_and_chicken.Migrations
                         });
                 });
 
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.DeliveryRushRun", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AvoidedObstacles")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CollisionCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Distance")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FinishedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GameVersion")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("MaxCombo")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Score")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Seed")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("WeekStartDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_DeliveryRushRuns_UserId_Started")
+                        .HasFilter("\"Status\" = 'Started'");
+
+                    b.HasIndex("UserId", "WeekStartDate");
+
+                    b.HasIndex("WeekStartDate", "Status", "Score");
+
+                    b.ToTable("DeliveryRushRuns", (string)null);
+                });
+
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.Dish", b =>
                 {
                     b.Property<int>("Id")
@@ -420,6 +485,9 @@ namespace beef_and_chicken.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
+                    b.Property<bool>("IsOnSale")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsRecommended")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -438,6 +506,9 @@ namespace beef_and_chicken.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
+
+                    b.Property<decimal?>("SalePrice")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
@@ -1010,6 +1081,50 @@ namespace beef_and_chicken.Migrations
                     b.ToTable("UserAllergens");
                 });
 
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.VisitLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("VisitedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VisitorId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("VisitorType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Path");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("VisitedAtUtc");
+
+                    b.HasIndex("VisitorId");
+
+                    b.HasIndex("VisitorType", "VisitedAtUtc");
+
+                    b.ToTable("VisitLogs");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<int>", null)
@@ -1070,6 +1185,17 @@ namespace beef_and_chicken.Migrations
                         .IsRequired();
 
                     b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.DeliveryRushRun", b =>
+                {
+                    b.HasOne("beef_and_chicken.Domain.Entities.User", "User")
+                        .WithMany("DeliveryRushRuns")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.Dish", b =>
@@ -1261,6 +1387,16 @@ namespace beef_and_chicken.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("beef_and_chicken.Domain.Entities.VisitLog", b =>
+                {
+                    b.HasOne("beef_and_chicken.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.Allergen", b =>
                 {
                     b.Navigation("DishAllergens");
@@ -1295,6 +1431,8 @@ namespace beef_and_chicken.Migrations
             modelBuilder.Entity("beef_and_chicken.Domain.Entities.User", b =>
                 {
                     b.Navigation("Addresses");
+
+                    b.Navigation("DeliveryRushRuns");
 
                     b.Navigation("EmployeeWorkTimes");
 

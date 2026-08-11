@@ -50,7 +50,14 @@ namespace beef_and_chicken.Application.Services
             if (data == null)
                 throw new BadRequestException("Podaci za jelo su obavezni.");
 
-            ValidateDish(data.Name, data.Price, data.CategoryId, data.RecommendedSortOrder);
+            ValidateDish(
+                data.Name,
+                data.Price,
+                data.IsOnSale,
+                data.SalePrice,
+                data.CategoryId,
+                data.RecommendedSortOrder
+            );
 
             var categoryExists = await _menuRepo.CategoryExistsAsync(data.CategoryId, ct);
 
@@ -83,6 +90,8 @@ namespace beef_and_chicken.Application.Services
                 Name = data.Name.Trim(),
                 Description = data.Description?.Trim(),
                 Price = data.Price,
+                IsOnSale = data.IsOnSale,
+                SalePrice = data.IsOnSale ? data.SalePrice : null,
                 ImageUrl = data.ImageUrl?.Trim(),
                 CategoryId = data.CategoryId,
                 IsRecommended = data.IsRecommended,
@@ -120,7 +129,14 @@ namespace beef_and_chicken.Application.Services
             if (data == null)
                 throw new BadRequestException("Podaci za jelo su obavezni.");
 
-            ValidateDish(data.Name, data.Price, data.CategoryId, data.RecommendedSortOrder);
+            ValidateDish(
+                data.Name,
+                data.Price,
+                data.IsOnSale,
+                data.SalePrice,
+                data.CategoryId,
+                data.RecommendedSortOrder
+            );
 
             var dish = await _menuRepo.GetByIdForUpdateAsync(dishId, ct);
 
@@ -156,6 +172,8 @@ namespace beef_and_chicken.Application.Services
             dish.Name = data.Name.Trim();
             dish.Description = data.Description?.Trim();
             dish.Price = data.Price;
+            dish.IsOnSale = data.IsOnSale;
+            dish.SalePrice = data.IsOnSale ? data.SalePrice : null;
             dish.ImageUrl = data.ImageUrl?.Trim();
             dish.CategoryId = data.CategoryId;
             dish.IsRecommended = data.IsRecommended;
@@ -230,6 +248,8 @@ namespace beef_and_chicken.Application.Services
         private static void ValidateDish(
             string name,
             decimal price,
+            bool isOnSale,
+            decimal? salePrice,
             int categoryId,
             int recommendedSortOrder)
         {
@@ -241,6 +261,18 @@ namespace beef_and_chicken.Application.Services
 
             if (price <= 0)
                 throw new BadRequestException("Cena jela mora biti veća od 0.");
+
+            if (isOnSale)
+            {
+                if (!salePrice.HasValue)
+                    throw new BadRequestException("Akcijska cena je obavezna kada je jelo na akciji.");
+
+                if (salePrice.Value <= 0)
+                    throw new BadRequestException("Akcijska cena mora biti veća od 0.");
+
+                if (salePrice.Value >= price)
+                    throw new BadRequestException("Akcijska cena mora biti manja od regularne cene.");
+            }
 
             if (categoryId <= 0)
                 throw new BadRequestException("Kategorija je obavezna.");

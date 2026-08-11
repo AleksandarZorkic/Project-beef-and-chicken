@@ -36,3 +36,21 @@ export async function updatePhoneNumber(data: UpdatePhoneNumberRequestDto) {
 
   return res.data;
 }
+
+export async function uploadProfilePicture(file: File) {
+  const formData = new FormData();
+
+  formData.append("image", file);
+
+  const res = await api.post<UserProfileDto>(
+    "/auth/profile/picture",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    },
+  );
+
+  return res.data;
+}

@@ -172,262 +172,271 @@ export default function DishOptionsModal({
     onAddToCart(cartSelectedOptions);
   }
 
+  function getOptionCardClassName(isSelected: boolean) {
+    return [
+      "dish-options-modal-option",
+      isSelected ? "dish-options-modal-option--selected" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
   return (
     <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0, 0, 0, 0.45)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000,
-        padding: 16,
-      }}
+      className="dish-options-modal-backdrop"
+      role="presentation"
+      onMouseDown={onClose}
     >
-      <div
-        style={{
-          background: "white",
-          borderRadius: 10,
-          padding: 20,
-          width: "100%",
-          maxWidth: 720,
-          maxHeight: "90vh",
-          overflow: "auto",
-        }}
+      <section
+        className="dish-options-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dish-options-modal-title"
+        onMouseDown={(event) => event.stopPropagation()}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 12,
-            alignItems: "flex-start",
-          }}
-        >
+        <header className="dish-options-modal__header">
           <div>
-            <h3 style={{ marginTop: 0 }}>{dish.name}</h3>
-            <div>Osnovna cena: {formatPrice(dish.price)}</div>
+            <span className="dish-options-modal__eyebrow">
+              DODACI I PRILOZI
+            </span>
+
+            <h3
+              id="dish-options-modal-title"
+              className="dish-options-modal__title"
+            >
+              {dish.name}
+            </h3>
+
+            <p className="dish-options-modal__base-price">
+              Osnovna cena: <strong>{formatPrice(dish.price)}</strong>
+            </p>
           </div>
 
-          <button type="button" onClick={onClose}>
-            Zatvori
+          <button
+            type="button"
+            className="dish-options-modal__close"
+            onClick={onClose}
+            aria-label="Zatvori izbor dodataka"
+          >
+            ×
           </button>
-        </div>
+        </header>
 
         {(dish.allowsSideDishes ||
           dish.allowsSpices ||
           dish.allowsSweetAdditions) && (
-          <div
-            style={{
-              marginTop: 16,
-              padding: 12,
-              border: "1px solid #ddd",
-              borderRadius: 8,
-              background: "#fafafa",
-            }}
-          >
+          <aside className="dish-options-modal-rules">
             <strong>Pravila za dodatke</strong>
 
             {dish.allowsSideDishes && (
               <>
-                <div style={{ marginTop: 6 }}>
+                <p>
                   Prva 4 obična priloga su besplatna. Svaki sledeći običan
                   prilog se naplaćuje {formatPrice(EXTRA_SIDE_DISH_PRICE)}.
-                </div>
+                </p>
 
-                <div>Prilozi označeni kao naplativi se plaćaju odmah.</div>
+                <p>Prilozi označeni kao naplativi se plaćaju odmah.</p>
               </>
             )}
 
-            {dish.allowsSpices && <div>Začini su besplatni.</div>}
+            {dish.allowsSpices && <p>Začini su besplatni.</p>}
+
             {dish.allowsSweetAdditions && (
-              <div>Slatki dodaci se dodatno naplaćuju.</div>
+              <p>Slatki dodaci se dodatno naplaćuju.</p>
             )}
-          </div>
+          </aside>
         )}
 
-        {dish.allowsSideDishes && (
-          <div style={{ marginTop: 18 }}>
-            <h4>Prilozi</h4>
+        <div className="dish-options-modal__body">
+          {dish.allowsSideDishes && (
+            <section className="dish-options-modal-section">
+              <header className="dish-options-modal-section__header">
+                <h4>Prilozi</h4>
+                <span>Prva 4 obična priloga su besplatna</span>
+              </header>
 
-            {sideDishes.length === 0 ? (
-              <div>Nema dostupnih priloga.</div>
-            ) : (
-              <div style={{ display: "grid", gap: 8 }}>
-                {sideDishes.map((option) => {
-                  const checked = selectedOptionIds.includes(option.id);
-                  const selectedPrice = getSelectedOptionPrice(option);
+              {sideDishes.length === 0 ? (
+                <p className="dish-options-modal-section__empty">
+                  Nema dostupnih priloga.
+                </p>
+              ) : (
+                <div className="dish-options-modal-options">
+                  {sideDishes.map((option) => {
+                    const checked = selectedOptionIds.includes(option.id);
+                    const selectedPrice = getSelectedOptionPrice(option);
 
-                  return (
-                    <label
-                      key={option.id}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        border: checked ? "2px solid black" : "1px solid #ddd",
-                        borderRadius: 8,
-                        padding: 10,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <span style={{ display: "flex", gap: 8 }}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleOption(option.id)}
-                        />
-                        <span>{option.name}</span>
-                      </span>
+                    return (
+                      <label
+                        key={option.id}
+                        className={getOptionCardClassName(checked)}
+                      >
+                        <span className="dish-options-modal-option__main">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleOption(option.id)}
+                          />
 
-                      <span>
-                        {option.isAlwaysPaid
-                          ? `+${formatPrice(option.price)}`
-                          : checked && selectedPrice > 0
-                            ? `+${formatPrice(selectedPrice)}`
-                            : "besplatno"}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+                          <span className="dish-options-modal-option__name">
+                            {option.name}
+                          </span>
+                        </span>
 
-        {dish.allowsSpices && (
-          <div style={{ marginTop: 18 }}>
-            <h4>Začini</h4>
+                        <span className="dish-options-modal-option__price">
+                          {option.isAlwaysPaid
+                            ? `+${formatPrice(option.price)}`
+                            : checked && selectedPrice > 0
+                              ? `+${formatPrice(selectedPrice)}`
+                              : "besplatno"}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          )}
 
-            {spices.length === 0 ? (
-              <div>Nema dostupnih začina.</div>
-            ) : (
-              <div style={{ display: "grid", gap: 8 }}>
-                {spices.map((option) => {
-                  const checked = selectedOptionIds.includes(option.id);
+          {dish.allowsSpices && (
+            <section className="dish-options-modal-section">
+              <header className="dish-options-modal-section__header">
+                <h4>Začini</h4>
+                <span>Bez dodatne naplate</span>
+              </header>
 
-                  return (
-                    <label
-                      key={option.id}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        border: checked ? "2px solid black" : "1px solid #ddd",
-                        borderRadius: 8,
-                        padding: 10,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <span style={{ display: "flex", gap: 8 }}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleOption(option.id)}
-                        />
-                        <span>{option.name}</span>
-                      </span>
+              {spices.length === 0 ? (
+                <p className="dish-options-modal-section__empty">
+                  Nema dostupnih začina.
+                </p>
+              ) : (
+                <div className="dish-options-modal-options">
+                  {spices.map((option) => {
+                    const checked = selectedOptionIds.includes(option.id);
 
-                      <span>besplatno</span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+                    return (
+                      <label
+                        key={option.id}
+                        className={getOptionCardClassName(checked)}
+                      >
+                        <span className="dish-options-modal-option__main">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleOption(option.id)}
+                          />
 
-        {dish.allowsSweetAdditions && (
-          <div style={{ marginTop: 18 }}>
-            <h4>Slatki dodaci</h4>
+                          <span className="dish-options-modal-option__name">
+                            {option.name}
+                          </span>
+                        </span>
 
-            {sweetAdditions.length === 0 ? (
-              <div>Nema dostupnih slatkih dodataka.</div>
-            ) : (
-              <div style={{ display: "grid", gap: 8 }}>
-                {sweetAdditions.map((option) => {
-                  const checked = selectedOptionIds.includes(option.id);
+                        <span className="dish-options-modal-option__price">
+                          besplatno
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          )}
 
-                  return (
-                    <label
-                      key={option.id}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        border: checked ? "2px solid black" : "1px solid #ddd",
-                        borderRadius: 8,
-                        padding: 10,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <span style={{ display: "flex", gap: 8 }}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleOption(option.id)}
-                        />
-                        <span>{option.name}</span>
-                      </span>
+          {dish.allowsSweetAdditions && (
+            <section className="dish-options-modal-section">
+              <header className="dish-options-modal-section__header">
+                <h4>Slatki dodaci</h4>
+                <span>Dodatno se naplaćuju</span>
+              </header>
 
-                      <span>+{formatPrice(option.price)}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+              {sweetAdditions.length === 0 ? (
+                <p className="dish-options-modal-section__empty">
+                  Nema dostupnih slatkih dodataka.
+                </p>
+              ) : (
+                <div className="dish-options-modal-options">
+                  {sweetAdditions.map((option) => {
+                    const checked = selectedOptionIds.includes(option.id);
 
-        <div
-          style={{
-            marginTop: 20,
-            padding: 14,
-            border: "1px solid #ccc",
-            borderRadius: 8,
-            background: "#f7f7f7",
-            display: "grid",
-            gap: 6,
-          }}
-        >
+                    return (
+                      <label
+                        key={option.id}
+                        className={getOptionCardClassName(checked)}
+                      >
+                        <span className="dish-options-modal-option__main">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleOption(option.id)}
+                          />
+
+                          <span className="dish-options-modal-option__name">
+                            {option.name}
+                          </span>
+                        </span>
+
+                        <span className="dish-options-modal-option__price">
+                          +{formatPrice(option.price)}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+
+        <section className="dish-options-modal-summary">
           {dish.allowsSideDishes && (
             <>
-              <div>Izabrano običnih priloga: {regularSideDishCount}</div>
+              <div className="dish-options-modal-summary__row">
+                <span>Izabrano običnih priloga</span>
+                <strong>{regularSideDishCount}</strong>
+              </div>
 
-              <div>
-                Dodatno naplaćenih običnih priloga: {paidRegularSideDishCount}
+              <div className="dish-options-modal-summary__row">
+                <span>Dodatno naplaćenih običnih priloga</span>
+                <strong>{paidRegularSideDishCount}</strong>
               </div>
             </>
           )}
 
           {dish.allowsSweetAdditions && (
-            <div>Slatki dodaci se dodatno naplaćuju.</div>
+            <div className="dish-options-modal-summary__row">
+              <span>Slatki dodaci</span>
+              <strong>Dodatno se naplaćuju</strong>
+            </div>
           )}
 
-          <div>Doplata za dodatke: {formatPrice(optionsTotal)}</div>
-
-          <div style={{ fontWeight: 800 }}>
-            Cena po komadu: {formatPrice(totalUnitPrice)}
+          <div className="dish-options-modal-summary__row">
+            <span>Doplata za dodatke</span>
+            <strong>{formatPrice(optionsTotal)}</strong>
           </div>
-        </div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 10,
-            marginTop: 18,
-          }}
-        >
-          <button type="button" onClick={onClose}>
+          <div className="dish-options-modal-summary__total">
+            <span>Cena po komadu</span>
+            <strong>{formatPrice(totalUnitPrice)}</strong>
+          </div>
+        </section>
+
+        <footer className="dish-options-modal__actions">
+          <button
+            type="button"
+            className="dish-options-modal__button dish-options-modal__button--secondary"
+            onClick={onClose}
+          >
             Otkaži
           </button>
 
-          <button type="button" onClick={handleAddToCart}>
+          <button
+            type="button"
+            className="dish-options-modal__button dish-options-modal__button--primary"
+            onClick={handleAddToCart}
+          >
             Dodaj u korpu
           </button>
-        </div>
-      </div>
+        </footer>
+      </section>
     </div>
   );
 }

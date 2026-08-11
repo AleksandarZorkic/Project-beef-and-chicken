@@ -1,11 +1,15 @@
 import api from "./https";
 
-// Baci pogled na Swager kako bi znao koje atribute vraca da li PascalCase ilicamelCase.
-export interface DishMenuDto {
+export type DishMenuDto = {
   id: number;
   name: string;
   description?: string | null;
   price: number;
+
+  isOnSale: boolean;
+  salePrice?: number | null;
+  effectivePrice: number;
+
   imageUrl?: string | null;
   isRecommended: boolean;
   recommendedSortOrder: number;
@@ -15,7 +19,7 @@ export interface DishMenuDto {
   allowsSpices: boolean;
   allowsSweetAdditions: boolean;
   allergens: DishAllergenDto[];
-}
+};
 
 export interface DishAllergenDto {
   allergenId: number;
@@ -39,6 +43,11 @@ export type HomepageDishDto = {
   name: string;
   description?: string | null;
   price: number;
+
+  isOnSale: boolean;
+  salePrice?: number | null;
+  effectivePrice: number;
+
   imageUrl?: string | null;
   categoryId: number;
   categoryName: string;

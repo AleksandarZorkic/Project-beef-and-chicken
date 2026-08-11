@@ -37,6 +37,23 @@ function formatPrice(value: number) {
   return `${value.toLocaleString("sr-RS")} RSD`;
 }
 
+function isDishOnSale(dish: DishMenuDto) {
+  return (
+    dish.isOnSale &&
+    typeof dish.salePrice === "number" &&
+    dish.salePrice > 0 &&
+    dish.salePrice < dish.price
+  );
+}
+
+function getDishEffectivePrice(dish: DishMenuDto) {
+  if (isDishOnSale(dish)) {
+    return dish.salePrice!;
+  }
+
+  return dish.effectivePrice ?? dish.price;
+}
+
 function getCategoryAnchorId(categoryId: number) {
   return `menu-category-${categoryId}`;
 }
@@ -73,10 +90,7 @@ export default function MenuPage() {
       ? restaurantSettings.freeDeliveryThreshold - subtotal
       : 0;
 
-  const canAddToCart =
-    canOrder &&
-    Boolean(restaurantSettings?.isDeliveryEnabled) &&
-    !loadingSettings;
+  const canAddToCart = canOrder && !loadingSettings;
 
   const minimumOrderProgress =
     restaurantSettings?.minimumOrderAmount &&
@@ -224,7 +238,10 @@ export default function MenuPage() {
         dishId: selectedDish.id,
         name: selectedDish.name,
         imageUrl: selectedDish.imageUrl,
-        unitPrice: selectedDish.price,
+        unitPrice: getDishEffectivePrice(selectedDish),
+        regularPrice: selectedDish.price,
+        isOnSale: isDishOnSale(selectedDish),
+        salePrice: selectedDish.salePrice ?? null,
         optionsTotal,
         selectedOptions,
       },
@@ -244,7 +261,10 @@ export default function MenuPage() {
         dishId: dish.id,
         name: dish.name,
         imageUrl: dish.imageUrl,
-        unitPrice: dish.price,
+        unitPrice: getDishEffectivePrice(dish),
+        regularPrice: dish.price,
+        isOnSale: isDishOnSale(dish),
+        salePrice: dish.salePrice ?? null,
         optionsTotal: 0,
         selectedOptions: [],
       },
@@ -597,6 +617,9 @@ export default function MenuPage() {
 
                           const imageUrl = resolveImageUrl(dish.imageUrl);
 
+                          const dishOnSale = isDishOnSale(dish);
+                          const effectivePrice = getDishEffectivePrice(dish);
+
                           const hasConfigurableOptions =
                             dish.allowsSideDishes ||
                             dish.allowsSpices ||
@@ -610,6 +633,7 @@ export default function MenuPage() {
                                 hasAllergyWarning
                                   ? "dish-card--allergy-warning"
                                   : "",
+                                dishOnSale ? "dish-card--sale" : "",
                               ]
                                 .filter(Boolean)
                                 .join(" ")}
@@ -632,9 +656,34 @@ export default function MenuPage() {
 
                                 <div className="dish-card__media-overlay" />
 
-                                <span className="dish-card__price">
-                                  {formatPrice(dish.price)}
+                                <span
+                                  className={[
+                                    "dish-card__price",
+                                    dishOnSale ? "dish-card__price--sale" : "",
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" ")}
+                                >
+                                  {dishOnSale ? (
+                                    <>
+                                      <span className="dish-card__old-price">
+                                        {formatPrice(dish.price)}
+                                      </span>
+
+                                      <span className="dish-card__new-price">
+                                        {formatPrice(effectivePrice)}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    formatPrice(dish.price)
+                                  )}
                                 </span>
+
+                                {dishOnSale && (
+                                  <span className="dish-card__sale-badge">
+                                    AKCIJA
+                                  </span>
+                                )}
 
                                 {hasAllergyWarning && (
                                   <span className="dish-card__warning-badge">

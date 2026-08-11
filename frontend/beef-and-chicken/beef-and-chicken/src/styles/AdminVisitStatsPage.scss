@@ -1,0 +1,323 @@
+@use "./abstracts/variables" as *;
+
+.admin-visit-stats-page {
+  display: grid;
+  gap: $space-7;
+}
+
+.admin-visit-stats-page__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: $space-6;
+}
+
+.admin-visit-stats-page__eyebrow {
+  display: block;
+
+  margin-bottom: $space-2;
+
+  color: $color-accent;
+
+  font-size: 0.72rem;
+  font-weight: $font-weight-extra-bold;
+  letter-spacing: 0.16em;
+}
+
+.admin-visit-stats-page__title {
+  margin: 0;
+
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  line-height: 1;
+}
+
+.admin-visit-stats-page__description {
+  max-width: 760px;
+  margin: $space-3 0 0;
+
+  color: $color-text-soft;
+
+  line-height: 1.7;
+}
+
+.admin-visit-stats-page__refresh {
+  min-height: 44px;
+  padding-inline: $space-5;
+
+  color: #11140f;
+
+  font-family: inherit;
+  font-weight: $font-weight-extra-bold;
+
+  background: $color-accent;
+  border: 0;
+  border-radius: $radius-md;
+
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+}
+
+.admin-visit-stats-loading,
+.admin-visit-stats-alert {
+  padding: $space-5;
+
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+
+  p {
+    margin: $space-2 0 0;
+
+    color: $color-text-muted;
+  }
+}
+
+.admin-visit-stats-alert {
+  border-color: rgba(255, 91, 91, 0.28);
+
+  strong {
+    color: #ffd0d0;
+  }
+}
+
+.admin-visit-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: $space-4;
+}
+
+.admin-visit-stat-card {
+  min-height: 170px;
+  padding: $space-5;
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba($color-primary, 0.08),
+      transparent 18rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.058),
+      rgba(255, 255, 255, 0.018)
+    );
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  box-shadow: $shadow-md;
+
+  span {
+    display: block;
+
+    color: $color-text-muted;
+
+    font-size: 0.72rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+  }
+
+  strong {
+    display: block;
+
+    margin-top: $space-4;
+
+    color: $color-accent;
+
+    font-family: $font-family-display;
+    font-size: 3rem;
+    font-weight: $font-weight-black;
+    line-height: 1;
+  }
+
+  p {
+    margin: $space-3 0 0;
+
+    color: $color-text-soft;
+
+    font-size: 0.84rem;
+    line-height: 1.5;
+  }
+}
+
+.admin-visit-stat-card--primary {
+  border-color: rgba($color-accent, 0.24);
+}
+
+.admin-visit-stats-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: $space-5;
+}
+
+.admin-visit-panel {
+  padding: $space-5;
+
+  background: rgba(255, 255, 255, 0.032);
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+}
+
+.admin-visit-panel__header {
+  margin-bottom: $space-5;
+
+  span {
+    display: block;
+
+    margin-bottom: $space-2;
+
+    color: $color-accent;
+
+    font-size: 0.68rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  h2 {
+    margin: 0;
+
+    font-size: 1.6rem;
+  }
+}
+
+.admin-visit-panel__empty {
+  margin: 0;
+
+  color: $color-text-muted;
+}
+
+.admin-visit-days {
+  display: grid;
+  gap: $space-3;
+}
+
+.admin-visit-day {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: $space-3;
+}
+
+.admin-visit-day__label {
+  display: grid;
+  gap: 3px;
+
+  strong {
+    color: $color-text;
+  }
+
+  span {
+    color: $color-text-muted;
+
+    font-size: 0.72rem;
+  }
+}
+
+.admin-visit-day__bar {
+  height: 12px;
+
+  overflow: hidden;
+
+  background: rgba(255, 255, 255, 0.055);
+  border-radius: $radius-pill;
+
+  span {
+    display: block;
+
+    height: 100%;
+
+    background: linear-gradient(90deg, $color-primary, $color-accent);
+    border-radius: inherit;
+  }
+}
+
+.admin-visit-day__value {
+  color: $color-accent;
+
+  text-align: right;
+}
+
+.admin-visit-paths {
+  display: grid;
+  gap: $space-3;
+}
+
+.admin-visit-path {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+
+  padding: $space-4;
+
+  background: rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: $radius-md;
+
+  div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  strong {
+    color: $color-text;
+
+    word-break: break-word;
+  }
+
+  span {
+    color: $color-text-muted;
+
+    font-size: 0.76rem;
+  }
+
+  b {
+    color: $color-accent;
+
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: $breakpoint-laptop) {
+  .admin-visit-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-visit-stats-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .admin-visit-stats-page__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-visit-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-visit-day {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-visit-day__value {
+    text-align: left;
+  }
+
+  .admin-visit-path {
+    align-items: flex-start;
+    flex-direction: column;
+
+    b {
+      align-self: flex-end;
+    }
+  }
+}

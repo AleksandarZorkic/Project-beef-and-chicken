@@ -13,6 +13,9 @@ export type CartItem = {
   name: string;
   imageUrl?: string | null;
   unitPrice: number;
+  regularPrice: number;
+  isOnSale?: boolean;
+  salePrice?: number | null;
   optionsTotal: number;
   quantity: number;
   selectedOptions: CartSelectedOption[];
@@ -44,6 +47,9 @@ export type CartAction =
         name: string;
         imageUrl?: string | null;
         unitPrice: number;
+        regularPrice?: number;
+        isOnSale?: boolean;
+        salePrice?: number | null;
         optionsTotal?: number;
         selectedOptions?: CartSelectedOption[];
       };

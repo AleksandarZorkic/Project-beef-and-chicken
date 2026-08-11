@@ -123,6 +123,17 @@ namespace beef_and_chicken.Application.Services
 
             var restaurantSettings = await _restaurantSettingsService.GetAsync(ct);
 
+            if (!restaurantSettings.RestaurantStatus.IsOpen)
+            {
+                var message = restaurantSettings.RestaurantStatus.NextOpeningText == null
+                    ? restaurantSettings.RestaurantStatus.Message
+                    : $"{restaurantSettings.RestaurantStatus.Message} {restaurantSettings.RestaurantStatus.NextOpeningText}";
+
+                throw new BadRequestException(
+                    $"Restoran trenutno ne prima porudžbine. {message}"
+                );
+            }
+
             if (isDelivery && !restaurantSettings.IsDeliveryEnabled)
             {
                 throw new BadRequestException(
@@ -242,12 +253,14 @@ namespace beef_and_chicken.Application.Services
                     out var optionsTotal
                 );
 
+                var unitPrice = GetEffectiveDishPrice(dish);
+
                 var orderItem = new OrderItem
                 {
                     DishId = dish.Id,
                     DishName = dish.Name,
                     Quantity = requestedItem.Quantity,
-                    UnitPrice = dish.Price,
+                    UnitPrice = unitPrice,
                     OptionsTotal = optionsTotal,
                     Options = optionSnapshots
                 };
@@ -311,6 +324,37 @@ namespace beef_and_chicken.Application.Services
             );
 
             return _mapper.Map<OrderDetailsDto>(fullOrder);
+        }
+
+        private static decimal GetEffectiveDishPrice(Dish dish)
+        {
+            if (!dish.IsOnSale)
+            {
+                return dish.Price;
+            }
+
+            if (!dish.SalePrice.HasValue)
+            {
+                throw new BadRequestException(
+                    $"Jelo \"{dish.Name}\" je označeno kao akcijsko, ali nema akcijsku cenu."
+                );
+            }
+
+            if (dish.SalePrice.Value <= 0)
+            {
+                throw new BadRequestException(
+                    $"Akcijska cena za jelo \"{dish.Name}\" mora biti veća od 0."
+                );
+            }
+
+            if (dish.SalePrice.Value >= dish.Price)
+            {
+                throw new BadRequestException(
+                    $"Akcijska cena za jelo \"{dish.Name}\" mora biti manja od regularne cene."
+                );
+            }
+
+            return dish.SalePrice.Value;
         }
 
         private static List<OrderItemOption> BuildOrderItemOptions(
@@ -761,6 +805,11 @@ namespace beef_and_chicken.Application.Services
             StartDeliveryBatchRequestDto dto,
             CancellationToken ct = default)
         {
+            if (dto?.OrderIds == null)
+            {
+                throw new BadRequestException("Moraš izabrati bar jednu porudžbinu.");
+            }
+
             var orderIds = dto.OrderIds
                 .Distinct()
                 .ToList();
@@ -775,6 +824,23 @@ namespace beef_and_chicken.Application.Services
 
             if (orders.Count != orderIds.Count)
                 throw new NotFoundException("Jedna ili više porudžbina nisu pronađene.");
+
+            foreach (var order in orders)
+            {
+                if (order.FulfillmentType != FulfillmentType.Delivery)
+                {
+                    throw new BadRequestException(
+                        $"Porudžbina #{order.OrderNumber ?? order.Id.ToString()} je za lično preuzimanje i ne može biti poslata u dostavu."
+                    );
+                }
+
+                if (order.Status != OrderStatus.Spremna_za_preuzimanje)
+                {
+                    throw new BadRequestException(
+                        $"Porudžbina #{order.OrderNumber ?? order.Id.ToString()} mora biti spremna za preuzimanje pre pokretanja dostave."
+                    );
+                }
+            }
 
             foreach (var order in orders)
             {

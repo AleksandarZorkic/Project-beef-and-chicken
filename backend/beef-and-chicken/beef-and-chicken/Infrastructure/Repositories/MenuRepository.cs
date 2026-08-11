@@ -115,6 +115,8 @@ namespace beef_and_chicken.Infrastructure.Repositories
                     orderItem.Dish!.Name,
                     orderItem.Dish.Description,
                     orderItem.Dish.Price,
+                    orderItem.Dish.IsOnSale,
+                    orderItem.Dish.SalePrice,
                     orderItem.Dish.ImageUrl,
                     CategoryId = orderItem.Dish.CategoryId,
                     CategoryName = orderItem.Dish.Category.Name
@@ -125,6 +127,11 @@ namespace beef_and_chicken.Infrastructure.Repositories
                     Name = group.Key.Name,
                     Description = group.Key.Description,
                     Price = group.Key.Price,
+                    IsOnSale = group.Key.IsOnSale,
+                    SalePrice = group.Key.SalePrice,
+                    EffectivePrice = group.Key.IsOnSale && group.Key.SalePrice.HasValue
+                        ? group.Key.SalePrice.Value
+                        : group.Key.Price,
                     ImageUrl = group.Key.ImageUrl,
                     CategoryId = group.Key.CategoryId,
                     CategoryName = group.Key.CategoryName,
@@ -158,6 +165,11 @@ namespace beef_and_chicken.Infrastructure.Repositories
                     Name = dish.Name,
                     Description = dish.Description,
                     Price = dish.Price,
+                    IsOnSale = dish.IsOnSale,
+                    SalePrice = dish.SalePrice,
+                    EffectivePrice = dish.IsOnSale && dish.SalePrice.HasValue
+                        ? dish.SalePrice.Value
+                        : dish.Price,
                     ImageUrl = dish.ImageUrl,
                     CategoryId = dish.CategoryId,
                     CategoryName = dish.Category.Name,

@@ -90,11 +90,11 @@ export default function HomePage() {
             <span className="home-section-heading__eyebrow">IZDVAJAMO</span>
 
             <h2 className="home-section-heading__title">
-              Najtraženije i preporuke kuće
+              Akcije, najtraženije i preporuke kuće
             </h2>
 
             <p className="home-section-heading__text">
-              Otkrij jela koja naši gosti najčešće biraju i posebne ukuse koje
+              Otkrij jela na akciji, favorite naših gostiju i posebne ukuse koje
               preporučuje naša kuhinja.
             </p>
           </header>
@@ -136,7 +136,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="home-cta">
+      <section id="poruci" className="home-cta">
         <div className="home-cta__inner">
           <div className="home-cta__content">
             <span className="home-cta__eyebrow">VREME JE ZA GRILL</span>

@@ -25,6 +25,8 @@ type DishFormState = {
   name: string;
   description: string;
   price: string;
+  isOnSale: boolean;
+  salePrice: string;
   imageUrl: string;
   isRecommended: boolean;
   recommendedSortOrder: string;
@@ -38,6 +40,8 @@ const emptyForm: DishFormState = {
   name: "",
   description: "",
   price: "",
+  isOnSale: false,
+  salePrice: "",
   imageUrl: "",
   isRecommended: false,
   recommendedSortOrder: "0",
@@ -47,6 +51,23 @@ const emptyForm: DishFormState = {
 
 function formatPrice(value: number) {
   return `${value.toLocaleString("sr-RS")} RSD`;
+}
+
+function isDishOnSale(dish: DishMenuDto) {
+  return (
+    dish.isOnSale &&
+    typeof dish.salePrice === "number" &&
+    dish.salePrice > 0 &&
+    dish.salePrice < dish.price
+  );
+}
+
+function getDishEffectivePrice(dish: DishMenuDto) {
+  if (isDishOnSale(dish)) {
+    return dish.salePrice!;
+  }
+
+  return dish.effectivePrice ?? dish.price;
 }
 
 export default function AdminDishesPage() {
@@ -301,6 +322,8 @@ export default function AdminDishesPage() {
       name: dish.name,
       description: dish.description ?? "",
       price: String(dish.price),
+      isOnSale: dish.isOnSale,
+      salePrice: dish.salePrice == null ? "" : String(dish.salePrice),
       imageUrl: dish.imageUrl ?? "",
       categoryId: String(dish.categoryId),
       isRecommended: dish.isRecommended,
@@ -372,6 +395,22 @@ export default function AdminDishesPage() {
       return "Cena mora biti veća od 0.";
     }
 
+    const salePrice = form.salePrice.trim() ? Number(form.salePrice) : null;
+
+    if (form.isOnSale) {
+      if (salePrice === null) {
+        return "Akcijska cena je obavezna kada je jelo na akciji.";
+      }
+
+      if (!Number.isFinite(salePrice) || salePrice <= 0) {
+        return "Akcijska cena mora biti veća od 0.";
+      }
+
+      if (salePrice >= price) {
+        return "Akcijska cena mora biti manja od regularne cene.";
+      }
+    }
+
     const categoryId = Number(form.categoryId);
 
     if (!Number.isInteger(categoryId) || categoryId <= 0) {
@@ -397,10 +436,16 @@ export default function AdminDishesPage() {
       return;
     }
 
+    const normalizedSalePrice = form.salePrice.trim()
+      ? Number(form.salePrice)
+      : null;
+
     const payload = {
       name: form.name.trim(),
       description: form.description.trim(),
       price: Number(form.price),
+      isOnSale: form.isOnSale,
+      salePrice: form.isOnSale ? normalizedSalePrice : null,
       imageUrl: form.imageUrl.trim() || null,
       isRecommended: form.isRecommended,
       recommendedSortOrder: Number(form.recommendedSortOrder),
@@ -737,6 +782,71 @@ export default function AdminDishesPage() {
                 </select>
               </div>
             </div>
+
+            <section className="admin-dish-sale-section">
+              <header className="admin-dish-sale-section__header">
+                <div>
+                  <strong>Akcijska cena</strong>
+
+                  <p>Označite jelo kao akcijsko i unesite nižu cenu.</p>
+                </div>
+
+                <label className="admin-dish-switch">
+                  <input
+                    type="checkbox"
+                    checked={form.isOnSale}
+                    aria-label="Označi jelo kao akcijsko"
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        isOnSale: event.target.checked,
+                        salePrice: event.target.checked
+                          ? current.salePrice
+                          : "",
+                      }))
+                    }
+                  />
+
+                  <span
+                    className="admin-dish-switch__control"
+                    aria-hidden="true"
+                  >
+                    <span className="admin-dish-switch__thumb" />
+                  </span>
+                </label>
+              </header>
+
+              <div className="form-field">
+                <label className="form-label" htmlFor="dish-sale-price">
+                  Akcijska cena
+                </label>
+
+                <div className="admin-dish-price-control">
+                  <input
+                    id="dish-sale-price"
+                    className="form-control"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={form.salePrice}
+                    disabled={!form.isOnSale}
+                    placeholder="590"
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        salePrice: event.target.value,
+                      }))
+                    }
+                  />
+
+                  <span>RSD</span>
+                </div>
+
+                <p className="form-help">
+                  Akcijska cena mora biti manja od regularne cene.
+                </p>
+              </div>
+            </section>
 
             <section className="admin-dish-recommendation">
               <header className="admin-dish-recommendation__header">
@@ -1186,6 +1296,9 @@ export default function AdminDishesPage() {
 
                       const isInactive = view === "inactive";
 
+                      const dishOnSale = isDishOnSale(dish);
+                      const effectivePrice = getDishEffectivePrice(dish);
+
                       return (
                         <article
                           key={dish.id}
@@ -1231,6 +1344,12 @@ export default function AdminDishesPage() {
                                 Preporuka kuće
                               </span>
                             )}
+
+                            {dishOnSale && (
+                              <span className="admin-dish-card__sale-badge">
+                                Akcija
+                              </span>
+                            )}
                           </div>
 
                           <div className="admin-dish-card__body">
@@ -1245,8 +1364,29 @@ export default function AdminDishesPage() {
                                 </h3>
                               </div>
 
-                              <strong className="admin-dish-card__price">
-                                {formatPrice(dish.price)}
+                              <strong
+                                className={[
+                                  "admin-dish-card__price",
+                                  dishOnSale
+                                    ? "admin-dish-card__price--sale"
+                                    : "",
+                                ]
+                                  .filter(Boolean)
+                                  .join(" ")}
+                              >
+                                {dishOnSale ? (
+                                  <>
+                                    <span className="admin-dish-card__old-price">
+                                      {formatPrice(dish.price)}
+                                    </span>
+
+                                    <span className="admin-dish-card__new-price">
+                                      {formatPrice(effectivePrice)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  formatPrice(dish.price)
+                                )}
                               </strong>
                             </header>
 

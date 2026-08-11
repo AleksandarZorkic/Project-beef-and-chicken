@@ -14,6 +14,8 @@
 
         public string? PhoneNumber { get; set; }
 
+        public string? ProfilePicture { get; set; }
+
         public List<string> Roles { get; set; } = new();
     }
 }

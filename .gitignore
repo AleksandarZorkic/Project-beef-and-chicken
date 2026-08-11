@@ -57,3 +57,6 @@ pnpm-debug.log*
 
 # TypeScript build info (if TS)
 *.tsbuildinfo
+
+# Runtime user uploads
+**/wwwroot/uploads/profile-pictures/

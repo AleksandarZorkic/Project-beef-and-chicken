@@ -1,4 +1,5 @@
 ﻿using beef_and_chicken.Application.DTOs;
+using Microsoft.AspNetCore.Http;
 
 namespace beef_and_chicken.Application.Interfaces.Services
 {
@@ -32,6 +33,12 @@ namespace beef_and_chicken.Application.Interfaces.Services
         Task<UserProfileDto> UpdateProfileAsync(
             int userId,
             UpdateUserProfileDto data,
+            CancellationToken ct = default
+        );
+
+        Task<UserProfileDto> UpdateProfilePictureAsync(
+            int userId,
+            IFormFile image,
             CancellationToken ct = default
         );
     }

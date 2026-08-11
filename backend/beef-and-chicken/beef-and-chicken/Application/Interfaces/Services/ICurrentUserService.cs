@@ -6,5 +6,8 @@
         string UserName { get; }
         string? IpAddress { get; }
         string? UserAgent { get; }
+
+        bool IsAuthenticated { get; }
+        bool IsInRole(string role);
     }
 }

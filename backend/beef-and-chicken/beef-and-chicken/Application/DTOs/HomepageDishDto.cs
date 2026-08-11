@@ -10,6 +10,12 @@
 
         public decimal Price { get; set; }
 
+        public bool IsOnSale { get; set; }
+
+        public decimal? SalePrice { get; set; }
+
+        public decimal EffectivePrice { get; set; }
+
         public string? ImageUrl { get; set; }
 
         public int CategoryId { get; set; }

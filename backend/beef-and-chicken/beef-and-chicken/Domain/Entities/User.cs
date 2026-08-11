@@ -18,6 +18,6 @@ namespace beef_and_chicken.Domain.Entities
         public ICollection<UserAllergen> UserAllergens { get; set; } = new List<UserAllergen>();
         public ICollection<EmployeeWorkTime> EmployeeWorkTimes { get; set; } = new List<EmployeeWorkTime>();
         public ICollection<Address> Addresses { get; set; } = new List<Address>();
-
+        public ICollection<DeliveryRushRun> DeliveryRushRuns { get; set; } = new List<DeliveryRushRun>();
     }
 }

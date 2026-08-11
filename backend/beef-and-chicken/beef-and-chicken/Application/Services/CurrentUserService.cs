@@ -38,5 +38,15 @@ namespace beef_and_chicken.Infrastructure.Services
 
         public string? UserAgent =>
             _httpContextAccessor.HttpContext?.Request.Headers.UserAgent.ToString();
+
+        public bool IsAuthenticated =>
+            _httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated
+            == true;
+
+        public bool IsInRole(string role)
+        {
+            return _httpContextAccessor.HttpContext?.User.IsInRole(role)
+                == true;
+        }
     }
 }

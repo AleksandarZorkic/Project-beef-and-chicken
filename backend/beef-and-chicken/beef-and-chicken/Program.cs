@@ -20,6 +20,11 @@ using System.Text;
 using System.Text.Json.Serialization;
 using beef_and_chicken.Presentation.Hubs;
 using beef_and_chicken.Presentation.Realtime;
+using beef_and_chicken.Domain.Games.DeliveryRush;
+using beef_and_chicken.Presentation.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+using beef_and_chicken.Application.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -165,6 +170,18 @@ builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
 
 builder.Services.AddScoped<IRestaurantSettingsRepository, RestaurantSettingsRepository>();
 builder.Services.AddScoped<IRestaurantSettingsService, RestaurantSettingsService>();
+builder.Services.AddScoped<IFastFoodWorkTimeRepository, FastFoodWorkTimeRepository>();
+
+builder.Services.AddScoped<IVisitLogRepository, VisitLogRepository>();
+builder.Services.AddScoped<IVisitTrackingService, VisitTrackingService>();
+
+builder.Services.AddScoped<IDeliveryRushRunRepository, DeliveryRushRunRepository>();
+builder.Services.AddScoped<IDeliveryRushService, DeliveryRushService>();
+
+builder.Services.AddSingleton<DeliveryRushSimulator>();
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+
+builder.Services.AddSingleton<IDeliveryRushSeedGenerator, DeliveryRushSeedGenerator>();
 
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IOrderNotificationService, OrderNotificationService>();
@@ -192,6 +209,87 @@ builder.Services.AddCors(options =>
          .AllowCredentials());
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode =
+        StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy(
+        RateLimitPolicies.DeliveryRushStart,
+        httpContext =>
+        {
+            var partitionKey =
+                GetRateLimitPartitionKey(httpContext);
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey,
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    QueueProcessingOrder =
+                        QueueProcessingOrder.OldestFirst,
+                    AutoReplenishment = true
+                });
+        });
+
+    options.AddPolicy(
+        RateLimitPolicies.DeliveryRushFinish,
+        httpContext =>
+        {
+            var partitionKey =
+                GetRateLimitPartitionKey(httpContext);
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey,
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    QueueProcessingOrder =
+                        QueueProcessingOrder.OldestFirst,
+                    AutoReplenishment = true
+                });
+        });
+
+    options.OnRejected = async (rejectedContext, ct) =>
+    {
+        var httpContext =
+            rejectedContext.HttpContext;
+
+        var traceId =
+            httpContext.TraceIdentifier;
+
+        httpContext.Response.Headers["X-Trace-Id"] =
+            traceId;
+
+        if (rejectedContext.Lease.TryGetMetadata(
+                MetadataName.RetryAfter,
+                out var retryAfter))
+        {
+            httpContext.Response.Headers["Retry-After"] =
+                Math.Ceiling(
+                    retryAfter.TotalSeconds)
+                .ToString();
+        }
+
+        var response = new ApiErrorResponseDto
+        {
+            Error =
+                "Previše zahteva. Pokušajte ponovo za nekoliko trenutaka.",
+
+            TraceId = traceId
+        };
+
+        await httpContext.Response.WriteAsJsonAsync(
+            response,
+            cancellationToken: ct);
+    };
+});
+
+
 var app = builder.Build();
 
 await RoleSeeder.SeedRolesAsync(app.Services);
@@ -208,9 +306,32 @@ app.UseStaticFiles();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<OrderHub>("/hubs/orders");
 
 app.Run();
+
+static string GetRateLimitPartitionKey(
+    HttpContext httpContext)
+{
+    var userId = httpContext.User.FindFirstValue(
+        ClaimTypes.NameIdentifier);
+
+    if (!string.IsNullOrWhiteSpace(userId))
+    {
+        return $"user:{userId}";
+    }
+
+    var ipAddress = httpContext.Connection
+        .RemoteIpAddress?
+        .ToString();
+
+    return $"ip:{ipAddress ?? "unknown"}";
+}
+
+public partial class Program
+{
+}

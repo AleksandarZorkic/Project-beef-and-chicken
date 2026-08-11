@@ -10,6 +10,8 @@ export type CreateDishRequest = {
   name: string;
   description: string;
   price: number;
+  isOnSale: boolean;
+  salePrice?: number | null;
   imageUrl?: string | null;
   isRecommended: boolean;
   recommendedSortOrder: number;

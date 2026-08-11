@@ -34,10 +34,26 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
     case "LOAD-CART":
       return {
         ownerUserId: action.payload.ownerUserId,
-        items: action.payload.cart.items.map((item) => ({
-          ...item,
-          imageUrl: item.imageUrl ?? null,
-        })),
+        items: action.payload.cart.items.map((item) => {
+          const selectedOptions = normalizeSelectedOptions(
+            item.selectedOptions ?? [],
+          );
+
+          return {
+            ...item,
+            imageUrl: item.imageUrl ?? null,
+            regularPrice: item.regularPrice ?? item.unitPrice,
+            isOnSale: item.isOnSale ?? false,
+            salePrice: item.salePrice ?? null,
+            selectedOptions,
+            optionsTotal:
+              item.optionsTotal ??
+              selectedOptions.reduce(
+                (sum, option) => sum + option.unitPrice,
+                0,
+              ),
+          };
+        }),
         notes: action.payload.cart.notes,
       };
 
@@ -71,6 +87,13 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
                   ...item,
                   quantity: item.quantity + 1,
                   imageUrl: item.imageUrl ?? action.payload.imageUrl ?? null,
+                  unitPrice: action.payload.unitPrice,
+                  regularPrice:
+                    action.payload.regularPrice ?? action.payload.unitPrice,
+                  isOnSale: action.payload.isOnSale ?? false,
+                  salePrice: action.payload.salePrice ?? null,
+                  optionsTotal,
+                  selectedOptions,
                 }
               : item,
           ),
@@ -87,6 +110,10 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
             name: action.payload.name,
             imageUrl: action.payload.imageUrl ?? null,
             unitPrice: action.payload.unitPrice,
+            regularPrice:
+              action.payload.regularPrice ?? action.payload.unitPrice,
+            isOnSale: action.payload.isOnSale ?? false,
+            salePrice: action.payload.salePrice ?? null,
             optionsTotal,
             quantity: 1,
             selectedOptions,

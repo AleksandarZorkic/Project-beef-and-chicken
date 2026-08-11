@@ -9,7 +9,7 @@ namespace beef_and_chicken.Infrastructure.Data
 {
     public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int >, IUnitOfWork
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+        public AppDbContext(DbContextOptions<AppDbContext> options): base(options) { }
 
         public DbSet<Address> Addresses => Set<Address>();
         public DbSet<Allergen> Allergens => Set<Allergen>();
@@ -27,6 +27,8 @@ namespace beef_and_chicken.Infrastructure.Data
         public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
         public DbSet<Announcement> Announcements => Set<Announcement>();
         public DbSet<RestaurantSettings> RestaurantSettings => Set<RestaurantSettings>();
+        public DbSet<VisitLog> VisitLogs => Set<VisitLog>();
+        public DbSet<DeliveryRushRun> DeliveryRushRuns => Set<DeliveryRushRun>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

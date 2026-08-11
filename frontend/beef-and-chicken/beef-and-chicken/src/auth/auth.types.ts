@@ -24,6 +24,7 @@ export interface UserProfileDto {
   email: string;
   userName: string;
   phoneNumber?: string | null;
+  profilePicture?: string | null;
   roles: string[];
 }
 
@@ -35,4 +36,5 @@ export interface UpdateUserProfileRequestDto {
   firstName: string;
   lastName: string;
   phoneNumber?: string | null;
+  profilePicture?: string | null;
 }

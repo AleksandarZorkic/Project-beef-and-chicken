@@ -1,11 +1,47 @@
 import api from "./https";
 
+export type DayOfWeekName =
+  | "Sunday"
+  | "Monday"
+  | "Tuesday"
+  | "Wednesday"
+  | "Thursday"
+  | "Friday"
+  | "Saturday";
+
+export interface RestaurantWorkingHourDto {
+  dayOfWeek: DayOfWeekName;
+  dayName: string;
+  openTime: string;
+  closeTime: string;
+  isClosed: boolean;
+  closesNextDay: boolean;
+}
+
+export interface UpdateRestaurantWorkingHourRequest {
+  dayOfWeek: DayOfWeekName;
+  openTime: string;
+  closeTime: string;
+  isClosed: boolean;
+  closesNextDay: boolean;
+}
+
+export interface RestaurantOpenStatusDto {
+  isOpen: boolean;
+  message: string;
+  currentTime: string;
+  todayWorkingHours: string;
+  nextOpeningText?: string | null;
+}
+
 export interface RestaurantSettingsDto {
   minimumOrderAmount: number;
   deliveryFee: number;
   freeDeliveryThreshold?: number | null;
   isDeliveryEnabled: boolean;
   updatedAt: string;
+  workingHours: RestaurantWorkingHourDto[];
+  restaurantStatus: RestaurantOpenStatusDto;
 }
 
 export interface UpdateRestaurantSettingsRequest {
@@ -13,6 +49,7 @@ export interface UpdateRestaurantSettingsRequest {
   deliveryFee: number;
   freeDeliveryThreshold?: number | null;
   isDeliveryEnabled: boolean;
+  workingHours?: UpdateRestaurantWorkingHourRequest[];
 }
 
 const RESTAURANT_SETTINGS_ENDPOINT = "/restaurant-settings";

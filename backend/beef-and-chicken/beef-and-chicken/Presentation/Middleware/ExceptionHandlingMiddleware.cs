@@ -1,12 +1,16 @@
 ﻿using beef_and_chicken.Application.Exceptions;
 using System.Diagnostics;
 using System.Net;
-using System.Text.Json;
+using Npgsql;
+using beef_and_chicken.Application.DTOs;
 
 namespace beef_and_chicken.Presentation.Middlewear
 {
     public class ExceptionHandlingMiddleware : IMiddleware
     {
+        private const string ActiveDeliveryRushRunConstraint =
+            "UX_DeliveryRushRuns_UserId_Started";
+
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
         public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger)
@@ -31,13 +35,49 @@ namespace beef_and_chicken.Presentation.Middlewear
 
             context.Response.Headers["X-Trace-Id"] = traceId;
 
-            var (statusCode, logLevel) = ex switch
+            var (statusCode, logLevel, errorMessage) = ex switch
             {
-                BadRequestException => (HttpStatusCode.BadRequest, LogLevel.Warning),
-                ConflictException => (HttpStatusCode.Conflict, LogLevel.Warning),
-                ForbiddenException => (HttpStatusCode.Forbidden, LogLevel.Warning),
-                NotFoundException => (HttpStatusCode.NotFound, LogLevel.Information),
-                _ => (HttpStatusCode.InternalServerError, LogLevel.Error)                
+                _ when IsActiveDeliveryRushRunConflict(ex) =>
+                    (
+                        HttpStatusCode.Conflict,
+                        LogLevel.Warning,
+                        "Već imate aktivnu Delivery Rush partiju."
+                    ),
+
+                BadRequestException =>
+                    (
+                        HttpStatusCode.BadRequest,
+                        LogLevel.Warning,
+                        ex.Message
+                    ),
+
+                ConflictException =>
+                    (
+                        HttpStatusCode.Conflict,
+                        LogLevel.Warning,
+                        ex.Message
+                    ),
+
+                ForbiddenException =>
+                    (
+                        HttpStatusCode.Forbidden,
+                        LogLevel.Warning,
+                        ex.Message
+                    ),
+
+                NotFoundException =>
+                    (
+                        HttpStatusCode.NotFound,
+                        LogLevel.Information,
+                        ex.Message
+                    ),
+
+                _ =>
+                    (
+                        HttpStatusCode.InternalServerError,
+                        LogLevel.Error,
+                        "Došlo je do greške na serveru."
+                    )
             };
 
             _logger.Log(
@@ -50,20 +90,41 @@ namespace beef_and_chicken.Presentation.Middlewear
                     traceId
             );
 
-            var errorMessage = statusCode == HttpStatusCode.InternalServerError
-                ? "Došlo je do greške na serveru."
-                : ex.Message;
 
-            var response = new
+            var response = new ApiErrorResponseDto
             {
-                error = errorMessage,
-                traceId
+                Error = errorMessage,
+                TraceId = traceId
             };
 
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)statusCode;
+            context.Response.StatusCode =
+                (int)statusCode;
 
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            await context.Response.WriteAsJsonAsync(
+                response,
+                cancellationToken:
+                    context.RequestAborted);
+        }
+
+        private static bool IsActiveDeliveryRushRunConflict(Exception exception)
+        {
+            Exception? currentException = exception;
+
+            while (currentException != null)
+            {
+                if (currentException is PostgresException postgresException)
+                {
+                    return
+                        postgresException.SqlState ==
+                            PostgresErrorCodes.UniqueViolation &&
+                        postgresException.ConstraintName ==
+                            ActiveDeliveryRushRunConstraint;
+                }
+
+                currentException = currentException.InnerException;
+            }
+
+            return false;
         }
     }
 }

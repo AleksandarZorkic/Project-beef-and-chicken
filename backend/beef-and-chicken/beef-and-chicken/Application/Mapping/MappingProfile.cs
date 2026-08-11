@@ -11,13 +11,18 @@ namespace beef_and_chicken.Application.Mapping
         {
             // Menu mappings
             CreateMap<Dish, DishMenuDto>()
-                .ForMember(d => d.CategoryName, opt => opt.MapFrom(s => s.Category.Name))
-                .ForMember(d => d.Allergens, opt => opt.MapFrom(s => s.DishAllergens))
-                .ForMember(dest => dest.AllowsSideDishes, opt => opt.MapFrom(src => src.Category.AllowsSideDishes))
-                .ForMember(dest => dest.AllowsSpices, opt => opt.MapFrom(src => src.Category.AllowsSpices))
-                .ForMember(dest => dest.AllowsSweetAdditions, opt => opt.MapFrom(src => src.Category.AllowsSweetAdditions))
-                .ForMember(dest => dest.IsRecommended, opt => opt.MapFrom(src => src.IsRecommended))
-                .ForMember(dest => dest.RecommendedSortOrder, opt => opt.MapFrom(src => src.RecommendedSortOrder));
+                 .ForMember(d => d.CategoryName, opt => opt.MapFrom(s => s.Category.Name))
+                 .ForMember(d => d.Allergens, opt => opt.MapFrom(s => s.DishAllergens))
+                 .ForMember(dest => dest.AllowsSideDishes, opt => opt.MapFrom(src => src.Category.AllowsSideDishes))
+                 .ForMember(dest => dest.AllowsSpices, opt => opt.MapFrom(src => src.Category.AllowsSpices))
+                 .ForMember(dest => dest.AllowsSweetAdditions, opt => opt.MapFrom(src => src.Category.AllowsSweetAdditions))
+                 .ForMember(dest => dest.IsRecommended, opt => opt.MapFrom(src => src.IsRecommended))
+                 .ForMember(dest => dest.RecommendedSortOrder, opt => opt.MapFrom(src => src.RecommendedSortOrder))
+                 .ForMember(dest => dest.EffectivePrice, opt => opt.MapFrom(src =>
+                     src.IsOnSale && src.SalePrice.HasValue
+                         ? src.SalePrice.Value
+                         : src.Price
+                 ));
 
 
             CreateMap<DishAllergen, DishAllergenDto>()

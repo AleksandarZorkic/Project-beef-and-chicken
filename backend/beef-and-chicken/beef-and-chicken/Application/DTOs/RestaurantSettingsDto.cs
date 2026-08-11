@@ -11,5 +11,9 @@
         public bool IsDeliveryEnabled { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+
+        public List<RestaurantWorkingHourDto> WorkingHours { get; set; } = new();
+
+        public RestaurantOpenStatusDto RestaurantStatus { get; set; } = new();
     }
 }

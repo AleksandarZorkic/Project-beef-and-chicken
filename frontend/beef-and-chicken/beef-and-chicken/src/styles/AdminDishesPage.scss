@@ -442,6 +442,7 @@
 // ======================================================
 
 .admin-dish-recommendation,
+.admin-dish-sale-section,
 .admin-dish-image-section,
 .admin-dish-allergens {
   padding: 16px;
@@ -476,6 +477,37 @@
 
       font-size: 0.64rem;
       line-height: 1.45;
+    }
+  }
+}
+
+.admin-dish-sale-section {
+  display: grid;
+  gap: $space-5;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-4;
+
+    strong {
+      display: block;
+
+      margin-bottom: 4px;
+
+      color: $color-text;
+
+      font-size: 0.82rem;
+    }
+
+    p {
+      margin: 0;
+
+      color: $color-text-muted;
+
+      font-size: 0.66rem;
+      line-height: 1.5;
     }
   }
 }
@@ -1208,7 +1240,8 @@
   }
 
   &__status,
-  &__recommended {
+  &__recommended,
+  &__sale-badge {
     position: absolute;
     z-index: 2;
     top: 12px;
@@ -1255,6 +1288,16 @@
     border-color: rgba(255, 255, 255, 0.24);
   }
 
+  &__sale-badge {
+    top: 46px;
+    left: 12px;
+
+    color: #11140f;
+
+    background: rgba($color-primary, 0.92);
+    border-color: rgba(255, 255, 255, 0.24);
+  }
+
   &__body {
     display: flex;
     flex-direction: column;
@@ -1293,10 +1336,38 @@
   }
 
   &__price {
+    display: grid;
+    justify-items: end;
+    gap: 2px;
+
     color: $color-accent;
 
     font-size: 0.72rem;
+    line-height: 1.15;
     white-space: nowrap;
+
+    &--sale {
+      padding: 6px 8px;
+
+      background: rgba($color-accent, 0.075);
+      border: 1px solid rgba($color-accent, 0.14);
+      border-radius: $radius-md;
+    }
+  }
+
+  &__old-price {
+    color: $color-text-muted;
+
+    font-size: 0.61rem;
+    font-weight: $font-weight-semibold;
+    text-decoration: line-through;
+  }
+
+  &__new-price {
+    color: $color-accent;
+
+    font-size: 0.78rem;
+    font-weight: $font-weight-extra-bold;
   }
 
   &__description {

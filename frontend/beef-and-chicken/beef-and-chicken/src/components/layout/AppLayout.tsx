@@ -63,6 +63,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
       label: "Meni",
       end: true,
     },
+    {
+      to: "/delivery-rush",
+      label: "Delivery Rush",
+    },
   ];
 
   if (canUseCart) {
@@ -96,6 +100,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {
         to: "/admin/dashboard",
         label: "Dashboard",
+      },
+      {
+        to: "/admin/visits",
+        label: "Statistika",
       },
       {
         to: "/admin/dishes",
@@ -171,9 +179,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <div className="app-header__main">
           <div className="container app-header__main-inner">
             <NavLink
-              to="/menu"
+              to="/"
               className="app-header__brand"
-              aria-label="Beef n' Chicken Grill meni"
+              aria-label="Beef n' Chicken početna stranica"
             >
               <img src="/logo.png" alt="" className="app-header__logo" />
 

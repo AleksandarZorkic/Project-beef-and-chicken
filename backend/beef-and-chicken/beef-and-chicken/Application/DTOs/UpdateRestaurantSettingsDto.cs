@@ -9,5 +9,7 @@
         public decimal? FreeDeliveryThreshold { get; set; }
 
         public bool IsDeliveryEnabled { get; set; } = true;
+
+        public List<UpdateRestaurantWorkingHourDto>? WorkingHours { get; set; }
     }
 }

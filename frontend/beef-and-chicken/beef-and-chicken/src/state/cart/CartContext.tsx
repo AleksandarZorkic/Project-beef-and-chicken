@@ -16,7 +16,7 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-const CART_STORAGE_VERSION = 1;
+const CART_STORAGE_VERSION = 2;
 
 function getCartStorageKey(userId: string) {
   return `beef-and-chicken:cart:v${CART_STORAGE_VERSION}:user-${userId}`;

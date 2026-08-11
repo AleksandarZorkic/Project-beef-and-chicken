@@ -53,6 +53,20 @@ namespace beef_and_chicken.Presentation.Controllers
         }
 
         [Authorize]
+        [HttpPost("profile/picture")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<UserProfileDto>> UpdateProfilePicture(
+            IFormFile image,
+            CancellationToken ct = default)
+        {
+            var userId = GetCurrentUserId();
+
+            var profile = await _authService.UpdateProfilePictureAsync(userId, image, ct);
+
+            return Ok(profile);
+        }
+
+        [Authorize]
         [HttpPatch("profile/phone-number")]
         public async Task<ActionResult<UserProfileDto>> UpdatePhoneNumber(
             [FromBody] UpdatePhoneNumberDto data,

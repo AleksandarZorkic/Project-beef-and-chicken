@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { updateProfile } from "../api/authApi";
+import { updateProfile, uploadProfilePicture } from "../api/authApi";
+import { API_ORIGIN } from "../api/https";
 import { useAuth } from "../auth/AuthContext";
 import "../styles/CustomerProfilePage.scss";
 
@@ -47,6 +48,42 @@ function getInitials(firstName?: string, lastName?: string) {
   return `${first}${last}`.toUpperCase() || "BC";
 }
 
+const MAX_PROFILE_PICTURE_SIZE = 2 * 1024 * 1024;
+
+const ALLOWED_PROFILE_PICTURE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+];
+
+function resolveProfilePictureUrl(profilePicture?: string | null) {
+  if (!profilePicture) {
+    return null;
+  }
+
+  if (
+    profilePicture.startsWith("http://") ||
+    profilePicture.startsWith("https://")
+  ) {
+    return profilePicture;
+  }
+
+  return `${API_ORIGIN}${profilePicture}`;
+}
+
+function validateProfilePicture(file: File) {
+  if (!ALLOWED_PROFILE_PICTURE_TYPES.includes(file.type)) {
+    return "Dozvoljeni formati slike su jpg, jpeg, png i webp.";
+  }
+
+  if (file.size > MAX_PROFILE_PICTURE_SIZE) {
+    return "Profilna slika može imati najviše 2MB.";
+  }
+
+  return null;
+}
+
 function getErrorMessage(error: any, fallback: string) {
   return (
     error?.response?.data?.error ??
@@ -68,6 +105,8 @@ export default function CustomerProfilePage() {
 
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+
+  const [uploadingProfilePicture, setUploadingProfilePicture] = useState(false);
 
   const [refreshingProfile, setRefreshingProfile] = useState(false);
 
@@ -196,6 +235,35 @@ export default function CustomerProfilePage() {
     }
   }
 
+  async function onProfilePictureChange(file?: File | null) {
+    if (!file) {
+      return;
+    }
+
+    const validationError = validateProfilePicture(file);
+
+    if (validationError) {
+      setError(validationError);
+      setSuccessMessage(null);
+      return;
+    }
+
+    try {
+      setUploadingProfilePicture(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      const updatedProfile = await uploadProfilePicture(file);
+
+      setUserProfile(updatedProfile);
+      setSuccessMessage("Profilna slika je uspešno promenjena.");
+    } catch (error: any) {
+      setError(getErrorMessage(error, "Greška pri promeni profilne slike."));
+    } finally {
+      setUploadingProfilePicture(false);
+    }
+  }
+
   if (!user) {
     return (
       <main className="profile-guest-state">
@@ -218,6 +286,8 @@ export default function CustomerProfilePage() {
     );
   }
 
+  const profilePictureUrl = resolveProfilePictureUrl(user.profilePicture);
+
   return (
     <main className="customer-profile-page">
       <header className="customer-profile-page__header">
@@ -237,7 +307,9 @@ export default function CustomerProfilePage() {
         <button
           type="button"
           className="customer-profile-page__refresh-button"
-          disabled={refreshingProfile || savingProfile}
+          disabled={
+            refreshingProfile || savingProfile || uploadingProfilePicture
+          }
           onClick={onRefreshProfile}
         >
           {refreshingProfile ? (
@@ -308,11 +380,40 @@ export default function CustomerProfilePage() {
       <div className="customer-profile-page__grid">
         <section className="profile-card profile-card--wide">
           <header className="profile-card__header">
-            <div className="profile-card__avatar" aria-hidden="true">
-              {getInitials(
-                editingProfile ? profileForm.firstName : user.firstName,
-                editingProfile ? profileForm.lastName : user.lastName,
-              )}
+            <div className="profile-card__avatar-block">
+              <div className="profile-card__avatar" aria-hidden="true">
+                {profilePictureUrl ? (
+                  <img
+                    src={profilePictureUrl}
+                    alt=""
+                    className="profile-card__avatar-image"
+                  />
+                ) : (
+                  getInitials(
+                    editingProfile ? profileForm.firstName : user.firstName,
+                    editingProfile ? profileForm.lastName : user.lastName,
+                  )
+                )}
+              </div>
+
+              <label className="profile-card__picture-button">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  disabled={uploadingProfilePicture || savingProfile}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+
+                    void onProfilePictureChange(file);
+
+                    event.target.value = "";
+                  }}
+                />
+
+                <span>
+                  {uploadingProfilePicture ? "Šaljem..." : "Promeni sliku"}
+                </span>
+              </label>
             </div>
 
             <div className="profile-card__identity">
@@ -332,7 +433,7 @@ export default function CustomerProfilePage() {
             <button
               type="button"
               className="profile-phone-card__edit-button"
-              disabled={savingProfile}
+              disabled={savingProfile || uploadingProfilePicture}
               onClick={editingProfile ? cancelProfileEdit : startProfileEdit}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">

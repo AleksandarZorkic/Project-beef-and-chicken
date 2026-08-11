@@ -30,6 +30,13 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
     ? "home-header home-header--scrolled"
     : "home-header";
 
+  function scrollToTop() {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
   return (
     <div className="home-layout">
       <header className={headerClassName}>
@@ -38,6 +45,7 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
             to="/"
             className="home-header__brand"
             aria-label="Beef n' Chicken početna stranica"
+            onClick={scrollToTop}
           >
             <img
               src="/logo.png"
@@ -60,6 +68,14 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
             className="home-header__nav"
             aria-label="Navigacija početne stranice"
           >
+            <a href="#akcija" className="home-header__nav-link">
+              Akcija
+            </a>
+
+            <a href="#chef-pick" className="home-header__nav-link">
+              Naša preporuka
+            </a>
+
             <a href="#najtrazenije" className="home-header__nav-link">
               Najtraženije
             </a>
@@ -83,6 +99,7 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
             to="/"
             className="home-footer__brand"
             aria-label="Beef n' Chicken početna stranica"
+            onClick={scrollToTop}
           >
             <img src="/logo.png" alt="" className="home-footer__logo" />
 

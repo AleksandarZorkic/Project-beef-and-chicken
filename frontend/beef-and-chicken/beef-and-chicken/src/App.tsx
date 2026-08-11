@@ -32,8 +32,14 @@ import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AdminAnnouncementsPage from "./pages/AdminAnnouncementsPage";
 import AdminRestaurantSettingsPage from "./pages/AdminRestaurantSettingsPage";
+import AdminVisitStatsPage from "./pages/AdminVisitStatsPage";
 
 import CourierOrdersPage from "./pages/CourierOrdersPage";
+
+import CookieBanner from "./components/cookies/CookieBanner";
+import VisitTracker from "./components/analytics/VisitTracker";
+
+import DeliveryRushPage from "./pages/DeliveryRushPage";
 
 function HomeShell() {
   return (
@@ -56,9 +62,10 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
+          <VisitTracker />
           <Routes>
             {/* Public home page with its own header and footer */}
-            <Route element={<HomeShell />}>
+            <Route path="/" element={<HomeShell />}>
               <Route index element={<HomePage />} />
             </Route>
 
@@ -69,6 +76,8 @@ export default function App() {
             {/* Application pages with AppLayout */}
             <Route element={<AppShell />}>
               <Route path="/menu" element={<MenuPage />} />
+
+              <Route path="/delivery-rush" element={<DeliveryRushPage />} />
 
               {/* Customer routes */}
               <Route
@@ -128,6 +137,8 @@ export default function App() {
                 />
               </Route>
 
+              <Route path="/admin/visits" element={<AdminVisitStatsPage />} />
+
               {/* Admin and employee routes */}
               <Route
                 element={
@@ -159,6 +170,7 @@ export default function App() {
               </Route>
             </Route>
           </Routes>
+          <CookieBanner />
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

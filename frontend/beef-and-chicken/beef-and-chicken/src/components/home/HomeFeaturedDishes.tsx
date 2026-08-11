@@ -1,21 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { API_ORIGIN } from "../../api/https";
 import {
   getBestSellers,
+  getMenu,
   getRecommendedDishes,
   type HomepageDishDto,
 } from "../../api/menuApi";
-import "./HomeFeaturedDishes.scss";
-
-type FeaturedDishesState = {
-  bestSellers: HomepageDishDto[];
-  recommended: HomepageDishDto[];
-  loading: boolean;
-};
+import { API_ORIGIN } from "../../api/https";
 
 function resolveImageUrl(imageUrl?: string | null) {
-  if (!imageUrl) return null;
+  if (!imageUrl) {
+    return null;
+  }
 
   if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
     return imageUrl;
@@ -24,168 +20,190 @@ function resolveImageUrl(imageUrl?: string | null) {
   return `${API_ORIGIN}${imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`}`;
 }
 
-function formatPrice(price: number) {
-  return `${price.toLocaleString("sr-RS")} RSD`;
+function formatPrice(value: number) {
+  return `${value.toLocaleString("sr-RS")} RSD`;
 }
 
-function DishCard({
+function isDishOnSale(dish: HomepageDishDto) {
+  return (
+    dish.isOnSale &&
+    typeof dish.salePrice === "number" &&
+    dish.salePrice > 0 &&
+    dish.salePrice < dish.price
+  );
+}
+
+function getDishEffectivePrice(dish: HomepageDishDto) {
+  if (isDishOnSale(dish)) {
+    return dish.salePrice!;
+  }
+
+  return dish.effectivePrice ?? dish.price;
+}
+
+function HomeDishCard({
   dish,
-  badge,
   variant,
 }: {
   dish: HomepageDishDto;
-  badge: string;
-  variant: "best-seller" | "recommended";
+  variant: "sale" | "recommended" | "best-seller";
 }) {
   const imageUrl = resolveImageUrl(dish.imageUrl);
+  const dishOnSale = isDishOnSale(dish);
+  const effectivePrice = getDishEffectivePrice(dish);
 
   return (
-    <article className={`home-dish-card home-dish-card--${variant}`}>
-      <div className="home-dish-card__image-wrap">
+    <article className="home-featured-dish-card">
+      <div className="home-featured-dish-card__image">
         {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={dish.name}
-            className="home-dish-card__image"
-            loading="lazy"
-          />
+          <img src={imageUrl} alt={dish.name} loading="lazy" />
         ) : (
-          <div className="home-dish-card__image-placeholder">
-            Beef n&apos; Chicken
+          <div className="home-featured-dish-card__image-fallback">
+            <img src="/logo.png" alt="" />
+            <span>Slika uskoro</span>
           </div>
         )}
 
-        <span className="home-dish-card__badge">{badge}</span>
+        <div className="home-featured-dish-card__badges">
+          {variant === "recommended" && (
+            <span className="home-featured-dish-card__badge home-featured-dish-card__badge--chef">
+              Chef Pick
+            </span>
+          )}
+
+          {variant === "best-seller" && (
+            <span className="home-featured-dish-card__badge home-featured-dish-card__badge--best">
+              Najtraženije
+            </span>
+          )}
+
+          {dishOnSale && (
+            <span className="home-featured-dish-card__badge home-featured-dish-card__badge--sale">
+              Akcija
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="home-dish-card__body">
-        <div className="home-dish-card__category">{dish.categoryName}</div>
+      <div className="home-featured-dish-card__body">
+        <span className="home-featured-dish-card__category">
+          {dish.categoryName}
+        </span>
 
-        <h3 className="home-dish-card__title">{dish.name}</h3>
+        <h3 className="home-featured-dish-card__title">{dish.name}</h3>
 
-        {dish.description && (
-          <p className="home-dish-card__description">{dish.description}</p>
-        )}
+        <p className="home-featured-dish-card__description">
+          {dish.description || "Posebno izdvojeno jelo iz naše ponude."}
+        </p>
 
-        {dish.soldQuantity ? (
-          <div className="home-dish-card__meta">
-            Prodato: <strong>{dish.soldQuantity}</strong>
+        <div className="home-featured-dish-card__footer">
+          <div
+            className={[
+              "home-featured-dish-card__price",
+              dishOnSale ? "home-featured-dish-card__price--sale" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            {dishOnSale ? (
+              <>
+                <span className="home-featured-dish-card__old-price">
+                  {formatPrice(dish.price)}
+                </span>
+
+                <strong className="home-featured-dish-card__new-price">
+                  {formatPrice(effectivePrice)}
+                </strong>
+              </>
+            ) : (
+              <strong>{formatPrice(dish.price)}</strong>
+            )}
           </div>
-        ) : (
-          <div className="home-dish-card__meta">Izbor restorana</div>
-        )}
 
-        <div className="home-dish-card__footer">
-          <strong className="home-dish-card__price">
-            {formatPrice(dish.price)}
-          </strong>
-
-          <Link to="/menu" className="home-dish-card__link">
-            Poruči
-          </Link>
+          {typeof dish.soldQuantity === "number" && dish.soldQuantity > 0 && (
+            <span className="home-featured-dish-card__sold">
+              {dish.soldQuantity} prodato
+            </span>
+          )}
         </div>
       </div>
     </article>
   );
 }
 
-function DishSection({
-  eyebrow,
-  title,
-  text,
-  dishes,
-  badge,
-  variant,
-}: {
-  eyebrow: string;
-  title: string;
-  text: string;
-  dishes: HomepageDishDto[];
-  badge: string;
-  variant: "best-seller" | "recommended";
-}) {
-  if (dishes.length === 0) {
-    return null;
-  }
-
-  return (
-    <section className="home-dish-section">
-      <div className="home-dish-section__heading">
-        <span className="home-dish-section__eyebrow">{eyebrow}</span>
-        <h2 className="home-dish-section__title">{title}</h2>
-        <p className="home-dish-section__text">{text}</p>
-      </div>
-
-      <div className="home-dish-section__grid">
-        {dishes.map((dish) => (
-          <DishCard
-            key={`${variant}-${dish.id}`}
-            dish={dish}
-            badge={badge}
-            variant={variant}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function FeaturedDishesSkeleton() {
-  return (
-    <section className="home-dish-section">
-      <div className="home-dish-section__heading">
-        <span className="home-dish-section__eyebrow">Učitavanje</span>
-        <h2 className="home-dish-section__title">Izdvojena jela</h2>
-      </div>
-
-      <div className="home-dish-section__grid">
-        {[1, 2, 3].map((item) => (
-          <div key={item} className="home-dish-card home-dish-card--skeleton">
-            <div className="home-dish-card__image-wrap" />
-            <div className="home-dish-card__body">
-              <div className="home-dish-card__skeleton-line home-dish-card__skeleton-line--short" />
-              <div className="home-dish-card__skeleton-line" />
-              <div className="home-dish-card__skeleton-line" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function HomeFeaturedDishes() {
-  const [state, setState] = useState<FeaturedDishesState>({
-    bestSellers: [],
-    recommended: [],
-    loading: true,
-  });
+  const [recommendedDishes, setRecommendedDishes] = useState<HomepageDishDto[]>(
+    [],
+  );
+  const [bestSellers, setBestSellers] = useState<HomepageDishDto[]>([]);
+  const [saleDishes, setSaleDishes] = useState<HomepageDishDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadFeaturedDishes() {
       try {
-        const [bestSellerData, recommendedData] = await Promise.all([
-          getBestSellers(6, 30),
-          getRecommendedDishes(6),
+        setLoading(true);
+        setError(null);
+
+        const [menu, recommended, bestSelling] = await Promise.all([
+          getMenu(),
+          getRecommendedDishes(12),
+          getBestSellers(18, 30),
         ]);
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
-        setState({
-          bestSellers: bestSellerData,
-          recommended: recommendedData,
-          loading: false,
-        });
-      } catch {
-        if (!isMounted) return;
+        const activeSaleDishes: HomepageDishDto[] = menu
+          .filter((dish) => isDishOnSale(dish))
+          .sort((firstDish, secondDish) => {
+            const firstDiscount =
+              (firstDish.price - getDishEffectivePrice(firstDish)) /
+              firstDish.price;
 
-        setState({
-          bestSellers: [],
-          recommended: [],
-          loading: false,
-        });
+            const secondDiscount =
+              (secondDish.price - getDishEffectivePrice(secondDish)) /
+              secondDish.price;
+
+            return secondDiscount - firstDiscount;
+          })
+          .slice(0, 6)
+          .map((dish) => ({
+            id: dish.id,
+            name: dish.name,
+            description: dish.description,
+            price: dish.price,
+            isOnSale: dish.isOnSale,
+            salePrice: dish.salePrice,
+            effectivePrice: dish.effectivePrice,
+            imageUrl: dish.imageUrl,
+            categoryId: dish.categoryId,
+            categoryName: dish.categoryName,
+            soldQuantity: null,
+          }));
+
+        setSaleDishes(activeSaleDishes);
+        setRecommendedDishes(recommended);
+        setBestSellers(bestSelling);
+      } catch (error: any) {
+        if (!isMounted) {
+          return;
+        }
+
+        setError(
+          error?.response?.data?.message ??
+            error?.response?.data?.title ??
+            error?.message ??
+            "Nismo uspeli da učitamo izdvojena jela.",
+        );
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
@@ -196,42 +214,122 @@ export default function HomeFeaturedDishes() {
     };
   }, []);
 
-  const recommendedWithoutDuplicates = useMemo(() => {
-    const bestSellerIds = new Set(state.bestSellers.map((dish) => dish.id));
+  const uniqueRecommendedDishes = useMemo(() => {
+    const saleIds = new Set(saleDishes.map((dish) => dish.id));
 
-    return state.recommended.filter((dish) => !bestSellerIds.has(dish.id));
-  }, [state.bestSellers, state.recommended]);
+    return recommendedDishes
+      .filter((dish) => !saleIds.has(dish.id))
+      .slice(0, 6);
+  }, [saleDishes, recommendedDishes]);
 
-  if (state.loading) {
-    return <FeaturedDishesSkeleton />;
+  const uniqueBestSellers = useMemo(() => {
+    const saleIds = new Set(saleDishes.map((dish) => dish.id));
+
+    const recommendedIds = new Set(
+      uniqueRecommendedDishes.map((dish) => dish.id),
+    );
+
+    return bestSellers
+      .filter((dish) => !saleIds.has(dish.id))
+      .filter((dish) => !recommendedIds.has(dish.id))
+      .slice(0, 6);
+  }, [saleDishes, uniqueRecommendedDishes, bestSellers]);
+
+  if (loading) {
+    return (
+      <section className="home-featured-dishes home-featured-dishes--state">
+        <p>Učitavamo izdvojena jela...</p>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="home-featured-dishes home-featured-dishes--state">
+        <p>{error}</p>
+      </section>
+    );
   }
 
   if (
-    state.bestSellers.length === 0 &&
-    recommendedWithoutDuplicates.length === 0
+    saleDishes.length === 0 &&
+    uniqueRecommendedDishes.length === 0 &&
+    uniqueBestSellers.length === 0
   ) {
-    return null;
+    return (
+      <section className="home-featured-dishes home-featured-dishes--state">
+        <p>Još nema dovoljno podataka za izdvojena jela.</p>
+      </section>
+    );
   }
 
   return (
     <div className="home-featured-dishes">
-      <DishSection
-        eyebrow="Favoriti gostiju"
-        title="Najprodavanija jela"
-        text="Jela koja su se najviše poručivala u poslednjih 30 dana."
-        dishes={state.bestSellers}
-        badge="Best seller"
-        variant="best-seller"
-      />
+      {saleDishes.length > 0 && (
+        <section id="akcija" className="home-featured-dishes__section">
+          <div className="home-featured-dishes__section-header">
+            <span>Akcija danas</span>
 
-      <DishSection
-        eyebrow="Preporuka kuće"
-        title="Izbor restorana"
-        text="Jela koja restoran posebno preporučuje — novo, popularno ili posebno vredno probanja."
-        dishes={recommendedWithoutDuplicates}
-        badge="Chef pick"
-        variant="recommended"
-      />
+            <h3>Jela na akciji</h3>
+          </div>
+
+          <div className="home-featured-dishes__grid">
+            {saleDishes.map((dish) => (
+              <HomeDishCard
+                key={`sale-${dish.id}`}
+                dish={dish}
+                variant="sale"
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {uniqueRecommendedDishes.length > 0 && (
+        <section id="chef-pick" className="home-featured-dishes__section">
+          <div className="home-featured-dishes__section-header">
+            <span>Chef Pick</span>
+
+            <h3>Preporuke kuće</h3>
+          </div>
+
+          <div className="home-featured-dishes__grid">
+            {uniqueRecommendedDishes.map((dish) => (
+              <HomeDishCard
+                key={`recommended-${dish.id}`}
+                dish={dish}
+                variant="recommended"
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {uniqueBestSellers.length > 0 && (
+        <section id="najtrazenije" className="home-featured-dishes__section">
+          <div className="home-featured-dishes__section-header">
+            <span>Best Sellers</span>
+
+            <h3>Najtraženija jela</h3>
+          </div>
+
+          <div className="home-featured-dishes__grid">
+            {uniqueBestSellers.map((dish) => (
+              <HomeDishCard
+                key={`best-seller-${dish.id}`}
+                dish={dish}
+                variant="best-seller"
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="home-featured-dishes__actions">
+        <Link to="/menu" className="btn btn--primary btn--lg">
+          Pogledaj ceo meni
+        </Link>
+      </div>
     </div>
   );
 }

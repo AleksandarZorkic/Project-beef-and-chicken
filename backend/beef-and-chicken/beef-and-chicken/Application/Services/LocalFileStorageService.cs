@@ -7,7 +7,8 @@ namespace beef_and_chicken.Infrastructure.Services
 {
     public class LocalFileStorageService : IFileStorageService
     {
-        private const long MaxFileSize = 5 * 1024 * 1024;
+        private const long MaxDishImageSize = 5 * 1024 * 1024;
+        private const long MaxProfilePictureSize = 2 * 1024 * 1024;
 
         private static readonly string[] AllowedExtensions =
         {
@@ -28,11 +29,70 @@ namespace beef_and_chicken.Infrastructure.Services
             IFormFile file,
             CancellationToken ct = default)
         {
+            return await SaveImageAsync(
+                file,
+                "dishes",
+                MaxDishImageSize,
+                "Slika može imati najviše 5MB.",
+                ct
+            );
+        }
+
+        public async Task<string> SaveProfilePictureAsync(
+            IFormFile file,
+            int userId,
+            CancellationToken ct = default)
+        {
+            return await SaveImageAsync(
+                file,
+                "profile-pictures",
+                MaxProfilePictureSize,
+                "Profilna slika može imati najviše 2MB.",
+                ct,
+                $"user-{userId}-"
+            );
+        }
+
+        public Task DeleteFileAsync(
+            string? relativePath,
+            CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath))
+                return Task.CompletedTask;
+
+            var normalizedPath = relativePath.Replace("\\", "/");
+
+            if (!normalizedPath.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+                return Task.CompletedTask;
+
+            var webRootPath = GetWebRootPath();
+
+            var filePath = Path.Combine(
+                webRootPath,
+                normalizedPath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString())
+            );
+
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private async Task<string> SaveImageAsync(
+            IFormFile file,
+            string folderName,
+            long maxFileSize,
+            string maxFileSizeErrorMessage,
+            CancellationToken ct,
+            string fileNamePrefix = "")
+        {
             if (file == null || file.Length == 0)
                 throw new BadRequestException("Slika je obavezna.");
 
-            if (file.Length > MaxFileSize)
-                throw new BadRequestException("Slika može imati najviše 5MB.");
+            if (file.Length > maxFileSize)
+                throw new BadRequestException(maxFileSizeErrorMessage);
 
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
@@ -43,32 +103,37 @@ namespace beef_and_chicken.Infrastructure.Services
                 );
             }
 
-            var webRootPath = _environment.WebRootPath;
-
-            if (string.IsNullOrWhiteSpace(webRootPath))
-            {
-                webRootPath = Path.Combine(
-                    _environment.ContentRootPath,
-                    "wwwroot"
-                );
-            }
+            var webRootPath = GetWebRootPath();
 
             var uploadFolder = Path.Combine(
                 webRootPath,
                 "uploads",
-                "dishes"
+                folderName
             );
 
             Directory.CreateDirectory(uploadFolder);
 
-            var fileName = $"{Guid.NewGuid():N}{extension}";
+            var fileName = $"{fileNamePrefix}{Guid.NewGuid():N}{extension}";
             var filePath = Path.Combine(uploadFolder, fileName);
 
             await using var stream = new FileStream(filePath, FileMode.Create);
 
             await file.CopyToAsync(stream, ct);
 
-            return $"/uploads/dishes/{fileName}";
+            return $"/uploads/{folderName}/{fileName}";
+        }
+
+        private string GetWebRootPath()
+        {
+            var webRootPath = _environment.WebRootPath;
+
+            if (!string.IsNullOrWhiteSpace(webRootPath))
+                return webRootPath;
+
+            return Path.Combine(
+                _environment.ContentRootPath,
+                "wwwroot"
+            );
         }
     }
 }

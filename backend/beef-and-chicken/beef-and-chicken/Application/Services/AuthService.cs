@@ -17,20 +17,23 @@ namespace beef_and_chicken.Application.Services
         private readonly IConfiguration _configuration;
         private readonly IMapper _mapper;
         private readonly ILogger<AuthService> _logger;
-        private readonly IEmailService _emailService;  
+        private readonly IEmailService _emailService;
+        private readonly IFileStorageService _fileStorageService;
 
         public AuthService(
             UserManager<User> userManager,
             IConfiguration configuration,
             IMapper mapper,
             ILogger<AuthService> logger,
-            IEmailService emailService)
+            IEmailService emailService,
+            IFileStorageService fileStorageService)
         {
             _userManager = userManager;
             _configuration = configuration;
             _mapper = mapper;
             _logger = logger;
             _emailService = emailService;
+            _fileStorageService = fileStorageService;
         }
 
         public async Task RegisterAsync(RegistrationDto data)
@@ -374,6 +377,50 @@ namespace beef_and_chicken.Application.Services
             return await BuildUserProfileDtoAsync(user);
         }
 
+        public async Task<UserProfileDto> UpdateProfilePictureAsync(
+            int userId,
+            IFormFile image,
+            CancellationToken ct = default)
+        {
+            if (image == null || image.Length == 0)
+                throw new BadRequestException("Slika profila je obavezna.");
+
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+
+            if (user == null)
+                throw new NotFoundException("Korisnik nije pronađen.");
+
+            var oldProfilePicture = user.ProfilePicture;
+
+            var imageUrl = await _fileStorageService.SaveProfilePictureAsync(
+                image,
+                userId,
+                ct
+            );
+
+            user.ProfilePicture = imageUrl;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                await _fileStorageService.DeleteFileAsync(imageUrl, ct);
+
+                var errors = result.Errors.Select(error => error.Description);
+                throw new BadRequestException(string.Join(", ", errors.Distinct()));
+            }
+
+            await _fileStorageService.DeleteFileAsync(oldProfilePicture, ct);
+
+            _logger.LogInformation(
+                "User profile picture updated. UserId={UserId}, Username={Username}",
+                user.Id,
+                user.UserName
+            );
+
+            return await BuildUserProfileDtoAsync(user);
+        }
+
         private async Task<string> GenerateJwtAsync(User user)
         {
             var roles = await _userManager.GetRolesAsync(user);
@@ -511,6 +558,7 @@ namespace beef_and_chicken.Application.Services
                 Email = user.Email ?? string.Empty,
                 UserName = user.UserName ?? string.Empty,
                 PhoneNumber = user.PhoneNumber,
+                ProfilePicture = user.ProfilePicture,
                 Roles = roles.ToList()
             };
         }
