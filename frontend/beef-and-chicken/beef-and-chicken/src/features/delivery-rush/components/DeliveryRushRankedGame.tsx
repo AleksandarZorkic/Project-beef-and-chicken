@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../auth/AuthContext";
 import { AppRoles } from "../../../auth/roles";
@@ -19,10 +19,12 @@ import "./DeliveryRushRankedGame.scss";
 
 interface DeliveryRushRankedGameProps {
   onRunCompleted: () => void;
+  onPlayingChange?: (isPlaying: boolean) => void;
 }
 
 export default function DeliveryRushRankedGame({
   onRunCompleted,
+  onPlayingChange,
 }: DeliveryRushRankedGameProps) {
   const { isAuthenticated, hasRole, hasAnyRole } = useAuth();
 
@@ -52,6 +54,16 @@ export default function DeliveryRushRankedGame({
   ]);
 
   const canPlayRanked = isAuthenticated && isCustomer && !hasStaffRole;
+
+  const isLobbyVisible = !activeRun && !result;
+
+  const isResultVisible = result !== null;
+
+  const isPlaying = activeRun !== null && !hasGameEnded;
+
+  useEffect(() => {
+    onPlayingChange?.(isPlaying);
+  }, [isPlaying, onPlayingChange]);
 
   async function handleStart(): Promise<void> {
     setIsStarting(true);
@@ -129,8 +141,29 @@ export default function DeliveryRushRankedGame({
   }
 
   return (
-    <section className="delivery-rush-ranked-game">
+    <section
+      className={[
+        "delivery-rush-ranked-game",
+        isLobbyVisible ? "delivery-rush-ranked-game--lobby" : "",
+        isResultVisible ? "delivery-rush-ranked-game--result" : "",
+        isPlaying ? "delivery-rush-ranked-game--playing" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <h2>Rangirana partija</h2>
+
+      {isPlaying && (
+        <button
+          type="button"
+          className="delivery-rush-ranked-game__cancel"
+          onClick={() => void handleCancel()}
+          disabled={isCancelling}
+          aria-label="Prekini rangiranu partiju"
+        >
+          {isCancelling ? "Prekidanje..." : "Prekini"}
+        </button>
+      )}
 
       {!isAuthenticated && (
         <>
@@ -154,8 +187,9 @@ export default function DeliveryRushRankedGame({
       {canPlayRanked && !activeRun && !result && (
         <>
           <p>
-            Vozi najduže 120 sekundi i izbegni što više prepreka. Težina
-            postepeno raste, a treći sudar završava partiju.
+            Vozi najduže {deliveryRushGameRules.durationSeconds} sekundi i
+            izbegni što više prepreka. Težina postepeno raste, a treći sudar
+            završava partiju.
           </p>
 
           <button
@@ -224,14 +258,41 @@ export default function DeliveryRushRankedGame({
 
       {result && (
         <div className="delivery-rush-result">
-          <h3>Rezultat partije</h3>
+          <header className="delivery-rush-result__header">
+            <span className="delivery-rush-result__trophy" aria-hidden="true">
+              🏆
+            </span>
 
-          <dl>
             <div>
-              <dt>Poeni</dt>
-              <dd>{result.score}</dd>
+              <span className="delivery-rush-result__eyebrow">
+                Partija završena
+              </span>
+
+              <h3>Rezultat partije</h3>
+
+              <p>Rezultat je sačuvan i dodat na nedeljnu rang-listu.</p>
+            </div>
+          </header>
+
+          <div className="delivery-rush-result__highlights">
+            <div className="delivery-rush-result__highlight delivery-rush-result__highlight--score">
+              <span>Poeni</span>
+              <strong>{result.score}</strong>
+              <small>Ukupan rezultat</small>
             </div>
 
+            <div className="delivery-rush-result__highlight delivery-rush-result__highlight--rank">
+              <span>Nedeljna pozicija</span>
+
+              <strong>
+                {result.weeklyRank ? `#${result.weeklyRank}` : "—"}
+              </strong>
+
+              <small>Na aktuelnoj rang-listi</small>
+            </div>
+          </div>
+
+          <dl>
             <div>
               <dt>Distanca</dt>
               <dd>{result.distance}</dd>
@@ -251,25 +312,24 @@ export default function DeliveryRushRankedGame({
               <dt>Najveći combo</dt>
               <dd>{result.maxCombo}</dd>
             </div>
-
-            <div>
-              <dt>Nedeljna pozicija</dt>
-              <dd>{result.weeklyRank ? `#${result.weeklyRank}` : "—"}</dd>
-            </div>
           </dl>
 
           {result.isPersonalBest && (
-            <p className="alert alert--success">Novi lični rekord!</p>
+            <p className="alert alert--success delivery-rush-result__record">
+              Novi lični rekord!
+            </p>
           )}
 
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={() => void handleStart()}
-            disabled={isStarting}
-          >
-            {isStarting ? "Pokretanje..." : "Igraj ponovo"}
-          </button>
+          <div className="delivery-rush-result__actions">
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => void handleStart()}
+              disabled={isStarting}
+            >
+              {isStarting ? "Pokretanje..." : "Igraj ponovo"}
+            </button>
+          </div>
         </div>
       )}
 

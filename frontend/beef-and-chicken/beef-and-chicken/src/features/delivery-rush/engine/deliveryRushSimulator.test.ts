@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DeliveryRushInput } from "../types/deliveryRush.types";
 import {
+  isDeliveryRushJumpActive,
   simulateDeliveryRush,
   simulateDeliveryRushUntilTick,
   validateDeliveryRushInputs,
@@ -17,8 +18,8 @@ describe("Delivery Rush simulator", () => {
     const result = simulateDeliveryRush(123456, []);
 
     expect(result).toEqual({
-      score: 341,
-      distance: 431,
+      score: 333,
+      distance: 423,
       avoidedObstacles: 2,
       collisionCount: 3,
       maxCombo: 2,
@@ -29,14 +30,17 @@ describe("Delivery Rush simulator", () => {
     const inputs: DeliveryRushInput[] = [
       {
         tick: 100,
+        action: "move",
         direction: -1,
       },
       {
         tick: 200,
+        action: "move",
         direction: 1,
       },
       {
         tick: 400,
+        action: "move",
         direction: 1,
       },
     ];
@@ -47,10 +51,99 @@ describe("Delivery Rush simulator", () => {
     expect(secondResult).toEqual(firstResult);
   });
 
+  it("keeps the jump active for exactly 18 ticks", () => {
+    const jumpStartTick = 100;
+
+    expect(isDeliveryRushJumpActive(99, jumpStartTick)).toBe(false);
+
+    expect(isDeliveryRushJumpActive(100, jumpStartTick)).toBe(true);
+
+    expect(isDeliveryRushJumpActive(117, jumpStartTick)).toBe(true);
+
+    expect(isDeliveryRushJumpActive(118, jumpStartTick)).toBe(false);
+
+    expect(isDeliveryRushJumpActive(100, null)).toBe(false);
+  });
+
+  it("rejects a new jump while cooldown is active", () => {
+    const inputs: DeliveryRushInput[] = [
+      {
+        tick: 100,
+        action: "jump",
+      },
+      {
+        tick: 129,
+        action: "jump",
+      },
+    ];
+
+    expect(() => validateDeliveryRushInputs(inputs)).toThrow(
+      "Jump is still on cooldown.",
+    );
+  });
+
+  it("allows a new jump after the cooldown ends", () => {
+    const inputs: DeliveryRushInput[] = [
+      {
+        tick: 100,
+        action: "jump",
+      },
+      {
+        tick: 130,
+        action: "jump",
+      },
+    ];
+
+    expect(() => validateDeliveryRushInputs(inputs)).not.toThrow();
+  });
+
+  it("registers a collision when the jump starts after contact", () => {
+    const inputs: DeliveryRushInput[] = [
+      {
+        tick: 87,
+        action: "jump",
+      },
+    ];
+
+    const result = simulateDeliveryRushUntilTick(123456, inputs, 95);
+
+    expect(result.collisionCount).toBe(1);
+    expect(result.avoidedObstacles).toBe(0);
+  });
+
+  it("registers a collision when the jump ends during contact", () => {
+    const inputs: DeliveryRushInput[] = [
+      {
+        tick: 76,
+        action: "jump",
+      },
+    ];
+
+    const result = simulateDeliveryRushUntilTick(123456, inputs, 95);
+
+    expect(result.collisionCount).toBe(1);
+    expect(result.avoidedObstacles).toBe(0);
+  });
+
+  it("avoids the obstacle when the jump covers the entire contact", () => {
+    const inputs: DeliveryRushInput[] = [
+      {
+        tick: 80,
+        action: "jump",
+      },
+    ];
+
+    const result = simulateDeliveryRushUntilTick(123456, inputs, 95);
+
+    expect(result.collisionCount).toBe(0);
+    expect(result.avoidedObstacles).toBe(1);
+  });
+
   it("rejects an invalid direction", () => {
     const invalidInputs = [
       {
         tick: 100,
+        action: "move",
         direction: 0,
       },
     ] as unknown as DeliveryRushInput[];
@@ -64,10 +157,12 @@ describe("Delivery Rush simulator", () => {
     const inputs: DeliveryRushInput[] = [
       {
         tick: 100,
+        action: "move",
         direction: -1,
       },
       {
         tick: 101,
+        action: "move",
         direction: 1,
       },
     ];
@@ -111,8 +206,8 @@ describe("Delivery Rush simulator", () => {
     );
 
     expect(finalLiveResult).toEqual({
-      score: 341,
-      distance: 431,
+      score: 333,
+      distance: 423,
       avoidedObstacles: 2,
       collisionCount: 3,
       currentCombo: 0,
@@ -121,9 +216,16 @@ describe("Delivery Rush simulator", () => {
   });
 
   it("increases difficulty as the game progresses", () => {
-    expect(deliveryRushGameRules.gameVersion).toBe("2.0.0");
+    expect(deliveryRushGameRules.gameVersion).toBe("3.1.0");
     expect(deliveryRushGameRules.durationSeconds).toBe(120);
     expect(deliveryRushGameRules.totalTicks).toBe(3600);
+
+    expect(deliveryRushGameRules.jumpDurationTicks).toBe(18);
+    expect(deliveryRushGameRules.jumpCooldownTicks).toBe(12);
+
+    expect(deliveryRushGameRules.collisionWindowBeforeTicks).toBe(4);
+
+    expect(deliveryRushGameRules.collisionWindowAfterTicks).toBe(4);
 
     expect(getTwoLaneBlockChancePercent(0)).toBe(20);
     expect(getTwoLaneBlockChancePercent(599)).toBe(20);

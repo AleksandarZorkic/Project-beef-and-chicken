@@ -43,6 +43,10 @@ export function simulateDeliveryRushUntilTick(
   let playerLane: number = deliveryRushGameRules.startingLane;
   let inputIndex = 0;
   let nextObstacleTick: number = deliveryRushGameRules.firstObstacleTick;
+  let activeObstacleTick: number | null = null;
+  let activeBlockedLaneMask = 0;
+  let activeObstacleCollided = false;
+  let jumpStartTick: number | null = null;
 
   let distance = 0;
   let avoidedObstacles = 0;
@@ -55,13 +59,17 @@ export function simulateDeliveryRushUntilTick(
     if (inputIndex < inputs.length && inputs[inputIndex].tick === tick) {
       const input = inputs[inputIndex];
 
-      playerLane = clamp(
-        playerLane + input.direction,
-        0,
-        deliveryRushGameRules.laneCount - 1,
-      );
+      if (input.action === "move") {
+        playerLane = clamp(
+          playerLane + input.direction,
+          0,
+          deliveryRushGameRules.laneCount - 1,
+        );
+      } else {
+        jumpStartTick = tick;
+      }
 
-      inputIndex++;
+      inputIndex += 1;
     }
 
     const distancePerTick = getDistancePerTick(tick);
@@ -73,29 +81,60 @@ export function simulateDeliveryRushUntilTick(
       distance += distancePerTick;
     }
 
-    if (tick !== nextObstacleTick) {
+    const collisionWindowStartTick =
+      nextObstacleTick - deliveryRushGameRules.collisionWindowBeforeTicks;
+
+    if (activeObstacleTick === null && tick === collisionWindowStartTick) {
+      activeObstacleTick = nextObstacleTick;
+
+      activeBlockedLaneMask = generateBlockedLaneMask(random, nextObstacleTick);
+
+      activeObstacleCollided = false;
+    }
+
+    if (activeObstacleTick === null) {
       continue;
     }
 
-    const blockedLaneMask = generateBlockedLaneMask(random, tick);
-    const playerLaneMask = 1 << playerLane;
-    const collision = (blockedLaneMask & playerLaneMask) !== 0;
+    const collisionWindowEndTick =
+      activeObstacleTick + deliveryRushGameRules.collisionWindowAfterTicks;
 
-    if (collision) {
+    const playerLaneMask = 1 << playerLane;
+
+    const isJumping = isDeliveryRushJumpActive(tick, jumpStartTick);
+
+    const isPlayerTouchingObstacle =
+      (activeBlockedLaneMask & playerLaneMask) !== 0;
+
+    if (!activeObstacleCollided && isPlayerTouchingObstacle && !isJumping) {
       collisionCount++;
       currentCombo = 0;
+
       slowdownTicksRemaining = deliveryRushGameRules.collisionSlowdownTicks;
-    } else {
+
+      activeObstacleCollided = true;
+
+      if (collisionCount >= deliveryRushGameRules.maximumCollisions) {
+        break;
+      }
+    }
+
+    if (tick < collisionWindowEndTick) {
+      continue;
+    }
+
+    if (!activeObstacleCollided) {
       avoidedObstacles++;
       currentCombo++;
+
       maxCombo = Math.max(maxCombo, currentCombo);
     }
 
-    if (collisionCount >= deliveryRushGameRules.maximumCollisions) {
-      break;
-    }
+    nextObstacleTick += getObstacleInterval(activeObstacleTick);
 
-    nextObstacleTick += getObstacleInterval(tick);
+    activeObstacleTick = null;
+    activeBlockedLaneMask = 0;
+    activeObstacleCollided = false;
   }
 
   const score =
@@ -114,6 +153,20 @@ export function simulateDeliveryRushUntilTick(
   };
 }
 
+export function isDeliveryRushJumpActive(
+  currentTick: number,
+  jumpStartTick: number | null,
+): boolean {
+  if (jumpStartTick === null) {
+    return false;
+  }
+
+  return (
+    currentTick >= jumpStartTick &&
+    currentTick < jumpStartTick + deliveryRushGameRules.jumpDurationTicks
+  );
+}
+
 export function validateDeliveryRushInputs(
   inputs: readonly DeliveryRushInput[],
 ): void {
@@ -126,6 +179,7 @@ export function validateDeliveryRushInputs(
   }
 
   let previousTick = -1;
+  let previousJumpTick: number | null = null;
 
   for (const input of inputs) {
     if (
@@ -137,7 +191,15 @@ export function validateDeliveryRushInputs(
       throw new Error("Input tick is outside the game duration.");
     }
 
-    if (input.direction !== -1 && input.direction !== 1) {
+    if (input.action !== "move" && input.action !== "jump") {
+      throw new Error("Input action must be move or jump.");
+    }
+
+    if (
+      input.action === "move" &&
+      input.direction !== -1 &&
+      input.direction !== 1
+    ) {
       throw new Error("Input direction must be -1 or 1.");
     }
 
@@ -151,6 +213,21 @@ export function validateDeliveryRushInputs(
         deliveryRushGameRules.minimumTicksBetweenInputs
     ) {
       throw new Error("Input events are too close together.");
+    }
+
+    if (input.action === "jump" && previousJumpTick !== null) {
+      const nextAllowedJumpTick =
+        previousJumpTick +
+        deliveryRushGameRules.jumpDurationTicks +
+        deliveryRushGameRules.jumpCooldownTicks;
+
+      if (input.tick < nextAllowedJumpTick) {
+        throw new Error("Jump is still on cooldown.");
+      }
+    }
+
+    if (input.action === "jump") {
+      previousJumpTick = input.tick;
     }
 
     previousTick = input.tick;

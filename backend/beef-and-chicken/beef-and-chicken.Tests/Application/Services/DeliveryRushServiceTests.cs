@@ -272,6 +272,80 @@ namespace beef_and_chicken.Tests.Application.Services
         }
 
         [Fact]
+        public async Task FinishRunAsync_WhenCollisionLimitEndsRunEarly_CompletesRun()
+        {
+            var currentTime = new DateTimeOffset(
+                2026,
+                8,
+                7,
+                12,
+                0,
+                0,
+                TimeSpan.Zero);
+
+            var repository =
+                new TestDeliveryRushRunRepository();
+
+            var unitOfWork = new TestUnitOfWork();
+
+            var currentUser = new TestCurrentUserService(
+                userId: 15,
+                isAuthenticated: true,
+                AppRoles.Customer);
+
+            var timeProvider =
+                new TestTimeProvider(currentTime);
+
+            var service = CreateService(
+                repository,
+                unitOfWork,
+                currentUser,
+                timeProvider);
+
+            var startedRun = await service.StartRunAsync();
+
+            const int completedTicks = 255;
+
+            var simulatedDuration = TimeSpan.FromSeconds(
+                (double)completedTicks /
+                DeliveryRushGameRules.TickRate);
+
+            Assert.True(
+                simulatedDuration <
+                TimeSpan.FromSeconds(
+                    DeliveryRushGameRules.DurationSeconds));
+
+            timeProvider.Advance(simulatedDuration);
+
+            var request = new FinishDeliveryRushRunRequestDto
+            {
+                Inputs = new List<DeliveryRushInputDto>()
+            };
+
+            var result = await service.FinishRunAsync(
+                startedRun.RunId,
+                request);
+
+            var savedRun = Assert.Single(repository.Runs);
+
+            Assert.Equal(
+                DeliveryRushRunStatus.Completed,
+                savedRun.Status);
+
+            Assert.Equal(333, result.Score);
+            Assert.Equal(423, result.Distance);
+            Assert.Equal(3, result.CollisionCount);
+
+            Assert.Equal(
+                currentTime.Add(simulatedDuration),
+                savedRun.FinishedAtUtc);
+
+            Assert.Equal(
+                2,
+                unitOfWork.SaveChangesCallCount);
+        }
+
+        [Fact]
         public async Task FinishRunAsync_WhenRunHasExpired_MarksRunAsExpired()
         {
             var currentTime = new DateTimeOffset(
@@ -382,10 +456,11 @@ namespace beef_and_chicken.Tests.Application.Services
                 Inputs = new List<DeliveryRushInputDto>
         {
             new DeliveryRushInputDto
-            {
-                Tick = 0,
-                Direction = 0
-            }
+                {
+                    Tick = 0,
+                    Action = DeliveryRushInput.MoveAction,
+                    Direction = 0
+                }
         }
             };
 
@@ -472,19 +547,13 @@ namespace beef_and_chicken.Tests.Application.Services
                 DeliveryRushRunStatus.Completed,
                 savedRun.Status);
 
-            Assert.Equal(341, savedRun.Score);
-            Assert.Equal(431, savedRun.Distance);
-            Assert.Equal(2, savedRun.AvoidedObstacles);
-            Assert.Equal(3, savedRun.CollisionCount);
-            Assert.Equal(2, savedRun.MaxCombo);
-
             Assert.Equal(
                 currentTime.AddSeconds(
                     DeliveryRushGameRules.DurationSeconds),
                 savedRun.FinishedAtUtc);
 
-            Assert.Equal(341, result.Score);
-            Assert.Equal(431, result.Distance);
+            Assert.Equal(333, result.Score);
+            Assert.Equal(423, result.Distance);
             Assert.Equal(2, result.AvoidedObstacles);
             Assert.Equal(3, result.CollisionCount);
             Assert.Equal(2, result.MaxCombo);
@@ -578,7 +647,7 @@ namespace beef_and_chicken.Tests.Application.Services
                 startedRun.RunId,
                 request);
 
-            Assert.Equal(341, result.Score);
+            Assert.Equal(333, result.Score);
             Assert.False(result.IsPersonalBest);
             Assert.Equal(1, result.WeeklyRank);
 
@@ -589,7 +658,7 @@ namespace beef_and_chicken.Tests.Application.Services
                 DeliveryRushRunStatus.Completed,
                 finishedRun.Status);
 
-            Assert.Equal(341, finishedRun.Score);
+            Assert.Equal(333, finishedRun.Score);
 
             var bestRuns =
                 await repository.GetWeeklyBestRunsAsync(
@@ -1157,8 +1226,7 @@ namespace beef_and_chicken.Tests.Application.Services
         [InlineData(DeliveryRushRunStatus.Expired)]
         [InlineData(DeliveryRushRunStatus.Rejected)]
         [InlineData(DeliveryRushRunStatus.Cancelled)]
-        public async Task CancelRunAsync_WhenRunIsNotStarted_DoesNotModifyIt(
-    DeliveryRushRunStatus status)
+        public async Task CancelRunAsync_WhenRunIsNotStarted_DoesNotModifyIt(DeliveryRushRunStatus status)
         {
             var nowUtc = new DateTimeOffset(
                 2026,

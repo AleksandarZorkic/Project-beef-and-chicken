@@ -2,5 +2,10 @@
 {
     public sealed record DeliveryRushInput(
         int Tick,
-        int Direction);
+        string Action,
+        int? Direction)
+    {
+        public const string MoveAction = "move";
+        public const string JumpAction = "jump";
+    }
 }

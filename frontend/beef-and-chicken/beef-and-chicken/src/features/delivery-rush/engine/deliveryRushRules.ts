@@ -1,5 +1,5 @@
 export const deliveryRushGameRules = {
-  gameVersion: "2.0.0",
+  gameVersion: "3.1.0",
 
   durationSeconds: 120,
   tickRate: 30,
@@ -11,6 +11,11 @@ export const deliveryRushGameRules = {
   firstObstacleTick: 90,
   maximumCollisions: 3,
   collisionSlowdownTicks: 45,
+  collisionWindowBeforeTicks: 4,
+  collisionWindowAfterTicks: 4,
+
+  jumpDurationTicks: 18,
+  jumpCooldownTicks: 12,
 
   maximumInputEvents: 900,
   minimumTicksBetweenInputs: 2,

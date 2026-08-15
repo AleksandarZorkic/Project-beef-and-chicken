@@ -1,9 +1,17 @@
 export type DeliveryRushDirection = -1 | 1;
 
-export interface DeliveryRushInput {
+export interface DeliveryRushMoveInput {
   tick: number;
+  action: "move";
   direction: DeliveryRushDirection;
 }
+
+export interface DeliveryRushJumpInput {
+  tick: number;
+  action: "jump";
+}
+
+export type DeliveryRushInput = DeliveryRushMoveInput | DeliveryRushJumpInput;
 
 export interface DeliveryRushSimulationResult {
   score: number;

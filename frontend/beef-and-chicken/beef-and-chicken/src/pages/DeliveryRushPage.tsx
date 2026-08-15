@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "../auth/AuthContext";
-import { AppRoles } from "../auth/roles";
+import { useEffect, useRef, useState } from "react";
 import { getApiErrorMessage } from "../utils/apiErrors";
 import { getDeliveryRushLeaderboard } from "../features/delivery-rush/api/deliveryRushApi";
 import type { DeliveryRushLeaderboard } from "../features/delivery-rush/types/deliveryRush.types";
 import DeliveryRushRankedGame from "../features/delivery-rush/components/DeliveryRushRankedGame";
+import { deliveryRushGameRules } from "../features/delivery-rush/engine/deliveryRushRules";
+import "../styles/DeliveryRushPage.scss";
 
 export default function DeliveryRushPage() {
   const [leaderboard, setLeaderboard] =
@@ -16,6 +15,11 @@ export default function DeliveryRushPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [reloadKey, setReloadKey] = useState(0);
+
+  const [isGameFocused, setIsGameFocused] = useState(false);
+
+  const arenaRef = useRef<HTMLElement | null>(null);
+  const wasGameFocusedRef = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -46,27 +50,128 @@ export default function DeliveryRushPage() {
     };
   }, [reloadKey]);
 
+  useEffect(() => {
+    const wasGameFocused = wasGameFocusedRef.current;
+
+    wasGameFocusedRef.current = isGameFocused;
+
+    if (typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const isMobile = window.matchMedia("(max-width: 640px)").matches;
+
+    if (!isMobile) {
+      return;
+    }
+
+    const focusModeStarted = isGameFocused;
+    const focusModeEnded = wasGameFocused && !isGameFocused;
+
+    if (!focusModeStarted && !focusModeEnded) {
+      return;
+    }
+
+    const navigationHeight = 72;
+    let secondFrameId: number | null = null;
+
+    const firstFrameId = window.requestAnimationFrame(() => {
+      secondFrameId = window.requestAnimationFrame(() => {
+        const arena = arenaRef.current;
+
+        if (!arena) {
+          return;
+        }
+
+        const arenaTop =
+          arena.getBoundingClientRect().top + window.scrollY - navigationHeight;
+
+        window.scrollTo({
+          top: Math.max(0, arenaTop),
+          behavior: focusModeStarted ? "smooth" : "auto",
+        });
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrameId);
+
+      if (secondFrameId !== null) {
+        window.cancelAnimationFrame(secondFrameId);
+      }
+    };
+  }, [isGameFocused]);
+
   return (
-    <main className="delivery-rush-page">
+    <main
+      className={[
+        "delivery-rush-page",
+        isGameFocused ? "delivery-rush-page--focus" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <div className="container">
         <header className="delivery-rush-page__header">
-          <span className="badge">Igra veštine</span>
+          <span className="badge">
+            <span
+              className="delivery-rush-page__badge-dot"
+              aria-hidden="true"
+            />
+            Igra veštine
+          </span>
 
           <h1>Delivery Rush</h1>
 
           <p>
-            Menjaj trake, izbegavaj prepreke i osvoji što više poena za 60
-            sekundi.
+            Menjaj trake, preskači prepreke i osvoji što više poena tokom
+            partije od {deliveryRushGameRules.durationSeconds} sekundi. Težina
+            postepeno raste, a partija se završava nakon{" "}
+            {deliveryRushGameRules.maximumCollisions} sudara.
           </p>
+
+          <div
+            className="delivery-rush-page__quick-info"
+            aria-label="Osnovna pravila igre"
+          >
+            <div>
+              <span>Trajanje</span>
+              <strong>{deliveryRushGameRules.durationSeconds} sekundi</strong>
+            </div>
+
+            <div>
+              <span>Dozvoljeno</span>
+              <strong>{deliveryRushGameRules.maximumCollisions} sudara</strong>
+            </div>
+
+            <div>
+              <span>Takmičenje</span>
+              <strong>Nedeljni ranking</strong>
+            </div>
+          </div>
         </header>
 
-        <DeliveryRushRankedGame
-          onRunCompleted={() => setReloadKey((current) => current + 1)}
-        />
+        <section
+          ref={arenaRef}
+          className="delivery-rush-page__arena"
+          aria-label="Delivery Rush rangirana partija"
+        >
+          <DeliveryRushRankedGame
+            onRunCompleted={() => setReloadKey((current) => current + 1)}
+            onPlayingChange={setIsGameFocused}
+          />
+        </section>
 
-        <section className="card">
+        <section
+          className="card delivery-rush-page__leaderboard"
+          aria-busy={isLoading}
+        >
           <div className="delivery-rush-page__leaderboard-header">
             <div>
+              <span className="delivery-rush-page__leaderboard-eyebrow">
+                Nova nedelja, novi rekord
+              </span>
+
               <h2>Nedeljna rang-lista</h2>
 
               {leaderboard && (
@@ -88,11 +193,30 @@ export default function DeliveryRushPage() {
             </button>
           </div>
 
-          {isLoading && <p aria-live="polite">Učitavanje rang-liste...</p>}
+          {isLoading && (
+            <div
+              className="delivery-rush-page__state"
+              role="status"
+              aria-live="polite"
+            >
+              <span
+                className="delivery-rush-page__spinner"
+                aria-hidden="true"
+              />
 
-          {error && (
-            <div className="alert alert--error" role="alert">
-              <p>{error}</p>
+              <p>Učitavanje rang-liste...</p>
+            </div>
+          )}
+
+          {!isLoading && error && (
+            <div
+              className="alert alert--error delivery-rush-page__error"
+              role="alert"
+            >
+              <div>
+                <strong>Rang-lista nije učitana</strong>
+                <p>{error}</p>
+              </div>
 
               <button
                 type="button"
@@ -105,7 +229,10 @@ export default function DeliveryRushPage() {
           )}
 
           {!isLoading && !error && leaderboard?.entries.length === 0 && (
-            <p>Ove nedelje još nema završenih partija.</p>
+            <div className="delivery-rush-page__state">
+              <strong>Rang-lista je još prazna</strong>
+              <p>Završi partiju i postavi prvi rezultat ove nedelje.</p>
+            </div>
           )}
 
           {!isLoading &&
@@ -127,29 +254,59 @@ export default function DeliveryRushPage() {
                   </thead>
 
                   <tbody>
-                    {leaderboard.entries.map((entry) => (
-                      <tr
-                        key={`${entry.rank}-${entry.playerName}`}
-                        className={
-                          entry.isCurrentUser
-                            ? "delivery-rush-page__current-player"
-                            : undefined
-                        }
-                      >
-                        <td>#{entry.rank}</td>
-                        <td>
-                          {entry.playerName}
-                          {entry.isCurrentUser && " (ti)"}
-                        </td>
-                        <td>
-                          <strong>{entry.score}</strong>
-                        </td>
-                        <td>{entry.distance}</td>
-                        <td>{entry.avoidedObstacles}</td>
-                        <td>{entry.collisionCount}</td>
-                        <td>{entry.maxCombo}</td>
-                      </tr>
-                    ))}
+                    {leaderboard.entries.map((entry) => {
+                      const rowClassName = [
+                        entry.rank <= 3
+                          ? `delivery-rush-page__podium delivery-rush-page__podium--${entry.rank}`
+                          : "",
+                        entry.isCurrentUser
+                          ? "delivery-rush-page__current-player"
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
+
+                      const rankClassName =
+                        entry.rank <= 3
+                          ? `delivery-rush-page__rank delivery-rush-page__rank--${entry.rank}`
+                          : "delivery-rush-page__rank";
+
+                      return (
+                        <tr
+                          key={`${entry.rank}-${entry.playerName}`}
+                          className={rowClassName || undefined}
+                        >
+                          <td data-label="Pozicija">
+                            <span className={rankClassName}>#{entry.rank}</span>
+                          </td>
+
+                          <td data-label="Igrač">
+                            <span className="delivery-rush-page__player">
+                              {entry.playerName}
+                            </span>
+
+                            {entry.isCurrentUser && (
+                              <span className="delivery-rush-page__you">
+                                Ti
+                              </span>
+                            )}
+                          </td>
+
+                          <td data-label="Poeni">
+                            <strong>
+                              {entry.score.toLocaleString("sr-RS")}
+                            </strong>
+                          </td>
+
+                          <td data-label="Distanca">{entry.distance}</td>
+                          <td data-label="Izbegnuto">
+                            {entry.avoidedObstacles}
+                          </td>
+                          <td data-label="Sudari">{entry.collisionCount}</td>
+                          <td data-label="Combo">{entry.maxCombo}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

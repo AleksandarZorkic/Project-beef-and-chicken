@@ -3,6 +3,10 @@
     public class DeliveryRushInputDto
     {
         public int Tick { get; set; }
-        public int Direction { get; set; }
+
+        public string Action { get; set; }
+            = string.Empty;
+
+        public int? Direction { get; set; }
     }
 }

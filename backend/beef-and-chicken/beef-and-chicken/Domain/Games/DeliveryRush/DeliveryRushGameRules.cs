@@ -2,7 +2,7 @@
 {
     public static class DeliveryRushGameRules
     {
-        public const string GameVersion = "2.0.0";
+        public const string GameVersion = "3.1.0";
 
         public const int DurationSeconds = 120;
         public const int TickRate = 30;
@@ -14,6 +14,12 @@
         public const int FirstObstacleTick = 90;
         public const int MaximumCollisions = 3;
         public const int CollisionSlowdownTicks = 45;
+
+        public const int JumpDurationTicks = 18;
+        public const int JumpCooldownTicks = 12;
+
+        public const int CollisionWindowBeforeTicks = 4;
+        public const int CollisionWindowAfterTicks = 4;
 
         public const int MaximumInputEvents = 900;
         public const int MinimumTicksBetweenInputs = 2;

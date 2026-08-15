@@ -165,6 +165,7 @@ namespace beef_and_chicken.Application.Services
             var inputs = data.Inputs
                 .Select(x => new DeliveryRushInput(
                     x.Tick,
+                    x.Action,
                     x.Direction))
                 .ToList();
 
@@ -388,7 +389,7 @@ namespace beef_and_chicken.Application.Services
             }
 
             return _currentUserService.UserId.Value;
-        }
+        } 
 
         private bool IsEligibleCustomer()
         {

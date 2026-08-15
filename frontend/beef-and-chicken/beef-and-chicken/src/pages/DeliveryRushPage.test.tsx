@@ -112,7 +112,11 @@ describe("DeliveryRushPage", () => {
     expect(screen.getByRole("button", { name: "Osveži" })).toBeDisabled();
 
     expect(
-      await screen.findByText("Ove nedelje još nema završenih partija."),
+      await screen.findByText("Rang-lista je još prazna"),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText("Završi partiju i postavi prvi rezultat ove nedelje."),
     ).toBeInTheDocument();
   });
 
@@ -121,12 +125,13 @@ describe("DeliveryRushPage", () => {
 
     renderPage();
 
-    expect(await screen.findByText("Aleks (ti)")).toBeInTheDocument();
+    expect(await screen.findByText("Aleks")).toBeInTheDocument();
+    expect(screen.getByText("Ti")).toBeInTheDocument();
 
     expect(screen.getByText("10.08.2026. – 16.08.2026.")).toBeInTheDocument();
 
     expect(screen.getByText("#1")).toBeInTheDocument();
-    expect(screen.getByText("2400")).toBeInTheDocument();
+    expect(screen.getByText("2.400")).toBeInTheDocument();
     expect(screen.getByText("860")).toBeInTheDocument();
   });
 
@@ -149,7 +154,8 @@ describe("DeliveryRushPage", () => {
       }),
     );
 
-    expect(await screen.findByText("Aleks (ti)")).toBeInTheDocument();
+    expect(await screen.findByText("Aleks")).toBeInTheDocument();
+    expect(screen.getByText("Ti")).toBeInTheDocument();
 
     expect(mockedGetLeaderboard).toHaveBeenCalledTimes(2);
   });
@@ -163,7 +169,8 @@ describe("DeliveryRushPage", () => {
 
     renderPage();
 
-    expect(await screen.findByText("Aleks (ti)")).toBeInTheDocument();
+    expect(await screen.findByText("Aleks")).toBeInTheDocument();
+    expect(screen.getByText("Ti")).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", {
