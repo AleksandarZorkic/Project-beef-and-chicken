@@ -3,6 +3,11 @@ export type DeliveryRushSound =
   | "jump"
   | "landing"
   | "collision"
+  | "collision"
+  | "car-horn"
+  | "car-collision"
+  | "pothole-hit"
+  | "life-lost"
   | "life-lost"
   | "countdown-tick"
   | "countdown-go"
@@ -31,7 +36,11 @@ const soundFiles: Record<DeliveryRushSound, string> = {
   "lane-whoosh": `${audioRoot}/sfx/lane-whoosh.wav`,
   jump: `${audioRoot}/sfx/jump.wav`,
   landing: `${audioRoot}/sfx/landing.wav`,
+
   collision: `${audioRoot}/sfx/collision.wav`,
+  "car-horn": `${audioRoot}/sfx/car-horn.wav`,
+  "car-collision": `${audioRoot}/sfx/car-collision.wav`,
+  "pothole-hit": `${audioRoot}/sfx/pothole-hit.wav`,
   "life-lost": `${audioRoot}/sfx/life-lost.wav`,
   "countdown-tick": `${audioRoot}/sfx/countdown-tick.wav`,
   "countdown-go": `${audioRoot}/sfx/countdown-go.wav`,
@@ -50,10 +59,13 @@ const defaultSoundVolumes: Record<DeliveryRushSound, number> = {
   jump: 0.66,
   landing: 0.54,
   collision: 0.92,
+  "car-horn": 0.42,
+  "car-collision": 0.86,
+  "pothole-hit": 0.78,
   "life-lost": 0.62,
   "countdown-tick": 0.52,
   "countdown-go": 0.78,
-  "obstacle-pass": 0.42,
+  "obstacle-pass": 0,
   "difficulty-up": 0.62,
   "rush-hour": 0.84,
   "game-over": 0.82,
@@ -66,6 +78,9 @@ const minimumSoundGaps: Partial<Record<DeliveryRushSound, number>> = {
   jump: 80,
   landing: 80,
   collision: 100,
+  "car-horn": 700,
+  "car-collision": 120,
+  "pothole-hit": 120,
   "life-lost": 100,
   "countdown-tick": 150,
   "countdown-go": 250,

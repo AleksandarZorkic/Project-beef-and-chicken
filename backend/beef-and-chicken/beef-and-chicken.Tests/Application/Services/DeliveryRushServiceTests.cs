@@ -304,7 +304,7 @@ namespace beef_and_chicken.Tests.Application.Services
 
             var startedRun = await service.StartRunAsync();
 
-            const int completedTicks = 255;
+            const int completedTicks = 423;
 
             var simulatedDuration = TimeSpan.FromSeconds(
                 (double)completedTicks /
@@ -332,8 +332,8 @@ namespace beef_and_chicken.Tests.Application.Services
                 DeliveryRushRunStatus.Completed,
                 savedRun.Status);
 
-            Assert.Equal(333, result.Score);
-            Assert.Equal(423, result.Distance);
+            Assert.Equal(789, result.Score);
+            Assert.Equal(759, result.Distance);
             Assert.Equal(3, result.CollisionCount);
 
             Assert.Equal(
@@ -552,11 +552,11 @@ namespace beef_and_chicken.Tests.Application.Services
                     DeliveryRushGameRules.DurationSeconds),
                 savedRun.FinishedAtUtc);
 
-            Assert.Equal(333, result.Score);
-            Assert.Equal(423, result.Distance);
-            Assert.Equal(2, result.AvoidedObstacles);
+            Assert.Equal(789, result.Score);
+            Assert.Equal(759, result.Distance);
+            Assert.Equal(6, result.AvoidedObstacles);
             Assert.Equal(3, result.CollisionCount);
-            Assert.Equal(2, result.MaxCombo);
+            Assert.Equal(6, result.MaxCombo);
 
             Assert.True(result.IsPersonalBest);
             Assert.Equal(1, result.WeeklyRank);
@@ -647,7 +647,7 @@ namespace beef_and_chicken.Tests.Application.Services
                 startedRun.RunId,
                 request);
 
-            Assert.Equal(333, result.Score);
+            Assert.Equal(789, result.Score);
             Assert.False(result.IsPersonalBest);
             Assert.Equal(1, result.WeeklyRank);
 
@@ -658,7 +658,7 @@ namespace beef_and_chicken.Tests.Application.Services
                 DeliveryRushRunStatus.Completed,
                 finishedRun.Status);
 
-            Assert.Equal(333, finishedRun.Score);
+            Assert.Equal(789, finishedRun.Score);
 
             var bestRuns =
                 await repository.GetWeeklyBestRunsAsync(

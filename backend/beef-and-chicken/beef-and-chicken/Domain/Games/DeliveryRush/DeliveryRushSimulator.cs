@@ -30,8 +30,7 @@
             var nextObstacleTick =
                 DeliveryRushGameRules.FirstObstacleTick;
 
-            int? activeObstacleTick = null;
-            var activeBlockedLaneMask = 0;
+            DeliveryRushObstacle? activeObstacle = null;
             var activeObstacleCollided = false;
 
             int? jumpStartTick = null;
@@ -90,29 +89,29 @@
                 }
 
                 var collisionWindowStartTick =
-                nextObstacleTick -
-                DeliveryRushGameRules.CollisionWindowBeforeTicks;
+                    nextObstacleTick -
+                    DeliveryRushGameRules.CollisionWindowBeforeTicks;
 
-                if (!activeObstacleTick.HasValue &&
+                if (activeObstacle is null &&
                     tick == collisionWindowStartTick)
                 {
-                    activeObstacleTick = nextObstacleTick;
-
-                    activeBlockedLaneMask =
-                        GenerateBlockedLaneMask(
+                    activeObstacle =
+                        DeliveryRushObstacleGenerator.Generate(
                             random,
                             nextObstacleTick);
 
                     activeObstacleCollided = false;
                 }
 
-                if (!activeObstacleTick.HasValue)
+                var obstacle = activeObstacle;
+
+                if (obstacle is null)
                 {
                     continue;
                 }
 
                 var collisionWindowEndTick =
-                    activeObstacleTick.Value +
+                    obstacle.Tick +
                     DeliveryRushGameRules.CollisionWindowAfterTicks;
 
                 var playerLaneMask = 1 << playerLane;
@@ -122,11 +121,16 @@
                     jumpStartTick);
 
                 var isPlayerTouchingObstacle =
-                    (activeBlockedLaneMask & playerLaneMask) != 0;
+                    (obstacle.BlockedLaneMask & playerLaneMask) != 0;
+
+                var jumpAvoidsCollision =
+                    isJumping &&
+                    DeliveryRushObstacleGenerator.CanJumpOver(
+                        obstacle.Type);
 
                 if (!activeObstacleCollided &&
                     isPlayerTouchingObstacle &&
-                    !isJumping)
+                    !jumpAvoidsCollision)
                 {
                     collisionCount++;
                     currentCombo = 0;
@@ -160,10 +164,9 @@
 
                 nextObstacleTick +=
                     DeliveryRushGameRules.GetObstacleInterval(
-                        activeObstacleTick.Value);
+                        obstacle.Tick);
 
-                activeObstacleTick = null;
-                activeBlockedLaneMask = 0;
+                activeObstacle = null;
                 activeObstacleCollided = false;
             }
 
@@ -199,35 +202,6 @@
                 currentTick <
                 jumpStartTick.Value +
                 DeliveryRushGameRules.JumpDurationTicks;
-        }
-
-        private static int GenerateBlockedLaneMask(
-            DeliveryRushRandom random,
-            int tick)
-        {
-            var twoLaneBlockChance =
-                DeliveryRushGameRules
-                    .GetTwoLaneBlockChancePercent(tick);
-
-            var shouldBlockTwoLanes =
-                random.NextInt(100) <
-                twoLaneBlockChance;
-
-            if (shouldBlockTwoLanes)
-            {
-                var safeLane = random.NextInt(
-                    DeliveryRushGameRules.LaneCount);
-
-                var allLanesMask =
-                    (1 << DeliveryRushGameRules.LaneCount) - 1;
-
-                return allLanesMask & ~(1 << safeLane);
-            }
-
-            var blockedLane = random.NextInt(
-                DeliveryRushGameRules.LaneCount);
-
-            return 1 << blockedLane;
         }
 
         private static void ValidateInputs(

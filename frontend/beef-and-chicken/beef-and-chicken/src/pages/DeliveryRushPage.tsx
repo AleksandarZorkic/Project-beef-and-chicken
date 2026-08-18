@@ -146,7 +146,7 @@ export default function DeliveryRushPage() {
 
             <div>
               <span>Takmičenje</span>
-              <strong>Nedeljni ranking</strong>
+              <strong>Nedeljna rang-lista</strong>
             </div>
           </div>
         </header>

@@ -3,7 +3,11 @@ import type {
   DeliveryRushLiveStats,
   DeliveryRushSimulationResult,
 } from "../types/deliveryRush.types";
-import { generateBlockedLaneMask } from "./deliveryRushObstacles";
+import {
+  canJumpOverObstacle,
+  generateDeliveryRushObstacle,
+  type DeliveryRushObstacle,
+} from "./deliveryRushObstacles";
 import { DeliveryRushRandom } from "./deliveryRushRandom";
 import {
   deliveryRushGameRules,
@@ -43,8 +47,7 @@ export function simulateDeliveryRushUntilTick(
   let playerLane: number = deliveryRushGameRules.startingLane;
   let inputIndex = 0;
   let nextObstacleTick: number = deliveryRushGameRules.firstObstacleTick;
-  let activeObstacleTick: number | null = null;
-  let activeBlockedLaneMask = 0;
+  let activeObstacle: DeliveryRushObstacle | null = null;
   let activeObstacleCollided = false;
   let jumpStartTick: number | null = null;
 
@@ -84,34 +87,33 @@ export function simulateDeliveryRushUntilTick(
     const collisionWindowStartTick =
       nextObstacleTick - deliveryRushGameRules.collisionWindowBeforeTicks;
 
-    if (activeObstacleTick === null && tick === collisionWindowStartTick) {
-      activeObstacleTick = nextObstacleTick;
-
-      activeBlockedLaneMask = generateBlockedLaneMask(random, nextObstacleTick);
-
+    if (activeObstacle === null && tick === collisionWindowStartTick) {
+      activeObstacle = generateDeliveryRushObstacle(random, nextObstacleTick);
       activeObstacleCollided = false;
     }
 
-    if (activeObstacleTick === null) {
+    if (activeObstacle === null) {
       continue;
     }
 
     const collisionWindowEndTick =
-      activeObstacleTick + deliveryRushGameRules.collisionWindowAfterTicks;
+      activeObstacle.tick + deliveryRushGameRules.collisionWindowAfterTicks;
 
     const playerLaneMask = 1 << playerLane;
-
     const isJumping = isDeliveryRushJumpActive(tick, jumpStartTick);
-
     const isPlayerTouchingObstacle =
-      (activeBlockedLaneMask & playerLaneMask) !== 0;
+      (activeObstacle.blockedLaneMask & playerLaneMask) !== 0;
+    const jumpAvoidsCollision =
+      isJumping && canJumpOverObstacle(activeObstacle.type);
 
-    if (!activeObstacleCollided && isPlayerTouchingObstacle && !isJumping) {
+    if (
+      !activeObstacleCollided &&
+      isPlayerTouchingObstacle &&
+      !jumpAvoidsCollision
+    ) {
       collisionCount++;
       currentCombo = 0;
-
       slowdownTicksRemaining = deliveryRushGameRules.collisionSlowdownTicks;
-
       activeObstacleCollided = true;
 
       if (collisionCount >= deliveryRushGameRules.maximumCollisions) {
@@ -126,14 +128,11 @@ export function simulateDeliveryRushUntilTick(
     if (!activeObstacleCollided) {
       avoidedObstacles++;
       currentCombo++;
-
       maxCombo = Math.max(maxCombo, currentCombo);
     }
 
-    nextObstacleTick += getObstacleInterval(activeObstacleTick);
-
-    activeObstacleTick = null;
-    activeBlockedLaneMask = 0;
+    nextObstacleTick += getObstacleInterval(activeObstacle.tick);
+    activeObstacle = null;
     activeObstacleCollided = false;
   }
 

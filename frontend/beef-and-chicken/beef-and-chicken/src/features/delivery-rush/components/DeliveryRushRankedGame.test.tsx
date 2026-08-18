@@ -80,7 +80,7 @@ describe("DeliveryRushRankedGame", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Pokreni rangiranu partiju",
+        name: "Započni dostavu",
       }),
     );
 
@@ -104,7 +104,7 @@ describe("DeliveryRushRankedGame", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Pokreni rangiranu partiju",
+        name: "Započni dostavu",
       }),
     );
 
@@ -125,7 +125,9 @@ describe("DeliveryRushRankedGame", () => {
       [],
     );
 
-    expect(screen.getByText("2400")).toBeInTheDocument();
+    expect(
+      screen.getByText(savedResult.score.toLocaleString("sr-RS")),
+    ).toBeInTheDocument();
     expect(screen.getByText("#2")).toBeInTheDocument();
     expect(onRunCompleted).toHaveBeenCalledTimes(1);
   });
@@ -144,7 +146,7 @@ describe("DeliveryRushRankedGame", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Pokreni rangiranu partiju",
+        name: "Započni dostavu",
       }),
     );
 
@@ -190,7 +192,7 @@ describe("DeliveryRushRankedGame", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Pokreni rangiranu partiju",
+        name: "Započni dostavu",
       }),
     );
 
@@ -214,7 +216,7 @@ describe("DeliveryRushRankedGame", () => {
 
     expect(
       await screen.findByRole("button", {
-        name: "Pokreni rangiranu partiju",
+        name: "Započni dostavu",
       }),
     ).toBeInTheDocument();
 

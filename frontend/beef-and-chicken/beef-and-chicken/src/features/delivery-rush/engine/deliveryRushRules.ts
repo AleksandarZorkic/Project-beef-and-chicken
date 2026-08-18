@@ -1,5 +1,5 @@
 export const deliveryRushGameRules = {
-  gameVersion: "3.1.0",
+  gameVersion: "3.2.0",
 
   durationSeconds: 120,
   tickRate: 30,

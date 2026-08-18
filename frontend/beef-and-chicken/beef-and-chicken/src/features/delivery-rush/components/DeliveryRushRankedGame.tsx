@@ -16,6 +16,7 @@ import type {
 } from "../types/deliveryRush.types";
 import DeliveryRushGame from "./DeliveryRushGame";
 import "./DeliveryRushRankedGame.scss";
+import { useDeliveryRushSound } from "../hooks/useDeliveryRushSound";
 
 interface DeliveryRushRankedGameProps {
   onRunCompleted: () => void;
@@ -27,6 +28,8 @@ export default function DeliveryRushRankedGame({
   onPlayingChange,
 }: DeliveryRushRankedGameProps) {
   const { isAuthenticated, hasRole, hasAnyRole } = useAuth();
+
+  const { playSound, unlockAudio } = useDeliveryRushSound();
 
   const [activeRun, setActiveRun] =
     useState<StartDeliveryRushRunResponse | null>(null);
@@ -66,6 +69,9 @@ export default function DeliveryRushRankedGame({
   }, [isPlaying, onPlayingChange]);
 
   async function handleStart(): Promise<void> {
+    unlockAudio();
+    playSound("ui-click");
+
     setIsStarting(true);
     setError(null);
     setResult(null);
@@ -110,6 +116,10 @@ export default function DeliveryRushRankedGame({
       setPendingInputs(null);
       setHasGameEnded(false);
 
+      if (savedResult.isPersonalBest) {
+        playSound("new-record");
+      }
+
       onRunCompleted();
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
@@ -122,6 +132,8 @@ export default function DeliveryRushRankedGame({
     if (!activeRun || isCancelling) {
       return;
     }
+
+    playSound("ui-click");
 
     setIsCancelling(true);
 
@@ -151,7 +163,97 @@ export default function DeliveryRushRankedGame({
         .filter(Boolean)
         .join(" ")}
     >
-      <h2>Rangirana partija</h2>
+      {isLobbyVisible && (
+        <div className="delivery-rush-ranked-game__lobby">
+          <img
+            className="delivery-rush-ranked-game__hero-image"
+            src={`${import.meta.env.BASE_URL}images/delivery-rush/delivery-rush-night-hero.webp`}
+            alt=""
+            aria-hidden="true"
+          />
+
+          <div className="delivery-rush-ranked-game__hero-overlay" />
+
+          <div className="delivery-rush-ranked-game__hero-content">
+            <span className="delivery-rush-ranked-game__eyebrow">
+              Noćna smena je počela
+            </span>
+
+            <h2>
+              <span>Delivery</span>
+              <strong>Rush</strong>
+            </h2>
+
+            <p>
+              Preuzmi volan, izbegni gradski haos i dostavi porudžbinu pre nego
+              što vreme istekne.
+            </p>
+
+            <ul className="delivery-rush-ranked-game__features">
+              <li>
+                <strong>3</strong>
+                <span>života</span>
+              </li>
+
+              <li>
+                <strong>6</strong>
+                <span>nivoa</span>
+              </li>
+
+              <li>
+                <strong>TOP 10</strong>
+                <span>rang-lista</span>
+              </li>
+            </ul>
+
+            {!isAuthenticated && (
+              <div className="delivery-rush-ranked-game__hero-action">
+                <p>
+                  Prijavi se kao kupac da bi tvoj rezultat bio sačuvan na
+                  rang-listi.
+                </p>
+
+                <Link
+                  to="/login"
+                  className="btn btn--primary delivery-rush-ranked-game__start"
+                  onClick={() => playSound("ui-click")}
+                >
+                  Prijavi se i igraj
+                </Link>
+              </div>
+            )}
+
+            {isAuthenticated && !canPlayRanked && (
+              <p className="alert alert--info">
+                Rangirane partije mogu igrati samo korisnici sa ulogom kupca.
+              </p>
+            )}
+
+            {canPlayRanked && (
+              <div className="delivery-rush-ranked-game__hero-action">
+                <button
+                  type="button"
+                  className="btn btn--primary delivery-rush-ranked-game__start"
+                  onClick={() => void handleStart()}
+                  disabled={isStarting}
+                >
+                  <span aria-hidden="true">▶</span>
+
+                  {isStarting ? "Pripremamo vozilo..." : "Započni dostavu"}
+                </button>
+
+                <small>Strelice ili A/D za trake · Space ili W za skok</small>
+              </div>
+            )}
+
+            {error && (
+              <p className="alert alert--error" role="alert">
+                {error}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {isPlaying && (
         <button
@@ -163,44 +265,6 @@ export default function DeliveryRushRankedGame({
         >
           {isCancelling ? "Prekidanje..." : "Prekini"}
         </button>
-      )}
-
-      {!isAuthenticated && (
-        <>
-          <p>
-            Prijavi se kao Customer da bi tvoj rezultat mogao da se nađe na
-            rang-listi.
-          </p>
-
-          <Link to="/login" className="btn btn--primary">
-            Prijavi se
-          </Link>
-        </>
-      )}
-
-      {isAuthenticated && !canPlayRanked && (
-        <p className="alert alert--info">
-          Rangirane partije mogu igrati samo Customer korisnici bez staff uloge.
-        </p>
-      )}
-
-      {canPlayRanked && !activeRun && !result && (
-        <>
-          <p>
-            Vozi najduže {deliveryRushGameRules.durationSeconds} sekundi i
-            izbegni što više prepreka. Težina postepeno raste, a treći sudar
-            završava partiju.
-          </p>
-
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={() => void handleStart()}
-            disabled={isStarting}
-          >
-            {isStarting ? "Pokretanje..." : "Pokreni rangiranu partiju"}
-          </button>
-        </>
       )}
 
       {activeRun && !hasGameEnded && (
@@ -277,7 +341,7 @@ export default function DeliveryRushRankedGame({
           <div className="delivery-rush-result__highlights">
             <div className="delivery-rush-result__highlight delivery-rush-result__highlight--score">
               <span>Poeni</span>
-              <strong>{result.score}</strong>
+              <strong>{result.score.toLocaleString("sr-RS")}</strong>
               <small>Ukupan rezultat</small>
             </div>
 
@@ -295,7 +359,7 @@ export default function DeliveryRushRankedGame({
           <dl>
             <div>
               <dt>Distanca</dt>
-              <dd>{result.distance}</dd>
+              <dd>{result.distance.toLocaleString("sr-RS")}</dd>
             </div>
 
             <div>
@@ -333,11 +397,13 @@ export default function DeliveryRushRankedGame({
         </div>
       )}
 
-      {error && !(activeRun && hasGameEnded && pendingInputs) && (
-        <p className="alert alert--error" role="alert">
-          {error}
-        </p>
-      )}
+      {error &&
+        !isLobbyVisible &&
+        !(activeRun && hasGameEnded && pendingInputs) && (
+          <p className="alert alert--error" role="alert">
+            {error}
+          </p>
+        )}
     </section>
   );
 }

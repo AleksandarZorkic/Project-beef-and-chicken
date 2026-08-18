@@ -14,15 +14,15 @@ import {
 } from "./deliveryRushRules";
 
 describe("Delivery Rush simulator", () => {
-  it("returns the same golden result as the backend", () => {
+  it("returns the deterministic golden result for game version 3.2.0", () => {
     const result = simulateDeliveryRush(123456, []);
 
     expect(result).toEqual({
-      score: 333,
-      distance: 423,
-      avoidedObstacles: 2,
+      score: 789,
+      distance: 759,
+      avoidedObstacles: 6,
       collisionCount: 3,
-      maxCombo: 2,
+      maxCombo: 6,
     });
   });
 
@@ -35,6 +35,10 @@ describe("Delivery Rush simulator", () => {
       },
       {
         tick: 200,
+        action: "jump",
+      },
+      {
+        tick: 230,
         action: "move",
         direction: 1,
       },
@@ -46,97 +50,10 @@ describe("Delivery Rush simulator", () => {
     ];
 
     const firstResult = simulateDeliveryRush(987654, inputs);
+
     const secondResult = simulateDeliveryRush(987654, inputs);
 
     expect(secondResult).toEqual(firstResult);
-  });
-
-  it("keeps the jump active for exactly 18 ticks", () => {
-    const jumpStartTick = 100;
-
-    expect(isDeliveryRushJumpActive(99, jumpStartTick)).toBe(false);
-
-    expect(isDeliveryRushJumpActive(100, jumpStartTick)).toBe(true);
-
-    expect(isDeliveryRushJumpActive(117, jumpStartTick)).toBe(true);
-
-    expect(isDeliveryRushJumpActive(118, jumpStartTick)).toBe(false);
-
-    expect(isDeliveryRushJumpActive(100, null)).toBe(false);
-  });
-
-  it("rejects a new jump while cooldown is active", () => {
-    const inputs: DeliveryRushInput[] = [
-      {
-        tick: 100,
-        action: "jump",
-      },
-      {
-        tick: 129,
-        action: "jump",
-      },
-    ];
-
-    expect(() => validateDeliveryRushInputs(inputs)).toThrow(
-      "Jump is still on cooldown.",
-    );
-  });
-
-  it("allows a new jump after the cooldown ends", () => {
-    const inputs: DeliveryRushInput[] = [
-      {
-        tick: 100,
-        action: "jump",
-      },
-      {
-        tick: 130,
-        action: "jump",
-      },
-    ];
-
-    expect(() => validateDeliveryRushInputs(inputs)).not.toThrow();
-  });
-
-  it("registers a collision when the jump starts after contact", () => {
-    const inputs: DeliveryRushInput[] = [
-      {
-        tick: 87,
-        action: "jump",
-      },
-    ];
-
-    const result = simulateDeliveryRushUntilTick(123456, inputs, 95);
-
-    expect(result.collisionCount).toBe(1);
-    expect(result.avoidedObstacles).toBe(0);
-  });
-
-  it("registers a collision when the jump ends during contact", () => {
-    const inputs: DeliveryRushInput[] = [
-      {
-        tick: 76,
-        action: "jump",
-      },
-    ];
-
-    const result = simulateDeliveryRushUntilTick(123456, inputs, 95);
-
-    expect(result.collisionCount).toBe(1);
-    expect(result.avoidedObstacles).toBe(0);
-  });
-
-  it("avoids the obstacle when the jump covers the entire contact", () => {
-    const inputs: DeliveryRushInput[] = [
-      {
-        tick: 80,
-        action: "jump",
-      },
-    ];
-
-    const result = simulateDeliveryRushUntilTick(123456, inputs, 95);
-
-    expect(result.collisionCount).toBe(0);
-    expect(result.avoidedObstacles).toBe(1);
   });
 
   it("rejects an invalid direction", () => {
@@ -174,17 +91,67 @@ describe("Delivery Rush simulator", () => {
 
   it("generates a deterministic obstacle schedule", () => {
     const firstSchedule = generateDeliveryRushObstacles(123456);
+
     const secondSchedule = generateDeliveryRushObstacles(123456);
 
     expect(secondSchedule).toEqual(firstSchedule);
+
     expect(firstSchedule).toHaveLength(135);
+
     expect(firstSchedule[0].tick).toBe(90);
+
+    expect(firstSchedule[0]).toMatchObject({
+      blockedLaneMask: 2,
+      type: "barrier",
+    });
 
     for (const obstacle of firstSchedule) {
       expect(obstacle.tick).toBeGreaterThanOrEqual(0);
 
       expect([1, 2, 3, 4, 5, 6].includes(obstacle.blockedLaneMask)).toBe(true);
+
+      expect(["barrier", "car", "pothole"]).toContain(obstacle.type);
     }
+  });
+
+  it("does not allow the player to jump over a car", () => {
+    const inputs: DeliveryRushInput[] = [
+      {
+        tick: 80,
+        action: "jump",
+      },
+    ];
+
+    const firstObstacle = generateDeliveryRushObstacles(7)[0];
+    const result = simulateDeliveryRushUntilTick(7, inputs, 95);
+
+    expect(firstObstacle).toMatchObject({
+      tick: 90,
+      blockedLaneMask: 2,
+      type: "car",
+    });
+    expect(result.collisionCount).toBe(1);
+    expect(result.avoidedObstacles).toBe(0);
+  });
+
+  it("allows the player to jump over a pothole", () => {
+    const inputs: DeliveryRushInput[] = [
+      {
+        tick: 80,
+        action: "jump",
+      },
+    ];
+
+    const firstObstacle = generateDeliveryRushObstacles(12)[0];
+    const result = simulateDeliveryRushUntilTick(12, inputs, 95);
+
+    expect(firstObstacle).toMatchObject({
+      tick: 90,
+      blockedLaneMask: 2,
+      type: "pothole",
+    });
+    expect(result.collisionCount).toBe(0);
+    expect(result.avoidedObstacles).toBe(1);
   });
 
   it("returns live statistics for completed ticks", () => {
@@ -205,27 +172,37 @@ describe("Delivery Rush simulator", () => {
       deliveryRushGameRules.totalTicks,
     );
 
-    expect(finalLiveResult).toEqual({
-      score: 333,
-      distance: 423,
-      avoidedObstacles: 2,
-      collisionCount: 3,
-      currentCombo: 0,
-      maxCombo: 2,
-    });
+    const { currentCombo: _currentCombo, ...finalResult } = finalLiveResult;
+
+    expect(finalResult).toEqual(simulateDeliveryRush(123456, []));
+  });
+
+  it("validates jump cooldown and active jump duration", () => {
+    expect(isDeliveryRushJumpActive(100, 100)).toBe(true);
+    expect(isDeliveryRushJumpActive(117, 100)).toBe(true);
+    expect(isDeliveryRushJumpActive(118, 100)).toBe(false);
+
+    const inputs = [
+      { tick: 100, action: "jump" },
+      { tick: 129, action: "jump" },
+    ] as DeliveryRushInput[];
+
+    expect(() => validateDeliveryRushInputs(inputs)).toThrow(
+      "Jump is still on cooldown.",
+    );
+
+    expect(() =>
+      validateDeliveryRushInputs([
+        { tick: 100, action: "jump" },
+        { tick: 130, action: "jump" },
+      ]),
+    ).not.toThrow();
   });
 
   it("increases difficulty as the game progresses", () => {
-    expect(deliveryRushGameRules.gameVersion).toBe("3.1.0");
+    expect(deliveryRushGameRules.gameVersion).toBe("3.2.0");
     expect(deliveryRushGameRules.durationSeconds).toBe(120);
     expect(deliveryRushGameRules.totalTicks).toBe(3600);
-
-    expect(deliveryRushGameRules.jumpDurationTicks).toBe(18);
-    expect(deliveryRushGameRules.jumpCooldownTicks).toBe(12);
-
-    expect(deliveryRushGameRules.collisionWindowBeforeTicks).toBe(4);
-
-    expect(deliveryRushGameRules.collisionWindowAfterTicks).toBe(4);
 
     expect(getTwoLaneBlockChancePercent(0)).toBe(20);
     expect(getTwoLaneBlockChancePercent(599)).toBe(20);

@@ -2,7 +2,7 @@
 {
     public static class DeliveryRushGameRules
     {
-        public const string GameVersion = "3.1.0";
+        public const string GameVersion = "3.2.0";
 
         public const int DurationSeconds = 120;
         public const int TickRate = 30;
