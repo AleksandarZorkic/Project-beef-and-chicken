@@ -29,6 +29,8 @@ namespace beef_and_chicken.Infrastructure.Data
         public DbSet<RestaurantSettings> RestaurantSettings => Set<RestaurantSettings>();
         public DbSet<VisitLog> VisitLogs => Set<VisitLog>();
         public DbSet<DeliveryRushRun> DeliveryRushRuns => Set<DeliveryRushRun>();
+        public DbSet<FeedbackMessage> FeedbackMessages => Set<FeedbackMessage>();
+        public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

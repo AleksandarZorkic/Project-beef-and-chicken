@@ -4,6 +4,7 @@
     {
         SideDish,
         Spice,
-        SweetAddition
+        SweetAddition,
+        SavoryPancakeAddition
     }
 }

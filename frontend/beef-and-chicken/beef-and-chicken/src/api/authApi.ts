@@ -54,3 +54,34 @@ export async function uploadProfilePicture(file: File) {
 
   return res.data;
 }
+
+export async function forgotPassword(email: string) {
+  const res = await api.post("/auth/forgot-password", {
+    email,
+  });
+
+  return res.data;
+}
+
+export async function resetPassword(data: {
+  email: string;
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}) {
+  const res = await api.post("/auth/reset-password", data);
+
+  return res.data;
+}
+
+export async function googleLogin(
+  idToken: string,
+  createAccountIfMissing: boolean,
+) {
+  const res = await api.post<AuthResponseDto>("/auth/google", {
+    idToken,
+    createAccountIfMissing,
+  });
+
+  return res.data;
+}

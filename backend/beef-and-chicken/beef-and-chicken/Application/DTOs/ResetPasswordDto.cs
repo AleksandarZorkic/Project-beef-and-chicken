@@ -14,5 +14,8 @@ namespace beef_and_chicken.Application.DTOs
         [Required(ErrorMessage = "Nova lozinka je obavezna.")]
         [MinLength(8, ErrorMessage = "Lozinka mora imati najmanje 8 karaktera.")]
         public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Potvrda lozinke je obavezna.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

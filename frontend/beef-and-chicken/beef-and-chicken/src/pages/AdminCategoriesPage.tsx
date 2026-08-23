@@ -25,6 +25,7 @@ type CategoryFormState = {
   allowsSideDishes: boolean;
   allowsSpices: boolean;
   allowsSweetAdditions: boolean;
+  allowsSavoryPancakeAdditions: boolean;
 };
 
 const emptyForm: CategoryFormState = {
@@ -34,6 +35,7 @@ const emptyForm: CategoryFormState = {
   allowsSideDishes: true,
   allowsSpices: true,
   allowsSweetAdditions: false,
+  allowsSavoryPancakeAdditions: false,
 };
 
 function getErrorMessage(error: any, fallback: string) {
@@ -168,6 +170,7 @@ export default function AdminCategoriesPage() {
       allowsSideDishes: category.allowsSideDishes,
       allowsSpices: category.allowsSpices,
       allowsSweetAdditions: category.allowsSweetAdditions,
+      allowsSavoryPancakeAdditions: category.allowsSavoryPancakeAdditions,
     });
 
     setError(null);
@@ -202,6 +205,7 @@ export default function AdminCategoriesPage() {
         allowsSideDishes: form.allowsSideDishes,
         allowsSpices: form.allowsSpices,
         allowsSweetAdditions: form.allowsSweetAdditions,
+        allowsSavoryPancakeAdditions: form.allowsSavoryPancakeAdditions,
       };
 
       if (editingCategoryId !== null) {
@@ -566,6 +570,33 @@ export default function AdminCategoriesPage() {
                 </span>
               </label>
 
+              <label className="admin-category-permission">
+                <input
+                  type="checkbox"
+                  checked={form.allowsSavoryPancakeAdditions}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      allowsSavoryPancakeAdditions: event.target.checked,
+                    }))
+                  }
+                />
+
+                <span className="admin-category-permission__control">
+                  <span
+                    className="admin-category-permission__check"
+                    aria-hidden="true"
+                  >
+                    ✓
+                  </span>
+                </span>
+
+                <span className="admin-category-permission__content">
+                  <strong>Slani dodaci za palačinke</strong>
+                  <small>Šunka, kačkavalj, pečenica i drugi slani dodaci</small>
+                </span>
+              </label>
+
               <p className="admin-category-permissions__hint">
                 Za kategoriju pića obično se isključuju prilozi i začini.
               </p>
@@ -836,6 +867,20 @@ export default function AdminCategoriesPage() {
                         </strong>
                       </span>
                     </div>
+
+                    <span
+                      className={[
+                        "admin-category-capability",
+                        category.allowsSavoryPancakeAdditions
+                          ? "admin-category-capability--enabled"
+                          : "admin-category-capability--disabled",
+                      ].join(" ")}
+                    >
+                      Slani dodaci
+                      <strong>
+                        {category.allowsSavoryPancakeAdditions ? "Da" : "Ne"}
+                      </strong>
+                    </span>
 
                     <div className="admin-category-card__metrics">
                       <div className="admin-category-card__metric">

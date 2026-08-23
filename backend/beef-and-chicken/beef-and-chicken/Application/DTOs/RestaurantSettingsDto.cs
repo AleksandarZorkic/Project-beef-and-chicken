@@ -1,4 +1,6 @@
-﻿namespace beef_and_chicken.Application.DTOs
+﻿using beef_and_chicken.Domain.Enum;
+
+namespace beef_and_chicken.Application.DTOs
 {
     public class RestaurantSettingsDto
     {
@@ -11,6 +13,10 @@
         public bool IsDeliveryEnabled { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+
+        public bool IsOnlinePaymentEnabled { get; set; }
+
+        public PaymentProviderType PaymentProvider { get; set; }
 
         public List<RestaurantWorkingHourDto> WorkingHours { get; set; } = new();
 

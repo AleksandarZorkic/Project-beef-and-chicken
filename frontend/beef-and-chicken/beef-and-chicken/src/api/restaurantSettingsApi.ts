@@ -9,6 +9,8 @@ export type DayOfWeekName =
   | "Friday"
   | "Saturday";
 
+export type PaymentProviderType = "Disabled" | "Fake" | "Monri" | "Bank";
+
 export interface RestaurantWorkingHourDto {
   dayOfWeek: DayOfWeekName;
   dayName: string;
@@ -39,6 +41,8 @@ export interface RestaurantSettingsDto {
   deliveryFee: number;
   freeDeliveryThreshold?: number | null;
   isDeliveryEnabled: boolean;
+  isOnlinePaymentEnabled: boolean;
+  paymentProvider: PaymentProviderType;
   updatedAt: string;
   workingHours: RestaurantWorkingHourDto[];
   restaurantStatus: RestaurantOpenStatusDto;
@@ -49,6 +53,8 @@ export interface UpdateRestaurantSettingsRequest {
   deliveryFee: number;
   freeDeliveryThreshold?: number | null;
   isDeliveryEnabled: boolean;
+  isOnlinePaymentEnabled?: boolean;
+  paymentProvider?: PaymentProviderType;
   workingHours?: UpdateRestaurantWorkingHourRequest[];
 }
 

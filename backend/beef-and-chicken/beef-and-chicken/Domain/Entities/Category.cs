@@ -18,6 +18,8 @@
 
         public bool AllowsSweetAdditions { get; set; } = false;
 
+        public bool AllowsSavoryPancakeAdditions { get; set; } = false;
+
         public ICollection<Dish> Dishes { get; set; } = new List<Dish>();
     }
 }

@@ -86,6 +86,11 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.User.RequireUniqueEmail = true;
 });
 
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromHours(1);
+});
+
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]
     ?? throw new InvalidOperationException("Jwt:Issuer nije podešen.");
 var jwtAudience = builder.Configuration["Jwt:Audience"]
@@ -175,6 +180,9 @@ builder.Services.AddScoped<IFastFoodWorkTimeRepository, FastFoodWorkTimeReposito
 builder.Services.AddScoped<IVisitLogRepository, VisitLogRepository>();
 builder.Services.AddScoped<IVisitTrackingService, VisitTrackingService>();
 
+builder.Services.AddScoped<IFeedbackMessageRepository, FeedbackMessageRepository>();
+builder.Services.AddScoped<IFeedbackMessageService, FeedbackMessageService>();
+
 builder.Services.AddScoped<IDeliveryRushRunRepository, DeliveryRushRunRepository>();
 builder.Services.AddScoped<IDeliveryRushService, DeliveryRushService>();
 
@@ -183,7 +191,14 @@ builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
 builder.Services.AddSingleton<IDeliveryRushSeedGenerator, DeliveryRushSeedGenerator>();
 
-builder.Services.AddSignalR();
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()
+        );
+    });
+
 builder.Services.AddScoped<IOrderNotificationService, OrderNotificationService>();
 
 builder.Services.AddHostedService<BlockedUsersAnonymizationBackgroundService>();
@@ -287,6 +302,26 @@ builder.Services.AddRateLimiter(options =>
             response,
             cancellationToken: ct);
     };
+
+    options.AddPolicy(
+    RateLimitPolicies.FeedbackCreate,
+    httpContext =>
+    {
+        var partitionKey =
+            GetRateLimitPartitionKey(httpContext);
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 3,
+                Window = TimeSpan.FromMinutes(10),
+                QueueLimit = 0,
+                QueueProcessingOrder =
+                    QueueProcessingOrder.OldestFirst,
+                AutoReplenishment = true
+            });
+    });
 });
 
 

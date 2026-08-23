@@ -1,6 +1,6 @@
 import api from "./https";
 
-export interface CategoryDto {
+export type CategoryDto = {
   id: number;
   name: string;
   description?: string | null;
@@ -9,9 +9,10 @@ export interface CategoryDto {
   allowsSideDishes: boolean;
   allowsSpices: boolean;
   allowsSweetAdditions: boolean;
+  allowsSavoryPancakeAdditions: boolean;
   dishCount: number;
   activeDishCount: number;
-}
+};
 
 export interface CreateCategoryDto {
   name: string;
@@ -20,6 +21,7 @@ export interface CreateCategoryDto {
   allowsSideDishes: boolean;
   allowsSpices: boolean;
   allowsSweetAdditions: boolean;
+  allowsSavoryPancakeAdditions: boolean;
 }
 
 export interface UpdateCategoryDto {
@@ -29,6 +31,7 @@ export interface UpdateCategoryDto {
   allowsSideDishes: boolean;
   allowsSpices: boolean;
   allowsSweetAdditions: boolean;
+  allowsSavoryPancakeAdditions: boolean;
 }
 
 const ADMIN_CATEGORIES_ENDPOINT = "/admin/categories";

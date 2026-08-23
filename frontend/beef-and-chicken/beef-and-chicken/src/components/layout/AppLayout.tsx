@@ -4,6 +4,7 @@ import { useCart } from "../../state/cart/CartContext";
 import { cartSubtotal } from "../../state/cart/cart.selectors";
 import { useAuth } from "../../auth/AuthContext";
 import { AppRoles } from "../../auth/roles";
+import { useOrderNotifications } from "../notifications/OrderNotificationsContext";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -13,6 +14,7 @@ type NavigationItem = {
   to: string;
   label: string;
   end?: boolean;
+  badgeCount?: number;
 };
 
 function getNavLinkClass({ isActive }: { isActive: boolean }) {
@@ -33,9 +35,31 @@ function getMobileNavLinkClass({ isActive }: { isActive: boolean }) {
     : "app-header__mobile-link";
 }
 
+function formatBadgeCount(count?: number) {
+  if (!count || count <= 0) {
+    return null;
+  }
+
+  return count > 99 ? "99+" : String(count);
+}
+
+function renderNavigationLabel(link: NavigationItem) {
+  const badge = formatBadgeCount(link.badgeCount);
+
+  return (
+    <span className="app-header__link-content">
+      <span>{link.label}</span>
+
+      {badge && <span className="app-header__pending-badge">{badge}</span>}
+    </span>
+  );
+}
+
 export default function AppLayout({ children }: AppLayoutProps) {
   const { state } = useCart();
   const { isAuthenticated, hasRole, logout } = useAuth();
+
+  const { pendingOrderCount } = useOrderNotifications();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -133,6 +157,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
         to: "/admin/categories",
         label: "Kategorije",
       },
+      {
+        to: "/admin/feedback",
+        label: "Sugestije",
+      },
     );
   }
 
@@ -142,6 +170,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         to: "/admin/orders",
         label: "Porudžbine",
         end: true,
+        badgeCount: pendingOrderCount,
       },
       {
         to: "/admin/orders/history",
@@ -207,7 +236,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   end={link.end}
                   className={getNavLinkClass}
                 >
-                  {link.label}
+                  {renderNavigationLabel(link)}
                 </NavLink>
               ))}
             </nav>
@@ -322,7 +351,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     end={link.end}
                     className={getSecondaryNavLinkClass}
                   >
-                    {link.label}
+                    {renderNavigationLabel(link)}
                   </NavLink>
                 ))}
               </nav>
@@ -349,7 +378,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                       end={link.end}
                       className={getMobileNavLinkClass}
                     >
-                      {link.label}
+                      {renderNavigationLabel(link)}
                     </NavLink>
                   ))}
                 </div>
@@ -367,7 +396,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         end={link.end}
                         className={getMobileNavLinkClass}
                       >
-                        {link.label}
+                        {renderNavigationLabel(link)}
                       </NavLink>
                     ))}
                   </div>

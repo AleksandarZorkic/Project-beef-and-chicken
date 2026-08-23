@@ -32,6 +32,8 @@
 
         public bool AllowsSweetAdditions { get; set; }
 
+        public bool AllowsSavoryPancakeAdditions { get; set; }
+
         public List<DishAllergenDto> Allergens { get; set; } = new();
     }
 }

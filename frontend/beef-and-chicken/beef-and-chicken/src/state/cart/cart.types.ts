@@ -1,4 +1,8 @@
-export type CartOptionType = "SideDish" | "Spice" | "SweetAddition";
+export type CartOptionType =
+  | "SideDish"
+  | "Spice"
+  | "SweetAddition"
+  | "SavoryPancakeAddition";
 
 export type CartSelectedOption = {
   optionId: number;

@@ -75,6 +75,7 @@ namespace beef_and_chicken.Application.Services
                 AllowsSideDishes = dto.AllowsSideDishes,
                 AllowsSpices = dto.AllowsSpices,
                 AllowsSweetAdditions = dto.AllowsSweetAdditions,
+                AllowsSavoryPancakeAdditions = dto.AllowsSavoryPancakeAdditions,
                 IsActive = true
             };
 
@@ -127,6 +128,7 @@ namespace beef_and_chicken.Application.Services
             category.AllowsSideDishes = dto.AllowsSideDishes;
             category.AllowsSpices = dto.AllowsSpices;
             category.AllowsSweetAdditions = dto.AllowsSweetAdditions;
+            category.AllowsSavoryPancakeAdditions = dto.AllowsSavoryPancakeAdditions;
 
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -262,6 +264,7 @@ namespace beef_and_chicken.Application.Services
                 AllowsSideDishes = category.AllowsSideDishes,
                 AllowsSpices = category.AllowsSpices,
                 AllowsSweetAdditions = category.AllowsSweetAdditions,
+                AllowsSavoryPancakeAdditions = category.AllowsSavoryPancakeAdditions,
                 DishCount = category.Dishes.Count,
                 ActiveDishCount = category.Dishes.Count(d => d.IsActive)
             };

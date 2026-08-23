@@ -1,0 +1,116 @@
+.operations-order-notifier {
+  display: flex;
+  margin-bottom: 18px;
+  padding: 13px 15px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.025)
+  );
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
+
+  &--active {
+    border-color: rgba(255, 152, 68, 0.45);
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(255, 152, 68, 0.22),
+        transparent 38%
+      ),
+      linear-gradient(
+        135deg,
+        rgba(255, 152, 68, 0.12),
+        rgba(255, 255, 255, 0.035)
+      );
+  }
+
+  &__content {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__icon {
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background-color: rgba(255, 152, 68, 0.14);
+    font-size: 18px;
+  }
+
+  &__title {
+    display: block;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.25;
+  }
+
+  &__description {
+    margin: 3px 0 0;
+    color: #aeb7b1;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  &__button {
+    display: inline-flex;
+    min-height: 36px;
+    padding: 0 13px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    color: #141915;
+    cursor: pointer;
+    border: 0;
+    border-radius: 999px;
+    background-color: #ff9844;
+    font-size: 12px;
+    font-weight: 900;
+    transition:
+      transform 0.18s ease,
+      filter 0.18s ease,
+      opacity 0.18s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 3px;
+    }
+  }
+
+  &--sound-enabled &__button {
+    color: #f0f5f1;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    background-color: rgba(255, 255, 255, 0.07);
+  }
+}
+
+@media (max-width: 720px) {
+  .operations-order-notifier {
+    align-items: stretch;
+    flex-direction: column;
+
+    &__button {
+      width: 100%;
+    }
+  }
+}

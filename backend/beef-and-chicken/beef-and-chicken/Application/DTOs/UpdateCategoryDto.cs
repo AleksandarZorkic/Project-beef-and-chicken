@@ -13,5 +13,7 @@
         public bool AllowsSpices { get; set; } = true;
 
         public bool AllowsSweetAdditions { get; set; } = false;
+
+        public bool AllowsSavoryPancakeAdditions { get; set; } = false;
     }
 }

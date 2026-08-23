@@ -16,6 +16,7 @@ namespace beef_and_chicken.Application.Mapping
                  .ForMember(dest => dest.AllowsSideDishes, opt => opt.MapFrom(src => src.Category.AllowsSideDishes))
                  .ForMember(dest => dest.AllowsSpices, opt => opt.MapFrom(src => src.Category.AllowsSpices))
                  .ForMember(dest => dest.AllowsSweetAdditions, opt => opt.MapFrom(src => src.Category.AllowsSweetAdditions))
+                 .ForMember(dest => dest.AllowsSavoryPancakeAdditions, opt => opt.MapFrom(src => src.Category.AllowsSavoryPancakeAdditions))
                  .ForMember(dest => dest.IsRecommended, opt => opt.MapFrom(src => src.IsRecommended))
                  .ForMember(dest => dest.RecommendedSortOrder, opt => opt.MapFrom(src => src.RecommendedSortOrder))
                  .ForMember(dest => dest.EffectivePrice, opt => opt.MapFrom(src =>

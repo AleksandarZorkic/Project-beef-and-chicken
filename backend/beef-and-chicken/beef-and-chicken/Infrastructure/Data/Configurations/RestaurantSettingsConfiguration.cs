@@ -1,4 +1,5 @@
 ﻿using beef_and_chicken.Domain.Entities;
+using beef_and_chicken.Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -32,6 +33,16 @@ namespace beef_and_chicken.Infrastructure.Data.Configurations
                 .HasDefaultValue(true);
 
             builder.Property(x => x.UpdatedAt)
+                .IsRequired();
+
+            builder.Property(x => x.IsOnlinePaymentEnabled)
+                .HasDefaultValue(false)
+                .IsRequired();
+
+            builder.Property(x => x.PaymentProvider)
+                .HasConversion<string>()
+                .HasMaxLength(40)
+                .HasDefaultValue(PaymentProviderType.Disabled)
                 .IsRequired();
 
             builder.ToTable("RestaurantSettings", t =>

@@ -18,6 +18,8 @@
 
         public bool AllowsSweetAdditions { get; set; }
 
+        public bool AllowsSavoryPancakeAdditions { get; set; }
+
         public int DishCount { get; set; }
 
         public int ActiveDishCount { get; set; }

@@ -396,6 +396,38 @@
     }
   }
 
+  &__link-content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+  }
+
+  &__pending-badge {
+    display: inline-flex;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 6px;
+    align-items: center;
+    justify-content: center;
+
+    color: #fff;
+
+    font-size: 0.68rem;
+    font-weight: $font-weight-extra-bold;
+    line-height: 1;
+
+    background: #e53935;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: $radius-pill;
+    box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.15);
+  }
+
+  &__mobile-link &__link-content {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   // ====================================================
   // Mobile panel
   // ====================================================

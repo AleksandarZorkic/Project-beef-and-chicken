@@ -224,6 +224,10 @@ export default function CheckoutPage() {
 
   const totalAmount = subtotal + deliveryFee;
 
+  const canUseOnlinePayment =
+    restaurantSettings?.isOnlinePaymentEnabled === true &&
+    restaurantSettings.paymentProvider !== "Disabled";
+
   const missingForMinimum =
     isDelivery &&
     restaurantSettings &&
@@ -297,6 +301,11 @@ export default function CheckoutPage() {
       setError(
         "Broj telefona može sadržati samo brojeve, razmake i znakove + - / ( ).",
       );
+      return;
+    }
+
+    if (paymentMethod === "OnlineCard" && !canUseOnlinePayment) {
+      setError("Online plaćanje trenutno nije dostupno.");
       return;
     }
 
@@ -507,7 +516,7 @@ export default function CheckoutPage() {
                   ></span>
 
                   <span className="checkout-choice__content">
-                    <span>{isPickup ? "Preuzimanje" : "Dostava"}</span>
+                    <strong>Dostava</strong>
 
                     <small>Porudžbina stiže na izabranu adresu</small>
                   </span>
@@ -860,6 +869,37 @@ export default function CheckoutPage() {
                   </span>
                 </span>
               </label>
+
+              {canUseOnlinePayment && (
+                <label className="checkout-choice">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="OnlineCard"
+                    checked={paymentMethod === "OnlineCard"}
+                    onChange={() => setPaymentMethod("OnlineCard")}
+                  />
+
+                  <span className="checkout-choice__control">
+                    <span className="checkout-choice__radio" />
+
+                    <span
+                      className="checkout-choice__payment-icon"
+                      aria-hidden="true"
+                    >
+                      💳
+                    </span>
+
+                    <span className="checkout-choice__content">
+                      <strong>Online plaćanje karticom</strong>
+
+                      <small>
+                        Sigurno plaćanje preko izabranog payment providera
+                      </small>
+                    </span>
+                  </span>
+                </label>
+              )}
             </div>
           </section>
         </div>

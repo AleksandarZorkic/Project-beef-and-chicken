@@ -27,6 +27,16 @@ namespace beef_and_chicken.Presentation.Controllers
             return Ok(new {token});
         }
 
+        [HttpPost("google")]
+        public async Task<IActionResult> GoogleLogin(
+            [FromBody] GoogleLoginDto data,
+            CancellationToken ct = default)
+        {
+            var token = await _authService.GoogleLoginAsync(data, ct);
+
+            return Ok(new { token });
+        }
+
         [Authorize]
         [HttpGet("profile")]
         public async Task<ActionResult<UserProfileDto>> Profile(

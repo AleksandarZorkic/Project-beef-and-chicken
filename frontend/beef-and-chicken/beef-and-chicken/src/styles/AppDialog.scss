@@ -1,0 +1,256 @@
+@use "./abstracts/variables" as *;
+
+.app-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: grid;
+  place-items: center;
+
+  padding: 20px;
+
+  &__backdrop {
+    position: absolute;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.68);
+    border: 0;
+
+    backdrop-filter: blur(8px);
+
+    cursor: pointer;
+  }
+
+  &__panel {
+    position: relative;
+    z-index: 1;
+
+    display: grid;
+    width: min(100%, 460px);
+    gap: 18px;
+
+    padding: 24px;
+
+    color: $color-text;
+
+    background: linear-gradient(
+      145deg,
+      rgba(23, 29, 25, 0.98),
+      rgba(9, 13, 10, 0.98)
+    );
+
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 24px;
+
+    box-shadow:
+      0 30px 90px rgba(0, 0, 0, 0.65),
+      0 12px 36px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.055);
+
+    animation: app-dialog-enter 160ms ease-out;
+
+    &::before {
+      position: absolute;
+      top: 0;
+      right: 18%;
+      left: 18%;
+
+      height: 1px;
+
+      content: "";
+
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba($color-accent, 0.55),
+        transparent
+      );
+    }
+
+    &--danger {
+      .app-dialog__icon {
+        color: #ffd5d5;
+        background: rgba(255, 91, 91, 0.15);
+        border-color: rgba(255, 91, 91, 0.35);
+      }
+
+      .app-dialog__button--primary {
+        color: #fff;
+        background: linear-gradient(135deg, #c63d3d, #ff6b6b);
+      }
+    }
+
+    &--warning {
+      .app-dialog__icon {
+        color: #11140f;
+        background: $color-accent;
+        border-color: rgba($color-accent, 0.5);
+      }
+    }
+
+    &--success {
+      .app-dialog__icon {
+        color: #d9ffe6;
+        background: rgba(83, 219, 126, 0.16);
+        border-color: rgba(83, 219, 126, 0.35);
+      }
+
+      .app-dialog__button--primary {
+        color: #102015;
+        background: linear-gradient(135deg, #51da82, #a8f0bd);
+      }
+    }
+  }
+
+  &__icon {
+    display: inline-flex;
+    width: 46px;
+    height: 46px;
+    align-items: center;
+    justify-content: center;
+
+    color: #11140f;
+
+    font-size: 1.25rem;
+    font-weight: $font-weight-black;
+
+    background: linear-gradient(135deg, $color-accent, #f1b928);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+  }
+
+  &__content {
+    display: grid;
+    gap: 9px;
+
+    h2 {
+      margin: 0;
+
+      color: $color-text;
+
+      font-family: $font-family-display;
+      font-size: clamp(1.8rem, 6vw, 2.65rem);
+      font-weight: $font-weight-black;
+      line-height: 0.95;
+      text-transform: uppercase;
+    }
+  }
+
+  &__message {
+    color: rgba($color-text, 0.7);
+
+    font-size: 0.94rem;
+    line-height: 1.6;
+
+    p {
+      margin: 0;
+    }
+
+    strong {
+      color: $color-accent;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  &__button {
+    display: inline-flex;
+    min-height: 44px;
+    padding: 0 17px;
+    align-items: center;
+    justify-content: center;
+
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: $font-weight-extra-bold;
+
+    border-radius: 999px;
+
+    cursor: pointer;
+
+    transition:
+      transform $transition-fast,
+      filter $transition-fast,
+      border-color $transition-fast,
+      background-color $transition-fast;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &:focus-visible {
+      outline: 3px solid rgba($color-accent, 0.4);
+      outline-offset: 3px;
+    }
+
+    &--secondary {
+      color: rgba($color-text, 0.72);
+
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+
+      &:hover {
+        color: $color-text;
+        border-color: rgba(255, 255, 255, 0.17);
+      }
+    }
+
+    &--primary {
+      color: #11140f;
+
+      background: linear-gradient(135deg, $color-accent, #f1b928);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+
+      &:hover {
+        filter: brightness(1.06);
+      }
+    }
+  }
+}
+
+@keyframes app-dialog-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .app-dialog {
+    align-items: end;
+
+    padding: 12px;
+
+    &__panel {
+      width: 100%;
+
+      padding: 20px;
+
+      border-radius: 22px;
+    }
+
+    &__actions {
+      flex-direction: column-reverse;
+    }
+
+    &__button {
+      width: 100%;
+    }
+  }
+}

@@ -16,6 +16,7 @@ import type {
 import type { AppRole } from "./roles";
 import {
   getProfile as getProfileApi,
+  googleLogin as googleLoginApi,
   login as loginApi,
   register as registerApi,
 } from "../api/authApi";
@@ -26,6 +27,10 @@ type AuthContextValue = {
   token: string | null;
   isAuthenticated: boolean;
   login: (data: LoginRequestDto) => Promise<void>;
+  loginWithGoogle: (
+    idToken: string,
+    createAccountIfMissing: boolean,
+  ) => Promise<void>;
   register: (data: RegisterRequestDto) => Promise<void>;
   refreshProfile: () => Promise<void>;
   setUserProfile: (profile: UserProfileDto) => void;
@@ -45,6 +50,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthToken(undefined);
     setToken(null);
     setUser(null);
+  }, []);
+
+  const applyAuthToken = useCallback(async (nextToken: string) => {
+    if (isTokenExpired(nextToken)) {
+      throw new Error("Token je istekao.");
+    }
+
+    const mappedUser = mapTokenToUser(nextToken);
+
+    if (!mappedUser) {
+      throw new Error("Token ne sadrži validne podatke o korisniku.");
+    }
+
+    saveStoredAuth(nextToken);
+    setAuthToken(nextToken);
+    setToken(nextToken);
+
+    const profile = await getProfileApi();
+    setUser(profile);
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -90,26 +114,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     restoreAuth();
   }, [logout]);
 
-  const login = useCallback(async (data: LoginRequestDto) => {
-    const result = await loginApi(data);
+  const login = useCallback(
+    async (data: LoginRequestDto) => {
+      const result = await loginApi(data);
 
-    if (isTokenExpired(result.token)) {
-      throw new Error("Token je istekao.");
-    }
+      await applyAuthToken(result.token);
+    },
+    [applyAuthToken],
+  );
 
-    const mappedUser = mapTokenToUser(result.token);
+  const loginWithGoogle = useCallback(
+    async (idToken: string, createAccountIfMissing: boolean) => {
+      if (!idToken) {
+        throw new Error("Google token nije pronađen.");
+      }
 
-    if (!mappedUser) {
-      throw new Error("Token ne sadrži validne podatke o korisniku.");
-    }
+      const result = await googleLoginApi(idToken, createAccountIfMissing);
 
-    saveStoredAuth(result.token);
-    setAuthToken(result.token);
-    setToken(result.token);
-
-    const profile = await getProfileApi();
-    setUser(profile);
-  }, []);
+      await applyAuthToken(result.token);
+    },
+    [applyAuthToken],
+  );
 
   const register = useCallback(async (data: RegisterRequestDto) => {
     await registerApi(data);
@@ -135,6 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       isAuthenticated: !!token && !!user,
       login,
+      loginWithGoogle,
       register,
       refreshProfile,
       setUserProfile,
@@ -146,6 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       token,
       login,
+      loginWithGoogle,
       register,
       refreshProfile,
       setUserProfile,

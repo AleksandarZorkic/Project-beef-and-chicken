@@ -3,10 +3,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getApiErrorMessage } from "../utils/apiErrors";
 import { validateLogin } from "../auth/auth.validation";
+import GoogleAuthButton from "../components/auth/GoogleAuthButton";
 import "../styles/AuthPage.scss";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -52,6 +53,25 @@ export default function LoginPage() {
     }
   }
 
+  async function handleGoogleSuccess(idToken: string) {
+    try {
+      setLoading(true);
+      setGeneralError(null);
+
+      await loginWithGoogle(idToken, false);
+
+      navigate(redirectTo, { replace: true });
+    } catch (error: any) {
+      setGeneralError(getApiErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleGoogleError() {
+    setGeneralError("Google prijava nije uspela. Pokušajte ponovo.");
+  }
+
   return (
     <main className="auth-page">
       <div className="auth-page__overlay" aria-hidden="true" />
@@ -84,6 +104,18 @@ export default function LoginPage() {
             Prijavi se na svoj nalog i nastavi sa poručivanjem omiljenih jela.
           </p>
         </header>
+
+        <div className="auth-social-login">
+          <GoogleAuthButton
+            disabled={loading}
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+          />
+
+          <div className="auth-social-login__separator">
+            <span>ili se prijavi korisničkim imenom</span>
+          </div>
+        </div>
 
         <form className="auth-form" onSubmit={onSubmit} noValidate>
           <div className="auth-form__field">
@@ -184,6 +216,12 @@ export default function LoginPage() {
                 {errors.password}
               </p>
             )}
+
+            <div className="auth-form__helper-row">
+              <Link to="/forgot-password" className="auth-form__helper-link">
+                Zaboravili ste lozinku?
+              </Link>
+            </div>
           </div>
 
           {generalError && (

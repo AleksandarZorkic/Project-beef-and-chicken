@@ -7,5 +7,7 @@
 
         public const string DeliveryRushFinish =
             "DeliveryRushFinish";
+
+        public const string FeedbackCreate = "feedback-create";
     }
 }

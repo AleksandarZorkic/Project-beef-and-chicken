@@ -1,6 +1,10 @@
 import api from "./https";
 
-export type DishOptionType = "SideDish" | "Spice" | "SweetAddition";
+export type DishOptionType =
+  | "SideDish"
+  | "Spice"
+  | "SweetAddition"
+  | "SavoryPancakeAddition";
 
 export interface DishOptionDto {
   id: number;

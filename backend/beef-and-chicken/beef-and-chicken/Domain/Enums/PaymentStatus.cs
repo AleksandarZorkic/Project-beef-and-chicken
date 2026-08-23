@@ -4,6 +4,7 @@
     {
         Pending,
         Paid,
+        Failed,
         Cancelled
     }
 }

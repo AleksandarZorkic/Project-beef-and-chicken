@@ -60,3 +60,5 @@ pnpm-debug.log*
 
 # Runtime user uploads
 **/wwwroot/uploads/profile-pictures/
+
+.env.local

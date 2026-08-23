@@ -19,5 +19,6 @@ namespace beef_and_chicken.Domain.Entities
         public ICollection<EmployeeWorkTime> EmployeeWorkTimes { get; set; } = new List<EmployeeWorkTime>();
         public ICollection<Address> Addresses { get; set; } = new List<Address>();
         public ICollection<DeliveryRushRun> DeliveryRushRuns { get; set; } = new List<DeliveryRushRun>();
+        public ICollection<FeedbackMessage> FeedbackMessages { get; set; } = new List<FeedbackMessage>();
     }
 }

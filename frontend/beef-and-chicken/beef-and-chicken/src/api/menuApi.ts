@@ -18,6 +18,7 @@ export type DishMenuDto = {
   allowsSideDishes: boolean;
   allowsSpices: boolean;
   allowsSweetAdditions: boolean;
+  allowsSavoryPancakeAdditions: boolean;
   allergens: DishAllergenDto[];
 };
 
@@ -30,8 +31,13 @@ export interface DishAllergenDto {
 export interface CategoryMenuDto {
   id: number;
   name: string;
-  description?: string;
+  description?: string | null;
   sortOrder: number;
+  allowsSideDishes: boolean;
+  allowsSpices: boolean;
+  allowsSweetAdditions: boolean;
+  allowsSavoryPancakeAdditions: boolean;
+  dishes: DishMenuDto[];
 }
 
 export interface UploadDishImageResponseDto {

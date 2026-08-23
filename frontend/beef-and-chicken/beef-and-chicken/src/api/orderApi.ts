@@ -11,11 +11,15 @@ export type OrderStatus =
 
 export type FulfillmentType = "Delivery" | "Pickup";
 
-export type PaymentMethod = "Cash" | "CardOnDelivery";
+export type PaymentMethod = "Cash" | "CardOnDelivery" | "OnlineCard";
 
-export type PaymentStatus = "Pending" | "Paid" | "Cancelled";
+export type PaymentStatus = "Pending" | "Paid" | "Failed" | "Cancelled";
 
-export type OrderOptionType = "SideDish" | "Spice" | "SweetAddition";
+export type OrderOptionType =
+  | "SideDish"
+  | "Spice"
+  | "SweetAddition"
+  | "SavoryPancakeAddition";
 
 export interface OrderAddressSnapshotDto {
   street: string;

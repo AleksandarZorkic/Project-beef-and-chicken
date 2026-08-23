@@ -4,6 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 import { getApiErrorMessage } from "../utils/apiErrors";
 import { getApiFieldErrors } from "../utils/apiValidationErrors";
 import { validateRegister, getPasswordRules } from "../auth/auth.validation";
+import GoogleAuthButton from "../components/auth/GoogleAuthButton";
 import "../styles/AuthPage.scss";
 
 type RegisterField =
@@ -16,7 +17,7 @@ type RegisterField =
   | "confirmPassword";
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -107,6 +108,25 @@ export default function RegisterPage() {
     }
   }
 
+  async function handleGoogleSuccess(idToken: string) {
+    try {
+      setLoading(true);
+      setGeneralError(null);
+
+      await loginWithGoogle(idToken, true);
+
+      navigate("/menu", { replace: true });
+    } catch (error: any) {
+      setGeneralError(getApiErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleGoogleError() {
+    setGeneralError("Google registracija nije uspela. Pokušajte ponovo.");
+  }
+
   return (
     <main className="auth-page auth-page--register">
       <div className="auth-page__overlay" aria-hidden="true" />
@@ -143,6 +163,18 @@ export default function RegisterPage() {
             nepotrebnog čekanja.
           </p>
         </header>
+
+        <div className="auth-social-login">
+          <GoogleAuthButton
+            disabled={loading}
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+          />
+
+          <div className="auth-social-login__separator">
+            <span>ili popuni podatke ručno</span>
+          </div>
+        </div>
 
         <form
           className="auth-form auth-form--register"

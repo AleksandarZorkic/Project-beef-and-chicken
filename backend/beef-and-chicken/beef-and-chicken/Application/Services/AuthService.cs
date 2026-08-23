@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using Google.Apis.Auth;
 
 namespace beef_and_chicken.Application.Services
 {
@@ -230,7 +231,14 @@ namespace beef_and_chicken.Application.Services
             if (string.IsNullOrWhiteSpace(data.NewPassword))
                 throw new BadRequestException("Nova lozinka je obavezna.");
 
-            var email = data.Email.Trim();
+            if (string.IsNullOrWhiteSpace(data.ConfirmPassword))
+                throw new BadRequestException("Potvrda lozinke je obavezna.");
+
+            if (data.NewPassword != data.ConfirmPassword)
+                throw new BadRequestException("Nova lozinka i potvrda lozinke se ne poklapaju.");
+            
+
+                        var email = data.Email.Trim();
 
             var user = await _userManager.FindByEmailAsync(email);
 
@@ -421,6 +429,181 @@ namespace beef_and_chicken.Application.Services
             return await BuildUserProfileDtoAsync(user);
         }
 
+        public async Task<string> GoogleLoginAsync(
+    GoogleLoginDto data,
+    CancellationToken ct = default)
+        {
+            if (data == null)
+                throw new BadRequestException("Google login podaci su obavezni.");
+
+            if (string.IsNullOrWhiteSpace(data.IdToken))
+                throw new BadRequestException("Google token je obavezan.");
+
+            var googleClientId = _configuration["Authentication:Google:ClientId"];
+
+            if (string.IsNullOrWhiteSpace(googleClientId))
+                throw new InvalidOperationException("Google ClientId nije podešen.");
+
+            GoogleJsonWebSignature.Payload payload;
+
+            try
+            {
+                payload = await GoogleJsonWebSignature.ValidateAsync(
+                    data.IdToken,
+                    new GoogleJsonWebSignature.ValidationSettings
+                    {
+                        Audience = new[] { googleClientId }
+                    }
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Google token validation failed.");
+
+                throw new BadRequestException("Google prijava nije uspela.");
+            }
+
+            if (string.IsNullOrWhiteSpace(payload.Email))
+                throw new BadRequestException("Google nalog nema email adresu.");
+
+            if (!payload.EmailVerified)
+                throw new BadRequestException("Google email adresa nije verifikovana.");
+
+            var user = await _userManager.FindByLoginAsync(
+                "Google",
+                payload.Subject
+            );
+
+            if (user != null)
+            {
+                if (await _userManager.IsLockedOutAsync(user))
+                    throw new ForbiddenException("Nalog je blokiran. Kontaktirajte administratora.");
+
+                await EnsureCustomerRoleIfUserHasNoRolesAsync(user);
+
+                _logger.LogInformation(
+                    "User logged in with Google. UserId={UserId}, Email={Email}",
+                    user.Id,
+                    user.Email
+                );
+
+                return await GenerateJwtAsync(user);
+            }
+
+            user = await _userManager.FindByEmailAsync(payload.Email);
+
+            if (user == null && !data.CreateAccountIfMissing)
+            {
+                _logger.LogInformation(
+                    "Google login attempted for non-existing account. Email={Email}",
+                    payload.Email
+                );
+
+                throw new BadRequestException(
+                    "Nalog sa ovom Google adresom ne postoji. Registrujte se preko Google-a."
+                );
+            }
+
+            if (user == null)
+            {
+                user = new User
+                {
+                    Email = payload.Email,
+                    EmailConfirmed = true,
+                    UserName = await GenerateUniqueUserNameAsync(payload.Email),
+                    FirstName = NormalizeGoogleName(payload.GivenName, "Google"),
+                    LastName = NormalizeGoogleName(payload.FamilyName, "User"),
+                    LockoutEnabled = true
+                };
+
+                var createResult = await _userManager.CreateAsync(user);
+
+                if (!createResult.Succeeded)
+                {
+                    var errors = createResult.Errors.Select(error => error.Code switch
+                    {
+                        "DuplicateUserName" => "Korisničko ime je već zauzeto.",
+                        "DuplicateEmail" => "Email adresa je već zauzeta.",
+                        "InvalidUserName" => "Korisničko ime nije ispravno.",
+                        "InvalidEmail" => "Email adresa nije ispravna.",
+                        _ => "Google registracija nije uspela."
+                    });
+
+                    _logger.LogWarning(
+                        "Google user creation failed. Email={Email}, ErrorCodes={ErrorCodes}",
+                        payload.Email,
+                        string.Join(", ", createResult.Errors.Select(e => e.Code))
+                    );
+
+                    throw new BadRequestException(string.Join(", ", errors.Distinct()));
+                }
+
+                var roleResult = await _userManager.AddToRoleAsync(user, AppRoles.Customer);
+
+                if (!roleResult.Succeeded)
+                {
+                    _logger.LogError(
+                        "Failed to assign customer role to Google user. UserId={UserId}, Email={Email}, ErrorCodes={ErrorCodes}",
+                        user.Id,
+                        user.Email,
+                        string.Join(", ", roleResult.Errors.Select(e => e.Code))
+                    );
+
+                    await _userManager.DeleteAsync(user);
+
+                    throw new InvalidOperationException("Korisnik je kreiran, ali rola nije dodeljena.");
+                }
+
+                _logger.LogInformation(
+                    "Google user registered. UserId={UserId}, Email={Email}",
+                    user.Id,
+                    user.Email
+                );
+            }
+            else
+            {
+                if (await _userManager.IsLockedOutAsync(user))
+                    throw new ForbiddenException("Nalog je blokiran. Kontaktirajte administratora.");
+
+                await EnsureCustomerRoleIfUserHasNoRolesAsync(user);
+            }
+
+            var loginInfo = new UserLoginInfo(
+                "Google",
+                payload.Subject,
+                "Google"
+            );
+
+            var addLoginResult = await _userManager.AddLoginAsync(user, loginInfo);
+
+            if (!addLoginResult.Succeeded)
+            {
+                var alreadyLinked = addLoginResult.Errors.Any(error =>
+                    error.Code == "LoginAlreadyAssociated"
+                );
+
+                if (!alreadyLinked)
+                {
+                    _logger.LogWarning(
+                        "Failed to link Google login. UserId={UserId}, Email={Email}, ErrorCodes={ErrorCodes}",
+                        user.Id,
+                        user.Email,
+                        string.Join(", ", addLoginResult.Errors.Select(e => e.Code))
+                    );
+
+                    throw new BadRequestException("Google nalog nije mogao da se poveže sa korisnikom.");
+                }
+            }
+
+            _logger.LogInformation(
+                "User logged in with Google. UserId={UserId}, Email={Email}",
+                user.Id,
+                user.Email
+            );
+
+            return await GenerateJwtAsync(user);
+        }
+
         private async Task<string> GenerateJwtAsync(User user)
         {
             var roles = await _userManager.GetRolesAsync(user);
@@ -561,6 +744,70 @@ namespace beef_and_chicken.Application.Services
                 ProfilePicture = user.ProfilePicture,
                 Roles = roles.ToList()
             };
+        }
+
+        private async Task<string> GenerateUniqueUserNameAsync(string email)
+        {
+            var baseUserName = email.Split('@')[0]
+                .Trim()
+                .ToLowerInvariant();
+
+            var cleaned = new string(
+                baseUserName
+                    .Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '.')
+                    .ToArray()
+            );
+
+            if (string.IsNullOrWhiteSpace(cleaned))
+                cleaned = "google_user";
+
+            var userName = cleaned;
+            var counter = 1;
+
+            while (await _userManager.FindByNameAsync(userName) != null)
+            {
+                userName = $"{cleaned}{counter}";
+                counter++;
+            }
+
+            return userName;
+        }
+
+        private static string NormalizeGoogleName(string? value, string fallback)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return fallback;
+
+            var trimmed = value.Trim();
+
+            if (trimmed.Length > 50)
+                return trimmed[..50];
+
+            return trimmed;
+        }
+
+        private async Task EnsureCustomerRoleIfUserHasNoRolesAsync(User user)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+
+            if (roles.Count > 0)
+            {
+                return;
+            }
+
+            var result = await _userManager.AddToRoleAsync(user, AppRoles.Customer);
+
+            if (!result.Succeeded)
+            {
+                _logger.LogError(
+                    "Failed to assign fallback customer role. UserId={UserId}, Email={Email}, ErrorCodes={ErrorCodes}",
+                    user.Id,
+                    user.Email,
+                    string.Join(", ", result.Errors.Select(e => e.Code))
+                );
+
+                throw new InvalidOperationException("Korisnik nema dodeljenu rolu.");
+            }
         }
     }
 }

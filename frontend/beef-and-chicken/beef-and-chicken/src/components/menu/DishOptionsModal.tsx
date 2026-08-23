@@ -44,7 +44,18 @@ function buildCartSelectedOptions(
     .filter((option) => option.type === "SweetAddition")
     .sort(sortOptions);
 
+  const savoryPancakeAdditions = selectedOptions
+    .filter((option) => option.type === "SavoryPancakeAddition")
+    .sort(sortOptions);
+
   const pricedSweetAdditions = sweetAdditions.map((option) => ({
+    optionId: option.id,
+    name: option.name,
+    type: option.type,
+    unitPrice: option.price,
+  }));
+
+  const pricedSavoryPancakeAdditions = savoryPancakeAdditions.map((option) => ({
     optionId: option.id,
     name: option.name,
     type: option.type,
@@ -77,6 +88,7 @@ function buildCartSelectedOptions(
     ...pricedAlwaysPaidSideDishes,
     ...pricedSpices,
     ...pricedSweetAdditions,
+    ...pricedSavoryPancakeAdditions,
   ];
 }
 
@@ -118,9 +130,24 @@ export default function DishOptionsModal({
       .sort(sortOptions);
   }, [dish.allowsSweetAdditions, options]);
 
+  const savoryPancakeAdditions = useMemo(() => {
+    if (!dish.allowsSavoryPancakeAdditions) {
+      return [];
+    }
+
+    return options
+      .filter((option) => option.type === "SavoryPancakeAddition")
+      .sort(sortOptions);
+  }, [dish.allowsSavoryPancakeAdditions, options]);
+
   const allowedOptions = useMemo(() => {
-    return [...sideDishes, ...spices, ...sweetAdditions];
-  }, [sideDishes, spices, sweetAdditions]);
+    return [
+      ...sideDishes,
+      ...spices,
+      ...sweetAdditions,
+      ...savoryPancakeAdditions,
+    ];
+  }, [sideDishes, spices, sweetAdditions, savoryPancakeAdditions]);
 
   const selectedOptions = useMemo(() => {
     return allowedOptions.filter((option) =>
@@ -224,7 +251,8 @@ export default function DishOptionsModal({
 
         {(dish.allowsSideDishes ||
           dish.allowsSpices ||
-          dish.allowsSweetAdditions) && (
+          dish.allowsSweetAdditions ||
+          dish.allowsSavoryPancakeAdditions) && (
           <aside className="dish-options-modal-rules">
             <strong>Pravila za dodatke</strong>
 
@@ -243,6 +271,10 @@ export default function DishOptionsModal({
 
             {dish.allowsSweetAdditions && (
               <p>Slatki dodaci se dodatno naplaćuju.</p>
+            )}
+
+            {dish.allowsSavoryPancakeAdditions && (
+              <p>Slani dodaci za palačinke se dodatno naplaćuju.</p>
             )}
           </aside>
         )}
@@ -384,6 +416,50 @@ export default function DishOptionsModal({
               )}
             </section>
           )}
+
+          {dish.allowsSavoryPancakeAdditions && (
+            <section className="dish-options-modal-section">
+              <header className="dish-options-modal-section__header">
+                <h4>Slani dodaci za palačinke</h4>
+                <span>Dodatno se naplaćuju</span>
+              </header>
+
+              {savoryPancakeAdditions.length === 0 ? (
+                <p className="dish-options-modal-section__empty">
+                  Nema dostupnih slanih dodataka za palačinke.
+                </p>
+              ) : (
+                <div className="dish-options-modal-options">
+                  {savoryPancakeAdditions.map((option) => {
+                    const checked = selectedOptionIds.includes(option.id);
+
+                    return (
+                      <label
+                        key={option.id}
+                        className={getOptionCardClassName(checked)}
+                      >
+                        <span className="dish-options-modal-option__main">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleOption(option.id)}
+                          />
+
+                          <span className="dish-options-modal-option__name">
+                            {option.name}
+                          </span>
+                        </span>
+
+                        <span className="dish-options-modal-option__price">
+                          +{formatPrice(option.price)}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          )}
         </div>
 
         <section className="dish-options-modal-summary">
@@ -404,6 +480,13 @@ export default function DishOptionsModal({
           {dish.allowsSweetAdditions && (
             <div className="dish-options-modal-summary__row">
               <span>Slatki dodaci</span>
+              <strong>Dodatno se naplaćuju</strong>
+            </div>
+          )}
+
+          {dish.allowsSavoryPancakeAdditions && (
+            <div className="dish-options-modal-summary__row">
+              <span>Slani dodaci za palačinke</span>
               <strong>Dodatno se naplaćuju</strong>
             </div>
           )}

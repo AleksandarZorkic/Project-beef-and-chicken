@@ -3,6 +3,7 @@
     public enum PaymentMethod
     {
         Cash,
-        CardOnDelivery
+        CardOnDelivery,
+        OnlineCard
     }
 }

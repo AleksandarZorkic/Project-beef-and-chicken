@@ -41,5 +41,10 @@ namespace beef_and_chicken.Application.Interfaces.Services
             IFormFile image,
             CancellationToken ct = default
         );
+
+        Task<string> GoogleLoginAsync(
+            GoogleLoginDto data,
+            CancellationToken ct = default
+        );
     }
 }

@@ -123,6 +123,17 @@ namespace beef_and_chicken.Application.Services
 
             var restaurantSettings = await _restaurantSettingsService.GetAsync(ct);
 
+            if (orderDto.PaymentMethod.Value == PaymentMethod.OnlineCard)
+            {
+                if (!restaurantSettings.IsOnlinePaymentEnabled ||
+                    restaurantSettings.PaymentProvider == PaymentProviderType.Disabled)
+                {
+                    throw new BadRequestException(
+                        "Online plaćanje trenutno nije dostupno."
+                    );
+                }
+            }
+
             if (!restaurantSettings.RestaurantStatus.IsOpen)
             {
                 var message = restaurantSettings.RestaurantStatus.NextOpeningText == null
@@ -387,6 +398,12 @@ namespace beef_and_chicken.Application.Services
                 .ThenBy(x => x.Name)
                 .ToList();
 
+            var savoryPancakeAdditions = selectedOptions
+                .Where(x => x.Type == DishOptionType.SavoryPancakeAddition)
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.Name)
+                .ToList();
+
             for (var i = 0; i < regularSideDishes.Count; i++)
             {
                 var option = regularSideDishes[i];
@@ -437,6 +454,17 @@ namespace beef_and_chicken.Application.Services
                 });
             }
 
+            foreach (var option in savoryPancakeAdditions)
+            {
+                result.Add(new OrderItemOption
+                {
+                    DishOptionId = option.Id,
+                    OptionName = option.Name,
+                    OptionType = option.Type,
+                    UnitPrice = option.Price
+                });
+            }
+
             optionsTotal = result.Sum(x => x.UnitPrice);
 
             return result;
@@ -446,13 +474,25 @@ namespace beef_and_chicken.Application.Services
             int orderId,
             int changedByUserId,
             CancellationToken ct = default)
-            => UpdateOrderStatus(orderId, OrderStatus.Prihvacena, changedByUserId, ct);
+            => UpdateOrderStatus(
+                orderId,
+                OrderStatus.Prihvacena,
+                changedByUserId,
+                "OrderAccepted",
+                ct
+            );
 
         public Task RejectOrderAsync(
             int orderId,
             int changedByUserId,
             CancellationToken ct = default)
-            => UpdateOrderStatus(orderId, OrderStatus.Odbijena, changedByUserId, ct);
+            => UpdateOrderStatus(
+                orderId,
+                OrderStatus.Odbijena,
+                changedByUserId,
+                "OrderRejected",
+                ct
+            );
 
         public async Task<OrderDetailsDto> CancelCustomerOrderAsync(
             int userId,
@@ -506,6 +546,7 @@ namespace beef_and_chicken.Application.Services
             int orderId,
             OrderStatus newStatus,
             int changedByUserId,
+            string eventType,
             CancellationToken ct = default)
         {
             var order = await _orderRepo.GetOrderByIdForUpdate(orderId, ct);
@@ -524,7 +565,7 @@ namespace beef_and_chicken.Application.Services
 
             await _orderNotificationService.NotifyOrderChangedAsync(
                 order,
-                "OrderUpdated",
+                eventType,
                 ct
             );
 
@@ -898,6 +939,7 @@ namespace beef_and_chicken.Application.Services
             var hasSideDishes = selectedOptions.Any(x => x.Type == DishOptionType.SideDish);
             var hasSpices = selectedOptions.Any(x => x.Type == DishOptionType.Spice);
             var hasSweetAdditions = selectedOptions.Any(x => x.Type == DishOptionType.SweetAddition);
+            var hasSavoryPancakeAdditions = selectedOptions.Any(x => x.Type == DishOptionType.SavoryPancakeAddition);
 
             if (hasSideDishes && !dish.Category.AllowsSideDishes)
             {
@@ -917,6 +959,13 @@ namespace beef_and_chicken.Application.Services
             {
                 throw new BadRequestException(
                     $"Jelo \"{dish.Name}\" ne dozvoljava izbor slatkih dodataka."
+                );
+            }
+
+            if (hasSavoryPancakeAdditions && !dish.Category.AllowsSavoryPancakeAdditions)
+            {
+                throw new BadRequestException(
+                    $"Jelo \"{dish.Name}\" ne dozvoljava izbor slanih dodataka za palačinke."
                 );
             }
         }

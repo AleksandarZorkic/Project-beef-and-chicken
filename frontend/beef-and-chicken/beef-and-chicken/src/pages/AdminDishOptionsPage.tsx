@@ -54,6 +54,9 @@ function formatType(type: DishOptionType) {
     case "SweetAddition":
       return "Slatki dodatak";
 
+    case "SavoryPancakeAddition":
+      return "Slani dodatak za palačinke";
+
     default:
       return type;
   }
@@ -76,6 +79,16 @@ function normalizeForm(value: DishOptionFormValue): DishOptionFormValue {
     return {
       name,
       type: "SweetAddition",
+      price: value.price,
+      isAlwaysPaid: true,
+      sortOrder: value.sortOrder,
+    };
+  }
+
+  if (value.type === "SavoryPancakeAddition") {
+    return {
+      name,
+      type: "SavoryPancakeAddition",
       price: value.price,
       isAlwaysPaid: true,
       sortOrder: value.sortOrder,
@@ -133,6 +146,10 @@ function validateForm(value: DishOptionFormValue) {
 
   if (value.type === "SweetAddition" && value.price <= 0) {
     return "Slatki dodatak mora imati cenu veću od 0.";
+  }
+
+  if (value.type === "SavoryPancakeAddition" && value.price <= 0) {
+    return "Slani dodatak za palačinke mora imati cenu veću od 0.";
   }
 
   return null;
@@ -244,6 +261,10 @@ export default function AdminDishOptionsPage() {
       (option) => option.type === "SweetAddition",
     ).length;
 
+    const savoryPancakeAdditions = options.filter(
+      (option) => option.type === "SavoryPancakeAddition",
+    ).length;
+
     return {
       all: options.length,
       active,
@@ -251,6 +272,7 @@ export default function AdminDishOptionsPage() {
       sideDishes,
       spices,
       sweetAdditions,
+      savoryPancakeAdditions,
     };
   }, [options]);
 
@@ -308,7 +330,7 @@ export default function AdminDishOptionsPage() {
       isAlwaysPaid:
         nextType === "Spice"
           ? false
-          : nextType === "SweetAddition"
+          : nextType === "SweetAddition" || nextType === "SavoryPancakeAddition"
             ? true
             : current.isAlwaysPaid,
     }));
@@ -580,6 +602,10 @@ export default function AdminDishOptionsPage() {
                 <option value="Spice">Začin</option>
 
                 <option value="SweetAddition">Slatki dodatak</option>
+
+                <option value="SavoryPancakeAddition">
+                  Slani dodatak za palačinke
+                </option>
               </select>
             </div>
 
@@ -595,6 +621,9 @@ export default function AdminDishOptionsPage() {
 
                 {formValue.type === "SweetAddition" &&
                   "Slatki dodatak se koristi za palačinke i uvek se dodatno naplaćuje."}
+
+                {formValue.type === "SavoryPancakeAddition" &&
+                  "Slani dodatak se koristi za slane palačinke i uvek se dodatno naplaćuje."}
               </p>
             </div>
 
@@ -635,7 +664,8 @@ export default function AdminDishOptionsPage() {
             )}
 
             {((formValue.type === "SideDish" && formValue.isAlwaysPaid) ||
-              formValue.type === "SweetAddition") && (
+              formValue.type === "SweetAddition" ||
+              formValue.type === "SavoryPancakeAddition") && (
               <div className="form-field">
                 <label className="form-label" htmlFor="dish-option-price">
                   Cena
@@ -665,7 +695,9 @@ export default function AdminDishOptionsPage() {
                 <p className="form-help">
                   {formValue.type === "SweetAddition"
                     ? "Slatki dodatak mora imati cenu veću od nule."
-                    : "Cena mora biti veća od nule."}
+                    : formValue.type === "SavoryPancakeAddition"
+                      ? "Slani dodatak za palačinke mora imati cenu veću od nule."
+                      : "Cena mora biti veća od nule."}
                 </p>
               </div>
             )}
@@ -870,6 +902,22 @@ export default function AdminDishOptionsPage() {
               >
                 Slatki dodaci
               </button>
+
+              <button
+                type="button"
+                className={[
+                  "admin-dish-option-filter-tabs__button",
+                  typeFilter === "SavoryPancakeAddition"
+                    ? "admin-dish-option-filter-tabs__button--active"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-pressed={typeFilter === "SavoryPancakeAddition"}
+                onClick={() => setTypeFilter("SavoryPancakeAddition")}
+              >
+                Slani dodaci
+              </button>
             </div>
 
             <label className="admin-dish-option-inactive-filter">
@@ -998,6 +1046,11 @@ export default function AdminDishOptionsPage() {
                           <strong>Uvek besplatno</strong>
                         </>
                       ) : option.type === "SweetAddition" ? (
+                        <>
+                          <span>Uvek se naplaćuje</span>
+                          <strong>{formatPrice(option.price)}</strong>
+                        </>
+                      ) : option.type === "SavoryPancakeAddition" ? (
                         <>
                           <span>Uvek se naplaćuje</span>
                           <strong>{formatPrice(option.price)}</strong>

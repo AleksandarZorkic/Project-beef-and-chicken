@@ -11,6 +11,7 @@ import { AppRoles } from "../auth/roles";
 import { useAuth } from "../auth/AuthContext";
 import { useOrderRealtime } from "../realtime/useOrderRealtime";
 import OrderCard from "../components/orders/OrderCard";
+import { useAppDialog } from "../components/dialogs/AppDialogContext";
 import "../styles/AdminOrdersPage.scss";
 
 type AdminOrderTab =
@@ -103,6 +104,8 @@ export default function AdminOrdersPage() {
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const { confirm, alert } = useAppDialog();
+
   const loadOrders = useCallback(async (showLoading = true) => {
     try {
       setError(null);
@@ -149,8 +152,25 @@ export default function AdminOrdersPage() {
     return () => window.clearTimeout(timer);
   }, [successMessage]);
 
+  const statusPriority: Record<OrderDetailsDto["status"], number> = {
+    Na_Cekanju: 1,
+    Prihvacena: 2,
+    Spremna_za_preuzimanje: 3,
+    Dostava_u_toku: 4,
+    Dostavljena: 5,
+    Odbijena: 6,
+    Otkazana: 7,
+  };
+
   const sortedOrders = useMemo(() => {
     return [...orders].sort((first, second) => {
+      const firstPriority = statusPriority[first.status] ?? 99;
+      const secondPriority = statusPriority[second.status] ?? 99;
+
+      if (firstPriority !== secondPriority) {
+        return firstPriority - secondPriority;
+      }
+
       const firstTime = first.createdAt
         ? new Date(first.createdAt).getTime()
         : 0;
@@ -191,62 +211,21 @@ export default function AdminOrdersPage() {
     return sortedOrders.filter((order) => order.status === activeTab);
   }, [activeTab, sortedOrders]);
 
-  async function handleAccept(order: OrderDetailsDto) {
-    const confirmed = window.confirm(
-      `Da li želiš da prihvatiš porudžbinu #${getOrderLabel(order)}?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      setError(null);
-      setSuccessMessage(null);
-      setActionLoadingId(order.id);
-
-      await acceptOrder(order.id);
-      await loadOrders(false);
-
-      setSuccessMessage(`Porudžbina #${getOrderLabel(order)} je prihvaćena.`);
-    } catch (error: any) {
-      setError(getErrorMessage(error, "Greška pri prihvatanju porudžbine."));
-    } finally {
-      setActionLoadingId(null);
-    }
-  }
-
-  async function handleReject(order: OrderDetailsDto) {
-    const confirmed = window.confirm(
-      `Da li želiš da odbiješ porudžbinu #${getOrderLabel(order)}?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      setError(null);
-      setSuccessMessage(null);
-      setActionLoadingId(order.id);
-
-      await rejectOrder(order.id);
-      await loadOrders(false);
-
-      setSuccessMessage(`Porudžbina #${getOrderLabel(order)} je odbijena.`);
-    } catch (error: any) {
-      setError(getErrorMessage(error, "Greška pri odbijanju porudžbine."));
-    } finally {
-      setActionLoadingId(null);
-    }
-  }
-
   async function handleReadyForPickup(order: OrderDetailsDto) {
-    const confirmed = window.confirm(
-      `Da li je porudžbina #${getOrderLabel(order)} spremna za preuzimanje?`,
-    );
+    const ok = await confirm({
+      title: "Porudžbina je spremna",
+      message: (
+        <p>
+          Da li je porudžbina <strong>#{getOrderLabel(order)}</strong> spremna
+          za preuzimanje?
+        </p>
+      ),
+      confirmText: "Spremna je",
+      cancelText: "Odustani",
+      tone: "warning",
+    });
 
-    if (!confirmed) {
+    if (!ok) {
       return;
     }
 
@@ -262,23 +241,39 @@ export default function AdminOrdersPage() {
         `Porudžbina #${getOrderLabel(order)} je spremna za preuzimanje.`,
       );
     } catch (error: any) {
-      setError(
-        getErrorMessage(
-          error,
-          "Greška pri označavanju porudžbine kao spremne.",
-        ),
+      const message = getErrorMessage(
+        error,
+        "Greška pri označavanju porudžbine kao spremne.",
       );
+
+      setError(message);
+
+      await alert({
+        title: "Greška",
+        message: <p>{message}</p>,
+        confirmText: "Razumem",
+        tone: "danger",
+      });
     } finally {
       setActionLoadingId(null);
     }
   }
 
   async function handleCompletePickup(order: OrderDetailsDto) {
-    const confirmed = window.confirm(
-      `Da li je kupac preuzeo porudžbinu #${getOrderLabel(order)}?`,
-    );
+    const ok = await confirm({
+      title: "Preuzimanje porudžbine",
+      message: (
+        <p>
+          Da li je kupac preuzeo porudžbinu{" "}
+          <strong>#{getOrderLabel(order)}</strong>?
+        </p>
+      ),
+      confirmText: "Kupac je preuzeo",
+      cancelText: "Odustani",
+      tone: "success",
+    });
 
-    if (!confirmed) {
+    if (!ok) {
       return;
     }
 
@@ -294,12 +289,111 @@ export default function AdminOrdersPage() {
         `Porudžbina #${getOrderLabel(order)} je označena kao preuzeta.`,
       );
     } catch (error: any) {
-      setError(
-        getErrorMessage(
-          error,
-          "Greška pri označavanju porudžbine kao preuzete.",
-        ),
+      const message = getErrorMessage(
+        error,
+        "Greška pri označavanju porudžbine kao preuzete.",
       );
+
+      setError(message);
+
+      await alert({
+        title: "Greška",
+        message: <p>{message}</p>,
+        confirmText: "Razumem",
+        tone: "danger",
+      });
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleAccept(order: OrderDetailsDto) {
+    const ok = await confirm({
+      title: "Prihvatanje porudžbine",
+      message: (
+        <p>
+          Da li želiš da prihvatiš porudžbinu{" "}
+          <strong>#{getOrderLabel(order)}</strong>?
+        </p>
+      ),
+      confirmText: "Prihvati",
+      cancelText: "Odustani",
+      tone: "success",
+    });
+
+    if (!ok) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setSuccessMessage(null);
+      setActionLoadingId(order.id);
+
+      await acceptOrder(order.id);
+      await loadOrders(false);
+
+      setSuccessMessage(`Porudžbina #${getOrderLabel(order)} je prihvaćena.`);
+    } catch (error: any) {
+      const message = getErrorMessage(
+        error,
+        "Greška pri prihvatanju porudžbine.",
+      );
+
+      setError(message);
+
+      await alert({
+        title: "Greška",
+        message: <p>{message}</p>,
+        confirmText: "Razumem",
+        tone: "danger",
+      });
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleReject(order: OrderDetailsDto) {
+    const ok = await confirm({
+      title: "Odbijanje porudžbine",
+      message: (
+        <p>
+          Da li želiš da odbiješ porudžbinu{" "}
+          <strong>#{getOrderLabel(order)}</strong>?
+        </p>
+      ),
+      confirmText: "Odbij",
+      cancelText: "Odustani",
+      tone: "danger",
+    });
+
+    if (!ok) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setSuccessMessage(null);
+      setActionLoadingId(order.id);
+
+      await rejectOrder(order.id);
+      await loadOrders(false);
+
+      setSuccessMessage(`Porudžbina #${getOrderLabel(order)} je odbijena.`);
+    } catch (error: any) {
+      const message = getErrorMessage(
+        error,
+        "Greška pri odbijanju porudžbine.",
+      );
+
+      setError(message);
+
+      await alert({
+        title: "Greška",
+        message: <p>{message}</p>,
+        confirmText: "Razumem",
+        tone: "danger",
+      });
     } finally {
       setActionLoadingId(null);
     }
