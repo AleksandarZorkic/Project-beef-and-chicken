@@ -49,16 +49,27 @@ body {
 
   background:
     radial-gradient(
-      circle at 10% 0%,
-      rgba($color-primary, 0.1),
-      transparent 30rem
+      circle at 7% -5%,
+      rgba($color-primary, 0.13),
+      transparent 25rem
     ),
     radial-gradient(
-      circle at 95% 20%,
-      rgba($color-accent, 0.06),
-      transparent 28rem
+      circle at 92% 8%,
+      rgba($color-accent, 0.065),
+      transparent 23rem
     ),
-    linear-gradient(180deg, $color-bg 0%, $color-bg-soft 50%, $color-bg 100%);
+    radial-gradient(
+      circle at 50% 70%,
+      rgba($color-brand-green-light, 0.16),
+      transparent 38rem
+    ),
+    linear-gradient(
+      180deg,
+      #090d0a 0%,
+      $color-bg 24%,
+      $color-bg-soft 68%,
+      #080c09 100%
+    );
 
   overflow-x: hidden;
 }

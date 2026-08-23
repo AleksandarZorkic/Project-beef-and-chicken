@@ -8,11 +8,17 @@
 
   width: 100%;
 
-  background: rgba($color-bg-soft, 0.94);
+  background: linear-gradient(
+    180deg,
+    rgba(18, 25, 20, 0.96),
+    rgba(10, 15, 11, 0.94)
+  );
   border-bottom: 1px solid $color-border;
 
   backdrop-filter: blur(18px);
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.18);
+  box-shadow:
+    0 10px 36px rgba(0, 0, 0, 0.26),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.025);
 
   &__main {
     min-height: $header-height;
@@ -124,7 +130,12 @@
 
     &--active {
       color: $color-text;
-      background: rgba($color-primary, 0.13);
+
+      background: linear-gradient(
+        135deg,
+        rgba($color-primary, 0.16),
+        rgba($color-accent, 0.045)
+      );
 
       &::after {
         position: absolute;
@@ -136,7 +147,8 @@
 
         content: "";
 
-        background: $color-primary;
+        background: linear-gradient(90deg, $color-primary, $color-accent);
+
         border-radius: $radius-pill;
       }
     }

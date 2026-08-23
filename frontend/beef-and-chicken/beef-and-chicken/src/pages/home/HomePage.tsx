@@ -10,13 +10,13 @@ const benefits = [
   },
   {
     number: "02",
-    title: "Brzo i jednostavno",
-    text: "Izaberi jelo, priloge i adresu, a zatim potvrdi porudžbinu bez nepotrebnih koraka.",
+    title: "Složi obrok po svom",
+    text: "Izaberi priloge, dodatke i začine i napravi kombinaciju baš onako kako ti odgovara.",
   },
   {
     number: "03",
-    title: "Ukus koji se pamti",
-    text: "Sočno meso, hrskava piletina, bogati sosevi i kombinacije napravljene za ozbiljan apetit.",
+    title: "Brzo do tvojih vrata",
+    text: "Jednostavno poručivanje, jasni koraci i dostava bez nepotrebnog čekanja.",
   },
 ];
 
@@ -43,21 +43,20 @@ export default function HomePage() {
           <div className="home-hero__content">
             <span className="home-hero__eyebrow">
               <span className="home-hero__eyebrow-dot" />
-              PRAVO SA GRILA
+              PRAVO SA ROŠTILJA
             </span>
 
             <h1 className="home-hero__title">
-              <span className="home-hero__title-line">Veliki ukus.</span>
+              <span className="home-hero__title-line">Glad ne čeka.</span>
 
               <span className="home-hero__title-line home-hero__title-line--accent">
-                Bez čekanja.
+                Ni ti ne moraš.
               </span>
             </h1>
 
             <p className="home-hero__text">
-              Sočni burgeri, hrskava piletina i bogati grill obroci pripremljeni
-              za ozbiljan apetit. Izaberi svoje favorite i poruči za nekoliko
-              minuta.
+              Izaberi ono što ti se jede, složi obrok po svom ukusu i poruči ga
+              u samo nekoliko klikova. Mi ćemo se pobrinuti za ostalo.
             </p>
 
             <div className="home-hero__actions">
@@ -70,15 +69,10 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <Link to="/login" className="home-hero__login">
-              <span>Već imaš nalog?</span>
-              <strong>Prijavi se</strong>
-            </Link>
-
             <div className="home-hero__highlights">
               <span>Sveže pripremljeno</span>
               <span>Brzo poručivanje</span>
-              <span>Pun grill ukus</span>
+              <span>Brza dostava</span>
             </div>
           </div>
         </div>
@@ -86,19 +80,6 @@ export default function HomePage() {
 
       <section id="izdvajamo" className="home-menu-highlights">
         <div className="home-menu-highlights__inner">
-          <header className="home-section-heading">
-            <span className="home-section-heading__eyebrow">IZDVAJAMO</span>
-
-            <h2 className="home-section-heading__title">
-              Akcije, najtraženije i preporuke kuće
-            </h2>
-
-            <p className="home-section-heading__text">
-              Otkrij jela na akciji, favorite naših gostiju i posebne ukuse koje
-              preporučuje naša kuhinja.
-            </p>
-          </header>
-
           <HomeFeaturedDishes />
         </div>
       </section>
@@ -139,25 +120,16 @@ export default function HomePage() {
       <section id="poruci" className="home-cta">
         <div className="home-cta__inner">
           <div className="home-cta__content">
-            <span className="home-cta__eyebrow">VREME JE ZA GRILL</span>
-
-            <h2 className="home-cta__title">
-              Izaberi obrok koji ti se jede danas
-            </h2>
-
-            <p className="home-cta__text">
-              Otvori meni, izaberi omiljeno jelo i priloge, a zatim završi
-              porudžbinu u nekoliko koraka.
-            </p>
+            <div className="home-cta__content">
+              <h2 className="home-cta__title">
+                Izaberi svoj savršeni obrok u samo nekoliko klikova.
+              </h2>
+            </div>
           </div>
 
           <div className="home-cta__actions">
-            <Link to="/menu" className="btn btn--primary btn--lg">
-              Otvori meni
-            </Link>
-
-            <Link to="/register" className="btn btn--ghost btn--lg">
-              Napravi nalog
+            <Link to="/menu" className="btn btn--accent btn--lg">
+              Pogledaj meni
             </Link>
           </div>
         </div>

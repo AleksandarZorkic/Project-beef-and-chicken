@@ -2,146 +2,15 @@
 @use "../abstracts/mixins" as *;
 
 // ======================================================
-// Global form controls
-// ======================================================
-
-:where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
-  width: 100%;
-
-  color: $color-text;
-
-  font: inherit;
-  font-size: 0.82rem;
-
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid $color-border-strong;
-  border-radius: $radius-md;
-
-  outline: none;
-
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
-
-  transition:
-    color $transition-fast,
-    background-color $transition-fast,
-    border-color $transition-fast,
-    box-shadow $transition-fast;
-
-  &::placeholder {
-    color: rgba($color-text, 0.34);
-  }
-
-  &:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.28);
-    border-color: rgba($color-accent, 0.24);
-  }
-
-  &:focus {
-    background: rgba(0, 0, 0, 0.32);
-    border-color: $color-accent;
-
-    box-shadow:
-      0 0 0 3px rgba($color-accent, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.035);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-:where(input:not([type="checkbox"]):not([type="radio"]), select) {
-  min-height: 48px;
-  padding: 10px 14px;
-}
-
-textarea {
-  min-height: 120px;
-  padding: 13px 14px;
-
-  line-height: 1.6;
-
-  resize: vertical;
-}
-
-select {
-  padding-right: 44px;
-
-  appearance: none;
-  -webkit-appearance: none;
-
-  cursor: pointer;
-
-  background-image:
-    linear-gradient(45deg, transparent 50%, $color-accent 50%),
-    linear-gradient(135deg, $color-accent 50%, transparent 50%);
-
-  background-position:
-    calc(100% - 18px) calc(50% - 2px),
-    calc(100% - 13px) calc(50% - 2px);
-
-  background-size:
-    5px 5px,
-    5px 5px;
-
-  background-repeat: no-repeat;
-
-  option {
-    color: $color-text;
-    background: $color-bg-soft;
-  }
-}
-
-input[type="date"],
-input[type="datetime-local"],
-input[type="time"] {
-  color-scheme: dark;
-
-  cursor: pointer;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator,
-input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-input[type="time"]::-webkit-calendar-picker-indicator {
-  width: 18px;
-  height: 18px;
-
-  padding: 4px;
-
-  cursor: pointer;
-
-  opacity: 0.8;
-
-  filter: invert(80%) sepia(80%) saturate(900%) hue-rotate(350deg)
-    brightness(105%);
-
-  transition:
-    opacity $transition-fast,
-    transform $transition-fast;
-}
-
-input[type="date"]:hover::-webkit-calendar-picker-indicator,
-input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator,
-input[type="time"]:hover::-webkit-calendar-picker-indicator {
-  opacity: 1;
-  transform: scale(1.06);
-}
-
-// ======================================================
 // Global native form controls
 // ======================================================
 
 :where(
-  input:not([type="checkbox"])
-    :not([type="radio"])
-    :not([type="button"])
-    :not([type="submit"])
-    :not([type="reset"])
-    :not([type="file"])
-    :not([type="range"])
-    :not([type="color"])
-    :not([type="hidden"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not(
+      [type="submit"]
+    ):not([type="reset"]):not([type="file"]):not([type="range"]):not(
+      [type="color"]
+    ):not([type="hidden"]),
   select,
   textarea
 ) {
@@ -151,15 +20,24 @@ input[type="time"]:hover::-webkit-calendar-picker-indicator {
   caret-color: $color-accent;
 
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.92rem;
 
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid $color-border-strong;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.025),
+      rgba(255, 255, 255, 0.01)
+    ),
+    rgba(4, 8, 5, 0.42);
+
+  border: 1px solid $color-border;
   border-radius: $radius-md;
 
   outline: none;
 
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.025),
+    0 1px 0 rgba(0, 0, 0, 0.12);
 
   transition:
     color $transition-fast,
@@ -172,48 +50,25 @@ input[type="time"]:hover::-webkit-calendar-picker-indicator {
   }
 
   &:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.28);
-    border-color: rgba($color-accent, 0.24);
+    border-color: rgba($color-accent, 0.22);
   }
 
   &:focus {
-    background: rgba(0, 0, 0, 0.32);
-    border-color: $color-accent;
+    border-color: rgba($color-accent, 0.72);
 
     box-shadow:
-      0 0 0 3px rgba($color-accent, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.035);
+      0 0 0 4px rgba($color-accent, 0.09),
+      0 10px 24px rgba(0, 0, 0, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   &:disabled {
-    opacity: 0.5;
+    color: $color-text-muted;
+    background: rgba(255, 255, 255, 0.025);
+
     cursor: not-allowed;
+    opacity: 0.6;
   }
-}
-
-:where(
-  input:not([type="checkbox"])
-    :not([type="radio"])
-    :not([type="button"])
-    :not([type="submit"])
-    :not([type="reset"])
-    :not([type="file"])
-    :not([type="range"])
-    :not([type="color"])
-    :not([type="hidden"]),
-  select
-) {
-  min-height: 48px;
-  padding: 10px 14px;
-}
-
-textarea {
-  min-height: 120px;
-  padding: 13px 14px;
-
-  line-height: 1.6;
-
-  resize: vertical;
 }
 
 // ======================================================

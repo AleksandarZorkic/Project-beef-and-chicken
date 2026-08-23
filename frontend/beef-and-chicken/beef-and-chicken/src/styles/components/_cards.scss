@@ -2,16 +2,12 @@
 @use "../abstracts/mixins" as *;
 
 .card {
+  @include brand-surface;
+
   position: relative;
   overflow: hidden;
 
   padding: $space-5;
-
-  color: $color-text;
-  background: $color-surface;
-  border: 1px solid $color-border;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-md;
 
   transition:
     transform $transition-base,
@@ -19,15 +15,40 @@
     border-color $transition-base,
     box-shadow $transition-base;
 
+  &::before {
+    position: absolute;
+    top: 0;
+    right: 12%;
+    left: 12%;
+
+    height: 1px;
+
+    content: "";
+
+    pointer-events: none;
+
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.08),
+      transparent
+    );
+  }
+
   // Card with hover interaction
   &--interactive {
+    @include brand-hover;
+
     cursor: pointer;
 
     &:hover {
-      transform: translateY(-4px);
-      background: $color-surface-raised;
-      border-color: $color-border-strong;
-      box-shadow: $shadow-lg;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.045),
+          rgba(255, 255, 255, 0.012)
+        ),
+        $color-surface-raised;
     }
 
     &:active {

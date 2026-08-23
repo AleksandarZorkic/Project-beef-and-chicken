@@ -59,7 +59,7 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
               </span>
 
               <span className="home-header__brand-description">
-                Burgeri • piletina • grill
+                Burgeri • piletina • giros
               </span>
             </span>
           </Link>
@@ -68,16 +68,16 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
             className="home-header__nav"
             aria-label="Navigacija početne stranice"
           >
-            <a href="#akcija" className="home-header__nav-link">
-              Akcija
+            <a href="#akcije" className="home-header__nav-link">
+              Akcije
             </a>
 
-            <a href="#chef-pick" className="home-header__nav-link">
-              Naša preporuka
+            <a href="#preporuka-kuce" className="home-header__nav-link">
+              Preporuka kuće
             </a>
 
-            <a href="#najtrazenije" className="home-header__nav-link">
-              Najtraženije
+            <a href="#najprodavanije" className="home-header__nav-link">
+              Najprodavanije
             </a>
 
             <a href="#zasto-mi" className="home-header__nav-link">

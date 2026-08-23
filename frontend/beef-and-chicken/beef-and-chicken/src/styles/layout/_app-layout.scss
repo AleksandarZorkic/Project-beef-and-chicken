@@ -1,21 +1,47 @@
 @use "../abstracts/variables" as *;
 
 .app-layout {
+  position: relative;
+
   min-height: 100vh;
 
   color: $color-text;
-  background:
-    radial-gradient(
-      circle at 0% 0%,
-      rgba($color-primary, 0.08),
-      transparent 30rem
-    ),
-    radial-gradient(
-      circle at 100% 20%,
-      rgba($color-accent, 0.045),
-      transparent 28rem
-    ),
-    $color-bg;
+
+  background: transparent;
+
+  isolation: isolate;
+
+  &::before {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+
+    content: "";
+
+    pointer-events: none;
+
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.008) 1px, transparent 1px),
+      linear-gradient(rgba(255, 255, 255, 0.008) 1px, transparent 1px);
+
+    background-size: 56px 56px;
+
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(0, 0, 0, 0.38) 20%,
+      rgba(0, 0, 0, 0.16) 75%,
+      transparent
+    );
+
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(0, 0, 0, 0.38) 20%,
+      rgba(0, 0, 0, 0.16) 75%,
+      transparent
+    );
+  }
 }
 
 .app-layout__main {

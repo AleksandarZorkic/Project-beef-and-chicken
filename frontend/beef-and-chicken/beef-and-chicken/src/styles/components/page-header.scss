@@ -1,0 +1,66 @@
+@use "../abstracts/variables" as *;
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: $space-5;
+
+  margin-bottom: $space-6;
+
+  &__content {
+    max-width: 720px;
+  }
+
+  &__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+
+    margin-bottom: $space-2;
+
+    color: $color-accent;
+
+    font-size: 0.7rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    margin: 0;
+
+    font-size: clamp(2.3rem, 5vw, 4.4rem);
+    line-height: 0.95;
+    text-transform: uppercase;
+  }
+
+  &__description {
+    max-width: 640px;
+
+    margin-top: $space-3;
+
+    color: $color-text-soft;
+
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: $space-3;
+  }
+}
+
+@media (max-width: $breakpoint-tablet) {
+  .page-header {
+    align-items: stretch;
+    flex-direction: column;
+
+    &__actions {
+      width: 100%;
+    }
+  }
+}
