@@ -1,126 +1,351 @@
 @use "./abstracts/variables" as *;
 
 // ======================================================
-// Admin orders page
+// Page
 // ======================================================
 
 .admin-orders-page {
+  position: relative;
+
+  display: grid;
+  gap: $space-5;
+
   width: 100%;
-  padding-block: clamp(46px, 6vw, 82px);
+  padding-block: clamp(30px, 4vw, 56px);
 
   color: $color-text;
 
-  &__header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: $space-7;
+  &::before {
+    position: absolute;
+    top: -100px;
+    right: -170px;
+    z-index: -1;
 
-    margin-bottom: clamp(34px, 5vw, 54px);
+    width: 440px;
+    height: 440px;
+
+    content: "";
+    pointer-events: none;
+
+    background: rgba($color-primary, 0.05);
+
+    border-radius: 50%;
+
+    filter: blur(110px);
   }
 
-  &__heading {
+  &__messages {
+    display: grid;
+    gap: 10px;
+
+    &:empty {
+      display: none;
+    }
+  }
+}
+
+// ======================================================
+// Hero
+// ======================================================
+
+.admin-orders-hero {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(285px, 350px);
+
+  align-items: stretch;
+  gap: clamp(24px, 4vw, 48px);
+
+  padding: clamp(26px, 4vw, 44px);
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(90deg, rgba($color-primary, 0.035), transparent 45%),
+    radial-gradient(
+      circle at 90% 5%,
+      rgba($color-accent, 0.07),
+      transparent 23rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.043),
+      rgba(255, 255, 255, 0.012)
+    ),
+    $color-surface-deep;
+
+  border: 1px solid $color-border;
+
+  border-radius: $radius-xl;
+
+  box-shadow:
+    $shadow-surface,
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+  &__content {
+    align-self: center;
+
     max-width: 720px;
   }
 
   &__eyebrow {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
 
-    margin-bottom: $space-2;
+    margin-bottom: $space-3;
 
     color: $color-accent;
 
-    font-size: 0.72rem;
+    font-size: 0.66rem;
     font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.17em;
+
+    letter-spacing: 0.15em;
+
+    &::before {
+      width: 7px;
+      height: 7px;
+
+      content: "";
+
+      background: $color-primary;
+
+      border-radius: 50%;
+
+      box-shadow: 0 0 13px rgba($color-primary, 0.7);
+    }
   }
 
   &__title {
     margin: 0;
 
+    color: $color-text;
+
     font-family: $font-family-display;
-    font-size: clamp(3.4rem, 7vw, 5.8rem);
+
+    font-size: clamp(2.8rem, 5vw, 4.5rem);
+
     font-weight: $font-weight-black;
-    line-height: 0.9;
-    letter-spacing: 0.01em;
+
+    line-height: 0.92;
     text-transform: uppercase;
   }
 
   &__description {
-    max-width: 660px;
+    max-width: 650px;
 
     margin: $space-4 0 0;
 
     color: $color-text-soft;
 
-    font-size: 0.96rem;
+    font-size: 0.88rem;
     line-height: 1.7;
   }
 
-  &__header-actions {
+  &__meta {
     display: flex;
     align-items: center;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 9px;
+
+    margin-top: $space-5;
   }
 
-  &__realtime {
+  &__live,
+  &__total {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
 
-    min-height: 44px;
-    padding-inline: 13px;
+    min-height: 30px;
+    padding-inline: 10px;
 
-    color: #b8f3c9;
+    font-size: 0.59rem;
+    font-weight: $font-weight-semibold;
 
-    font-size: 0.67rem;
-    font-weight: $font-weight-bold;
-
-    background: rgba(46, 134, 70, 0.11);
-    border: 1px solid rgba(84, 210, 121, 0.17);
     border-radius: $radius-pill;
   }
 
-  &__realtime-dot {
+  &__live {
+    gap: 7px;
+
+    color: #b8f3c9;
+
+    background: rgba($color-success, 0.09);
+
+    border: 1px solid rgba($color-success, 0.17);
+  }
+
+  &__live-dot {
     position: relative;
 
     width: 7px;
     height: 7px;
 
-    background: #66d586;
+    background: $color-success;
     border-radius: 50%;
 
-    box-shadow: 0 0 0 4px rgba(102, 213, 134, 0.09);
+    box-shadow: 0 0 9px rgba($color-success, 0.5);
 
     &::after {
       position: absolute;
-      inset: -5px;
+      inset: -4px;
 
       content: "";
 
-      border: 1px solid rgba(102, 213, 134, 0.34);
+      border: 1px solid rgba($color-success, 0.38);
+
       border-radius: 50%;
 
       animation: admin-orders-live-pulse 1.8s ease-out infinite;
     }
   }
 
-  &__refresh-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
+  &__total {
+    color: $color-text-muted;
 
-    min-height: 44px;
-    padding-inline: 15px;
+    background: rgba(255, 255, 255, 0.03);
+
+    border: 1px solid $color-border;
+  }
+}
+
+// ======================================================
+// Hero summary
+// ======================================================
+
+.admin-orders-summary {
+  display: flex;
+  flex-direction: column;
+
+  min-height: 225px;
+  padding: $space-5;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba($color-accent, 0.055),
+      rgba(255, 255, 255, 0.018)
+    ),
+    rgba(0, 0, 0, 0.14);
+
+  border: 1px solid rgba($color-accent, 0.15);
+
+  border-radius: $radius-lg;
+
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__icon {
+    display: grid;
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.065);
+
+    border: 1px solid rgba($color-accent, 0.14);
+
+    border-radius: $radius-md;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &__label {
+    color: $color-text-muted;
+
+    font-size: 0.57rem;
+    font-weight: $font-weight-extra-bold;
+
+    letter-spacing: 0.11em;
+  }
+
+  &__value {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+
+    margin-top: auto;
+
+    strong {
+      color: #ffd36f;
+
+      font-family: $font-family-display;
+
+      font-size: 4.2rem;
+      font-weight: $font-weight-black;
+
+      line-height: 0.8;
+    }
+
+    span {
+      max-width: 130px;
+
+      padding-bottom: 3px;
+
+      color: $color-text-muted;
+
+      font-size: 0.64rem;
+      line-height: 1.35;
+    }
+  }
+
+  &__footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+
+    align-items: end;
+    gap: 10px;
+
+    margin-top: $space-4;
+    padding-top: $space-4;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+
+    > div {
+      display: grid;
+      gap: 3px;
+
+      span {
+        color: $color-text-muted;
+
+        font-size: 0.5rem;
+        text-transform: uppercase;
+      }
+
+      strong {
+        color: $color-text;
+
+        font-size: 0.7rem;
+      }
+    }
+  }
+
+  &__refresh {
+    display: grid;
+    place-items: center;
+
+    width: 35px;
+    height: 35px;
+    padding: 0;
 
     color: $color-text-soft;
 
-    font: inherit;
-    font-size: 0.7rem;
-    font-weight: $font-weight-bold;
-
     background: rgba(255, 255, 255, 0.035);
+
     border: 1px solid $color-border;
     border-radius: $radius-md;
 
@@ -129,41 +354,33 @@
     transition:
       color $transition-fast,
       background-color $transition-fast,
-      border-color $transition-fast,
-      transform $transition-base;
+      border-color $transition-fast;
 
     svg {
-      width: 17px;
-      height: 17px;
-
-      color: $color-accent;
+      width: 16px;
+      height: 16px;
     }
 
     &:hover:not(:disabled) {
-      color: $color-text;
+      color: $color-accent;
 
-      background: rgba(255, 255, 255, 0.065);
-      border-color: rgba($color-accent, 0.22);
+      background: rgba(255, 255, 255, 0.06);
 
-      transform: translateY(-1px);
+      border-color: rgba($color-accent, 0.18);
     }
 
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
-
-    &:focus-visible {
-      outline: 3px solid rgba($color-accent, 0.28);
-      outline-offset: 4px;
-    }
   }
 
   &__spinner {
-    width: 17px;
-    height: 17px;
+    width: 14px;
+    height: 14px;
 
-    border: 2px solid rgba($color-text, 0.16);
+    border: 2px solid rgba($color-accent, 0.14);
+
     border-top-color: $color-accent;
     border-radius: 50%;
 
@@ -178,9 +395,8 @@
 .admin-orders-overview {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
 
-  margin-bottom: $space-5;
+  gap: 11px;
 
   &__card {
     position: relative;
@@ -191,7 +407,8 @@
     gap: 14px;
 
     min-width: 0;
-    padding: 16px 18px;
+    min-height: 110px;
+    padding: 15px 17px;
 
     overflow: hidden;
 
@@ -200,45 +417,63 @@
     background:
       linear-gradient(
         145deg,
-        rgba(255, 255, 255, 0.045),
-        rgba(255, 255, 255, 0.014)
+        rgba(255, 255, 255, 0.04),
+        rgba(255, 255, 255, 0.012)
       ),
-      $color-bg-soft;
+      $color-surface-deep;
 
-    border: 1px solid $color-border;
+    border: 1px solid rgba(255, 255, 255, 0.065);
+
     border-radius: $radius-lg;
 
     box-shadow:
-      0 12px 29px rgba(0, 0, 0, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.025);
+      0 11px 28px rgba(0, 0, 0, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.02);
 
     &::after {
       position: absolute;
-      right: -32px;
-      bottom: -45px;
+      right: -55px;
+      bottom: -70px;
 
-      width: 100px;
-      height: 100px;
+      width: 135px;
+      height: 135px;
 
       content: "";
+      pointer-events: none;
 
       background: currentColor;
       border-radius: 50%;
 
-      opacity: 0.055;
+      opacity: 0.04;
 
-      filter: blur(10px);
+      filter: blur(14px);
     }
 
-    strong {
+    > div {
+      position: relative;
+      z-index: 1;
+
+      display: grid;
+      gap: 4px;
+
+      small {
+        color: $color-text-muted;
+
+        font-size: 0.52rem;
+      }
+    }
+
+    > strong {
       position: relative;
       z-index: 1;
 
       color: currentColor;
 
       font-family: $font-family-display;
-      font-size: 2rem;
+
+      font-size: 2.3rem;
       font-weight: $font-weight-black;
+
       line-height: 1;
     }
 
@@ -260,190 +495,13 @@
   }
 
   &__label {
-    position: relative;
-    z-index: 1;
-
-    color: $color-text-muted;
-
-    font-size: 0.63rem;
-    font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-}
-
-// ======================================================
-// Filter
-// ======================================================
-
-.admin-orders-filter {
-  padding: clamp(20px, 4vw, 27px);
-
-  background:
-    radial-gradient(
-      circle at top right,
-      rgba($color-primary, 0.07),
-      transparent 24rem
-    ),
-    linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.047),
-      rgba(255, 255, 255, 0.016)
-    ),
-    $color-bg-soft;
-
-  border: 1px solid $color-border;
-  border-radius: $radius-xl;
-
-  box-shadow:
-    0 18px 45px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
-
-  &__header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: $space-5;
-
-    margin-bottom: $space-5;
-    padding-bottom: $space-5;
-
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  }
-
-  &__eyebrow {
-    display: block;
-
-    margin-bottom: 5px;
-
-    color: $color-accent;
-
-    font-size: 0.62rem;
-    font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.13em;
-  }
-
-  &__title {
-    margin: 0;
-
-    color: $color-text;
-
-    font-size: clamp(1.35rem, 3vw, 1.75rem);
-  }
-
-  &__total {
-    color: $color-text-muted;
-
-    font-size: 0.68rem;
-
-    strong {
-      color: $color-accent;
-    }
-  }
-}
-
-.admin-orders-tabs {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-
-  &__button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    min-height: 42px;
-    padding-inline: 13px;
-
     color: $color-text-soft;
 
-    font: inherit;
-    font-size: 0.68rem;
-    font-weight: $font-weight-bold;
+    font-size: 0.57rem;
+    font-weight: $font-weight-extra-bold;
 
-    background: rgba(255, 255, 255, 0.033);
-    border: 1px solid $color-border;
-    border-radius: $radius-pill;
-
-    cursor: pointer;
-
-    transition:
-      color $transition-fast,
-      background-color $transition-fast,
-      border-color $transition-fast,
-      box-shadow $transition-base,
-      transform $transition-base;
-
-    &:hover {
-      color: $color-text;
-
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba($color-accent, 0.2);
-
-      transform: translateY(-1px);
-    }
-
-    &:focus-visible {
-      outline: 3px solid rgba($color-accent, 0.26);
-      outline-offset: 3px;
-    }
-
-    &--active {
-      color: $color-text;
-
-      background: rgba(255, 255, 255, 0.075);
-      border-color: currentColor;
-
-      box-shadow: 0 10px 23px rgba(0, 0, 0, 0.18);
-    }
-
-    &--all {
-      color: $color-accent;
-    }
-
-    &--waiting {
-      color: #ffd36f;
-    }
-
-    &--preparing {
-      color: #ffad68;
-    }
-
-    &--ready {
-      color: #8fcaff;
-    }
-
-    &--delivery {
-      color: #c5a7ff;
-    }
-  }
-
-  &__dot {
-    width: 7px;
-    height: 7px;
-
-    background: currentColor;
-    border-radius: 50%;
-
-    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.03);
-  }
-
-  &__count {
-    display: grid;
-    place-items: center;
-
-    min-width: 24px;
-    height: 24px;
-    padding-inline: 6px;
-
-    color: currentColor;
-
-    font-size: 0.6rem;
-
-    background: rgba(0, 0, 0, 0.18);
-    border-radius: $radius-pill;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
   }
 }
 
@@ -456,7 +514,6 @@
   align-items: flex-start;
   gap: 12px;
 
-  margin-top: $space-5;
   padding: 14px 16px;
 
   border: 1px solid transparent;
@@ -465,15 +522,16 @@
   &__icon {
     display: grid;
     place-items: center;
-    flex: 0 0 24px;
+    flex: 0 0 25px;
 
-    width: 24px;
-    height: 24px;
+    width: 25px;
+    height: 25px;
 
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: $font-weight-black;
 
     border: 1px solid currentColor;
+
     border-radius: 50%;
   }
 
@@ -482,37 +540,59 @@
 
     margin-bottom: 3px;
 
-    font-size: 0.8rem;
+    font-size: 0.77rem;
   }
 
   p {
     margin: 0;
 
-    font-size: 0.73rem;
+    font-size: 0.7rem;
     line-height: 1.55;
   }
 
   &--success {
     color: #b8f3c9;
 
-    background: rgba(46, 134, 70, 0.14);
-    border-color: rgba(84, 210, 121, 0.2);
+    background: rgba($color-success, 0.1);
+
+    border-color: rgba($color-success, 0.2);
   }
 
   &--error {
     color: #ffb3b3;
 
-    background: rgba(137, 29, 29, 0.16);
-    border-color: rgba(255, 91, 91, 0.23);
+    background: rgba($color-danger, 0.1);
+
+    border-color: rgba($color-danger, 0.22);
   }
 }
 
 // ======================================================
-// Results
+// Workspace
 // ======================================================
 
-.admin-orders-results {
-  margin-top: $space-7;
+.admin-orders-workspace {
+  min-width: 0;
+
+  padding: clamp(20px, 3vw, 27px);
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba($color-primary, 0.05),
+      transparent 25rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.035),
+      rgba(255, 255, 255, 0.01)
+    ),
+    $color-surface-deep;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  box-shadow: $shadow-surface;
 
   &__header {
     display: flex;
@@ -520,10 +600,18 @@
     justify-content: space-between;
     gap: $space-5;
 
-    margin-bottom: $space-5;
+    margin-bottom: $space-4;
     padding-bottom: $space-5;
 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+
+    p {
+      margin: 6px 0 0;
+
+      color: $color-text-muted;
+
+      font-size: 0.6rem;
+    }
   }
 
   &__eyebrow {
@@ -533,9 +621,10 @@
 
     color: $color-accent;
 
-    font-size: 0.63rem;
+    font-size: 0.58rem;
     font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.14em;
+
+    letter-spacing: 0.13em;
   }
 
   &__title {
@@ -543,87 +632,350 @@
 
     color: $color-text;
 
-    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-family: $font-family-display;
+
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+
+    font-weight: $font-weight-extra-bold;
+
+    text-transform: uppercase;
+  }
+
+  &__result {
+    display: grid;
+    justify-items: center;
+
+    min-width: 62px;
+    padding: 7px 9px;
+
+    background: rgba($color-accent, 0.045);
+
+    border: 1px solid rgba($color-accent, 0.11);
+
+    border-radius: $radius-md;
+
+    strong {
+      color: $color-accent;
+
+      font-family: $font-family-display;
+
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    span {
+      margin-top: 2px;
+
+      color: $color-text-muted;
+
+      font-size: 0.48rem;
+      text-transform: uppercase;
+    }
+  }
+}
+
+// ======================================================
+// Controls
+// ======================================================
+
+.admin-orders-controls {
+  display: grid;
+  gap: 10px;
+
+  margin-bottom: $space-4;
+}
+
+.admin-orders-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+
+  gap: 5px;
+
+  padding: 5px;
+
+  background: rgba(0, 0, 0, 0.13);
+
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+
+  &__button {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+
+    align-items: center;
+    gap: 7px;
+
+    min-height: 43px;
+    padding-inline: 9px;
+
+    color: $color-text-muted;
+
+    font: inherit;
+    font-size: 0.55rem;
+    font-weight: $font-weight-bold;
+
+    background: transparent;
+
+    border: 1px solid transparent;
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    transition:
+      color $transition-fast,
+      background-color $transition-fast,
+      border-color $transition-fast;
+
+    &:hover {
+      color: $color-text;
+
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    &--active {
+      color: $color-text;
+
+      background: rgba(255, 255, 255, 0.055);
+
+      border-color: rgba($color-accent, 0.13);
+    }
+
+    &--all {
+      --tab-color: #{$color-accent};
+    }
+
+    &--waiting {
+      --tab-color: #ffd36f;
+    }
+
+    &--preparing {
+      --tab-color: #ffad68;
+    }
+
+    &--ready {
+      --tab-color: #8fcaff;
+    }
+
+    &--delivery {
+      --tab-color: #c5a7ff;
+    }
+  }
+
+  &__dot {
+    width: 6px;
+    height: 6px;
+
+    background: var(--tab-color, #{$color-accent});
+
+    border-radius: 50%;
   }
 
   &__count {
     display: grid;
     place-items: center;
-    flex: 0 0 47px;
 
-    width: 47px;
-    height: 47px;
+    min-width: 23px;
+    height: 23px;
+    padding-inline: 5px;
 
-    color: $color-accent;
+    color: var(--tab-color, #{$color-accent});
 
-    font-family: $font-family-display;
-    font-size: 1.25rem;
-    font-weight: $font-weight-black;
+    font-size: 0.5rem;
 
-    background: rgba($color-accent, 0.06);
-    border: 1px solid rgba($color-accent, 0.13);
-    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.18);
+
+    border-radius: $radius-pill;
   }
 }
 
-.admin-orders-list {
-  display: grid;
-  gap: $space-6;
+// ======================================================
+// Fulfillment filter
+// ======================================================
+
+.admin-orders-fulfillment {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    min-height: 34px;
+    padding-inline: 9px;
+
+    color: $color-text-muted;
+
+    font: inherit;
+    font-size: 0.52rem;
+    font-weight: $font-weight-bold;
+
+    background: rgba(255, 255, 255, 0.025);
+
+    border: 1px solid $color-border;
+    border-radius: $radius-pill;
+
+    cursor: pointer;
+
+    transition:
+      color $transition-fast,
+      background-color $transition-fast,
+      border-color $transition-fast;
+
+    span {
+      display: grid;
+      place-items: center;
+
+      min-width: 19px;
+      height: 19px;
+      padding-inline: 4px;
+
+      color: $color-text-soft;
+
+      font-size: 0.47rem;
+
+      background: rgba(255, 255, 255, 0.05);
+
+      border-radius: $radius-pill;
+    }
+
+    &:hover {
+      color: $color-text;
+
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    &--active {
+      color: #15170f;
+
+      background: linear-gradient(135deg, $color-accent, $color-accent-soft);
+
+      border-color: rgba(255, 255, 255, 0.14);
+
+      span {
+        color: #15170f;
+
+        background: rgba(0, 0, 0, 0.12);
+      }
+    }
+  }
 }
 
 // ======================================================
-// Order actions
+// Current filter
+// ======================================================
+
+.admin-orders-current-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-5;
+
+  margin-bottom: $space-5;
+  padding: 11px 13px;
+
+  background: rgba(255, 255, 255, 0.022);
+
+  border: 1px solid rgba(255, 255, 255, 0.05);
+
+  border-radius: $radius-md;
+
+  > div {
+    display: grid;
+    gap: 2px;
+
+    span {
+      color: $color-text-muted;
+
+      font-size: 0.47rem;
+      text-transform: uppercase;
+    }
+
+    strong {
+      color: $color-text;
+
+      font-size: 0.62rem;
+    }
+  }
+
+  p {
+    max-width: 550px;
+
+    margin: 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.54rem;
+    line-height: 1.45;
+    text-align: right;
+  }
+}
+
+// ======================================================
+// Orders list
+// ======================================================
+
+.admin-orders-list {
+  display: grid;
+  gap: $space-5;
+}
+
+// ======================================================
+// Existing shared OrderCard actions
 // ======================================================
 
 .admin-orders-page {
   .shared-order-card__actions > .admin-order-action {
-    min-height: 44px;
-    padding-inline: 15px;
+    min-height: 42px;
+    padding-inline: 13px;
   }
 
   .shared-order-card__actions > .admin-order-action--accept {
     color: #dcffe5;
 
-    background: rgba(46, 134, 70, 0.17);
-    border-color: rgba(84, 210, 121, 0.25);
+    background: rgba($color-success, 0.13);
+
+    border-color: rgba($color-success, 0.22);
 
     &:hover:not(:disabled) {
       color: #effff3;
 
-      background: rgba(46, 154, 76, 0.24);
-      border-color: rgba(84, 210, 121, 0.36);
+      background: rgba($color-success, 0.2);
+
+      border-color: rgba($color-success, 0.32);
     }
   }
 
   .shared-order-card__actions > .admin-order-action--reject {
     color: #ffb3b3;
 
-    background: rgba(137, 29, 29, 0.14);
-    border-color: rgba(255, 91, 91, 0.21);
+    background: rgba($color-danger, 0.08);
+
+    border-color: rgba($color-danger, 0.16);
 
     &:hover:not(:disabled) {
       color: #ffd7d7;
 
-      background: rgba(166, 36, 36, 0.22);
-      border-color: rgba(255, 91, 91, 0.33);
+      background: rgba($color-danger, 0.14);
+
+      border-color: rgba($color-danger, 0.25);
     }
   }
 
   .shared-order-card__actions > .admin-order-action--ready {
-    color: #11140f;
+    color: #15170f;
 
-    background: linear-gradient(135deg, $color-accent, #f0b628);
+    background: linear-gradient(135deg, $color-accent, $color-accent-soft);
 
-    border-color: rgba(255, 255, 255, 0.17);
+    border-color: rgba(255, 255, 255, 0.16);
 
-    box-shadow:
-      0 11px 25px rgba($color-accent, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.24);
+    box-shadow: 0 10px 24px rgba($color-accent, 0.13);
 
     &:hover:not(:disabled) {
-      color: #11140f;
-
-      background: linear-gradient(135deg, $color-accent, #f0b628);
+      color: #15170f;
 
       filter: brightness(1.055);
     }
@@ -642,6 +994,7 @@
     font-weight: $font-weight-black;
 
     background: rgba(255, 255, 255, 0.12);
+
     border-radius: 50%;
   }
 
@@ -650,12 +1003,17 @@
     height: 16px;
 
     border: 2px solid rgba(255, 255, 255, 0.17);
+
     border-top-color: currentColor;
     border-radius: 50%;
 
     animation: admin-orders-spin 700ms linear infinite;
   }
 }
+
+// ======================================================
+// Operational notices
+// ======================================================
 
 .admin-order-notice {
   display: inline-flex;
@@ -700,6 +1058,7 @@
     color: #8fcaff;
 
     background: rgba(37, 104, 164, 0.13);
+
     border-color: rgba(93, 169, 235, 0.2);
   }
 
@@ -707,12 +1066,13 @@
     color: #c5a7ff;
 
     background: rgba(92, 55, 155, 0.13);
+
     border-color: rgba(164, 123, 235, 0.2);
   }
 }
 
 // ======================================================
-// Loading and empty
+// Loading / empty
 // ======================================================
 
 .admin-orders-loading,
@@ -721,31 +1081,33 @@
   align-items: center;
   justify-content: center;
 
-  min-height: 390px;
-  margin-top: $space-6;
-  padding: 45px;
+  min-height: 330px;
+  padding: $space-7;
 
   background:
     radial-gradient(
       circle at center,
-      rgba($color-primary, 0.08),
-      transparent 21rem
+      rgba($color-primary, 0.055),
+      transparent 20rem
     ),
-    rgba(255, 255, 255, 0.025);
+    rgba(0, 0, 0, 0.08);
 
-  border: 1px solid $color-border;
-  border-radius: $radius-xl;
+  border: 1px dashed $color-border;
+
+  border-radius: $radius-lg;
 }
 
 .admin-orders-loading {
-  gap: 15px;
+  gap: 14px;
 
   &__spinner {
-    width: 36px;
-    height: 36px;
-    flex: 0 0 36px;
+    flex: 0 0 34px;
 
-    border: 3px solid rgba($color-accent, 0.13);
+    width: 34px;
+    height: 34px;
+
+    border: 3px solid rgba($color-accent, 0.12);
+
     border-top-color: $color-accent;
     border-radius: 50%;
 
@@ -755,57 +1117,55 @@
   strong {
     display: block;
 
-    margin-bottom: 4px;
-
     color: $color-text;
 
-    font-size: 0.88rem;
+    font-size: 0.77rem;
   }
 
   p {
-    margin: 0;
+    margin: 4px 0 0;
 
     color: $color-text-muted;
 
-    font-size: 0.71rem;
+    font-size: 0.61rem;
   }
 }
 
 .admin-orders-empty {
-  align-items: center;
   flex-direction: column;
 
   text-align: center;
-
-  border-style: dashed;
 
   &__icon {
     display: grid;
     place-items: center;
 
-    width: 72px;
-    height: 72px;
+    width: 65px;
+    height: 65px;
 
     margin-bottom: $space-4;
 
     color: $color-accent;
 
     background: rgba($color-accent, 0.055);
+
     border: 1px solid rgba($color-accent, 0.12);
+
     border-radius: 50%;
 
     svg {
-      width: 32px;
-      height: 32px;
+      width: 29px;
+      height: 29px;
     }
   }
 
   &__eyebrow {
     color: $color-accent;
 
-    font-size: 0.63rem;
+    font-size: 0.58rem;
     font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.14em;
+
+    letter-spacing: 0.13em;
   }
 
   &__title {
@@ -813,18 +1173,51 @@
 
     color: $color-text;
 
-    font-size: 1.7rem;
+    font-family: $font-family-display;
+
+    font-size: 1.55rem;
+    text-transform: uppercase;
   }
 
   &__description {
-    max-width: 450px;
+    max-width: 420px;
 
     margin: $space-3 0 0;
 
     color: $color-text-muted;
 
-    font-size: 0.74rem;
-    line-height: 1.55;
+    font-size: 0.62rem;
+    line-height: 1.5;
+  }
+
+  &__reset {
+    min-height: 38px;
+    margin-top: $space-4;
+    padding-inline: 12px;
+
+    color: #15170f;
+
+    font: inherit;
+    font-size: 0.56rem;
+    font-weight: $font-weight-extra-bold;
+
+    background: linear-gradient(135deg, $color-accent, $color-accent-soft);
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    transition:
+      filter $transition-fast,
+      transform $transition-base;
+
+    &:hover {
+      filter: brightness(1.06);
+
+      transform: translateY(-1px);
+    }
   }
 }
 
@@ -854,7 +1247,17 @@
 // Responsive
 // ======================================================
 
+@media (max-width: 1150px) {
+  .admin-orders-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: $breakpoint-laptop) {
+  .admin-orders-hero {
+    grid-template-columns: minmax(0, 1fr) 290px;
+  }
+
   .admin-orders-overview {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -862,81 +1265,88 @@
 
 @media (max-width: $breakpoint-tablet) {
   .admin-orders-page {
-    padding-block: $space-8;
+    padding-block: $space-7;
+  }
 
-    &__header {
-      align-items: flex-start;
-      flex-direction: column;
-    }
+  .admin-orders-hero {
+    grid-template-columns: 1fr;
 
-    &__header-actions {
-      width: 100%;
+    &__title {
+      font-size: clamp(2.7rem, 10vw, 4rem);
     }
   }
 
-  .admin-orders-filter {
-    &__header {
-      align-items: flex-start;
-      flex-direction: column;
+  .admin-orders-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-orders-current-filter {
+    align-items: flex-start;
+    flex-direction: column;
+
+    p {
+      text-align: left;
     }
   }
 }
 
 @media (max-width: $breakpoint-mobile) {
   .admin-orders-page {
-    padding-block: $space-7;
+    gap: $space-4;
+    padding-block: $space-6;
+  }
+
+  .admin-orders-hero {
+    padding: $space-5;
+
+    border-radius: $radius-lg;
 
     &__title {
-      font-size: 3.25rem;
+      font-size: 2.7rem;
     }
 
-    &__header-actions {
-      display: grid;
-      grid-template-columns: 1fr;
+    &__description {
+      font-size: 0.84rem;
     }
+  }
 
-    &__realtime,
-    &__refresh-button {
-      width: 100%;
-
-      justify-content: center;
-    }
+  .admin-orders-summary {
+    padding: $space-4;
   }
 
   .admin-orders-overview {
     grid-template-columns: 1fr;
   }
 
-  .admin-orders-filter {
-    padding: $space-5;
+  .admin-orders-workspace {
+    padding: $space-4;
 
     border-radius: $radius-lg;
+
+    &__header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    &__result {
+      width: 100%;
+    }
   }
 
   .admin-orders-tabs {
+    grid-template-columns: 1fr;
+
+    &__button {
+      width: 100%;
+    }
+  }
+
+  .admin-orders-fulfillment {
     display: grid;
     grid-template-columns: 1fr;
 
     &__button {
       width: 100%;
-
-      justify-content: flex-start;
-    }
-
-    &__count {
-      margin-left: auto;
-    }
-  }
-
-  .admin-orders-results {
-    &__header {
-      align-items: flex-start;
-    }
-
-    &__count {
-      width: 42px;
-      height: 42px;
-      flex-basis: 42px;
     }
   }
 
@@ -945,16 +1355,22 @@
   }
 }
 
+// ======================================================
+// Reduced motion
+// ======================================================
+
 @media (prefers-reduced-motion: reduce) {
-  .admin-orders-page__spinner,
+  .admin-orders-summary__spinner,
   .admin-orders-loading__spinner,
   .admin-order-action__spinner,
-  .admin-orders-page__realtime-dot::after {
+  .admin-orders-hero__live-dot::after {
     animation-duration: 0.01ms;
   }
 
-  .admin-orders-page__refresh-button,
-  .admin-orders-tabs__button {
+  .admin-orders-summary__refresh,
+  .admin-orders-tabs__button,
+  .admin-orders-fulfillment__button,
+  .admin-orders-empty__reset {
     transition-duration: 0.01ms;
   }
 }

@@ -9,6 +9,7 @@ import {
   startDeliveryRushRun,
 } from "../api/deliveryRushApi";
 import { deliveryRushGameRules } from "../engine/deliveryRushRules";
+import { useDeliveryRushSound } from "../hooks/useDeliveryRushSound";
 import type {
   DeliveryRushInput,
   DeliveryRushRunResult,
@@ -16,7 +17,6 @@ import type {
 } from "../types/deliveryRush.types";
 import DeliveryRushGame from "./DeliveryRushGame";
 import "./DeliveryRushRankedGame.scss";
-import { useDeliveryRushSound } from "../hooks/useDeliveryRushSound";
 
 interface DeliveryRushRankedGameProps {
   onRunCompleted: () => void;
@@ -28,7 +28,6 @@ export default function DeliveryRushRankedGame({
   onPlayingChange,
 }: DeliveryRushRankedGameProps) {
   const { isAuthenticated, hasRole, hasAnyRole } = useAuth();
-
   const { playSound, unlockAudio } = useDeliveryRushSound();
 
   const [activeRun, setActiveRun] =
@@ -59,9 +58,7 @@ export default function DeliveryRushRankedGame({
   const canPlayRanked = isAuthenticated && isCustomer && !hasStaffRole;
 
   const isLobbyVisible = !activeRun && !result;
-
   const isResultVisible = result !== null;
-
   const isPlaying = activeRun !== null && !hasGameEnded;
 
   useEffect(() => {
@@ -189,10 +186,13 @@ export default function DeliveryRushRankedGame({
               što vreme istekne.
             </p>
 
-            <ul className="delivery-rush-ranked-game__features">
+            <ul
+              className="delivery-rush-ranked-game__features"
+              aria-label="Karakteristike igre"
+            >
               <li>
-                <strong>3</strong>
-                <span>života</span>
+                <strong>{deliveryRushGameRules.maximumCollisions}</strong>
+                <span>sudara</span>
               </li>
 
               <li>
@@ -236,10 +236,20 @@ export default function DeliveryRushRankedGame({
                   className="btn btn--primary delivery-rush-ranked-game__start"
                   onClick={() => void handleStart()}
                   disabled={isStarting}
+                  aria-busy={isStarting}
                 >
-                  <span aria-hidden="true">▶</span>
+                  {isStarting ? (
+                    <span
+                      className="delivery-rush-ranked-game__button-spinner"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <span aria-hidden="true">▶</span>
+                  )}
 
-                  {isStarting ? "Pripremamo vozilo..." : "Započni dostavu"}
+                  <span>
+                    {isStarting ? "Pripremamo vozilo..." : "Započni dostavu"}
+                  </span>
                 </button>
 
                 <small>Strelice ili A/D za trake · Space ili W za skok</small>
@@ -295,27 +305,33 @@ export default function DeliveryRushRankedGame({
 
       {activeRun && hasGameEnded && !isFinishing && error && pendingInputs && (
         <div className="delivery-rush-submit-error" role="alert">
-          <strong>Rezultat trenutno nije sačuvan</strong>
-          <p>{error}</p>
+          <span className="delivery-rush-submit-error__icon" aria-hidden="true">
+            !
+          </span>
 
-          <div className="delivery-rush-submit-error__actions">
-            <button
-              type="button"
-              className="btn btn--primary"
-              onClick={() => void submitResult(pendingInputs)}
-              disabled={isCancelling}
-            >
-              Ponovo pošalji rezultat
-            </button>
+          <div className="delivery-rush-submit-error__content">
+            <strong>Rezultat trenutno nije sačuvan</strong>
+            <p>{error}</p>
 
-            <button
-              type="button"
-              className="btn btn--secondary"
-              onClick={() => void handleCancel()}
-              disabled={isCancelling}
-            >
-              {isCancelling ? "Odustajanje..." : "Odustani i vrati se"}
-            </button>
+            <div className="delivery-rush-submit-error__actions">
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => void submitResult(pendingInputs)}
+                disabled={isCancelling}
+              >
+                Ponovo pošalji rezultat
+              </button>
+
+              <button
+                type="button"
+                className="btn btn--secondary"
+                onClick={() => void handleCancel()}
+                disabled={isCancelling}
+              >
+                {isCancelling ? "Odustajanje..." : "Odustani i vrati se"}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -341,7 +357,9 @@ export default function DeliveryRushRankedGame({
           <div className="delivery-rush-result__highlights">
             <div className="delivery-rush-result__highlight delivery-rush-result__highlight--score">
               <span>Poeni</span>
+
               <strong>{result.score.toLocaleString("sr-RS")}</strong>
+
               <small>Ukupan rezultat</small>
             </div>
 
@@ -356,7 +374,7 @@ export default function DeliveryRushRankedGame({
             </div>
           </div>
 
-          <dl>
+          <dl className="delivery-rush-result__stats">
             <div>
               <dt>Distanca</dt>
               <dd>{result.distance.toLocaleString("sr-RS")}</dd>
@@ -379,9 +397,14 @@ export default function DeliveryRushRankedGame({
           </dl>
 
           {result.isPersonalBest && (
-            <p className="alert alert--success delivery-rush-result__record">
-              Novi lični rekord!
-            </p>
+            <div
+              className="delivery-rush-result__record"
+              role="status"
+              aria-live="polite"
+            >
+              <span aria-hidden="true">★</span>
+              <strong>Novi lični rekord!</strong>
+            </div>
           )}
 
           <div className="delivery-rush-result__actions">
@@ -400,7 +423,10 @@ export default function DeliveryRushRankedGame({
       {error &&
         !isLobbyVisible &&
         !(activeRun && hasGameEnded && pendingInputs) && (
-          <p className="alert alert--error" role="alert">
+          <p
+            className="alert alert--error delivery-rush-ranked-game__runtime-error"
+            role="alert"
+          >
             {error}
           </p>
         )}

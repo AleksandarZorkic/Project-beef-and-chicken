@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import SiteFooter from "../../components/layout/SiteFooter";
 
 type HomeLayoutProps = {
   children: ReactNode;
@@ -40,7 +41,7 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
   return (
     <div className="home-layout">
       <header className={headerClassName}>
-        <div className="home-header__inner">
+        <div className="container home-header__inner">
           <Link
             to="/"
             className="home-header__brand"
@@ -93,31 +94,7 @@ export default function HomeLayout({ children }: HomeLayoutProps) {
 
       <div className="home-layout__content">{children}</div>
 
-      <footer className="home-footer">
-        <div className="home-footer__inner">
-          <Link
-            to="/"
-            className="home-footer__brand"
-            aria-label="Beef n' Chicken početna stranica"
-            onClick={scrollToTop}
-          >
-            <img src="/logo.png" alt="" className="home-footer__logo" />
-
-            <span>Beef n&apos; Chicken Grill</span>
-          </Link>
-
-          <p className="home-footer__text">
-            Burgeri, piletina i grill obroci pripremljeni sveže i poručeni bez
-            komplikacija.
-          </p>
-
-          <nav className="home-footer__nav" aria-label="Navigacija u podnožju">
-            <Link to="/menu">Meni</Link>
-            <Link to="/login">Prijava</Link>
-            <Link to="/register">Registracija</Link>
-          </nav>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

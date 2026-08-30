@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { getAllergens } from "../api/allergenApi";
 import {
   addAllergenToProfile,
@@ -23,6 +24,10 @@ export default function ProfileAllergensPage() {
     return new Set(myAllergens.map((allergen) => allergen.id));
   }, [myAllergens]);
 
+  const selectedPreview = useMemo(() => {
+    return myAllergens.slice(0, 3);
+  }, [myAllergens]);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -34,7 +39,7 @@ export default function ProfileAllergensPage() {
 
     const timer = window.setTimeout(() => {
       setSuccessMessage(null);
-    }, 3000);
+    }, 2600);
 
     return () => window.clearTimeout(timer);
   }, [successMessage]);
@@ -59,32 +64,27 @@ export default function ProfileAllergensPage() {
   }
 
   async function toggleAllergen(allergen: Allergen) {
-    const isAdded = myAllergenIds.has(allergen.id);
+    const isSelected = myAllergenIds.has(allergen.id);
 
     try {
       setSavingId(allergen.id);
       setError(null);
       setSuccessMessage(null);
 
-      if (isAdded) {
+      if (isSelected) {
         await removeAllergenFromProfile(allergen.id);
 
-        setMyAllergens((previousAllergens) =>
-          previousAllergens.filter(
-            (currentAllergen) => currentAllergen.id !== allergen.id,
-          ),
+        setMyAllergens((current) =>
+          current.filter((item) => item.id !== allergen.id),
         );
 
-        setSuccessMessage(`Alergen „${allergen.name}“ je uklonjen sa profila.`);
+        setSuccessMessage(`„${allergen.name}“ je uklonjen iz vašeg izbora.`);
       } else {
         const addedAllergen = await addAllergenToProfile(allergen.id);
 
-        setMyAllergens((previousAllergens) => [
-          ...previousAllergens,
-          addedAllergen,
-        ]);
+        setMyAllergens((current) => [...current, addedAllergen]);
 
-        setSuccessMessage(`Alergen „${allergen.name}“ je dodat na profil.`);
+        setSuccessMessage(`„${allergen.name}“ je dodat u vaš izbor.`);
       }
     } catch (error) {
       setError(getApiErrorMessage(error));
@@ -96,16 +96,25 @@ export default function ProfileAllergensPage() {
   if (loading) {
     return (
       <main className="profile-allergens-page">
-        <section className="profile-allergens-loading" aria-live="polite">
-          <span
-            className="profile-allergens-loading__spinner"
-            aria-hidden="true"
-          />
+        <section
+          className="profile-allergens-loading"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="profile-allergens-loading__visual">
+            <span className="profile-allergens-loading__spinner" />
+          </div>
 
-          <div>
-            <strong>Učitavamo alergene</strong>
+          <div className="profile-allergens-loading__content">
+            <span className="profile-allergens-loading__eyebrow">
+              BEEF N&apos; CHICKEN
+            </span>
 
-            <p>Sačekajte trenutak dok preuzmemo podatke vašeg profila.</p>
+            <h1>Učitavamo vaše alergene</h1>
+
+            <p>
+              Još samo trenutak dok pripremimo vaše personalizovane postavke.
+            </p>
           </div>
         </section>
       </main>
@@ -114,63 +123,118 @@ export default function ProfileAllergensPage() {
 
   return (
     <main className="profile-allergens-page">
-      <header className="profile-allergens-page__header">
-        <div className="profile-allergens-page__heading">
-          <span className="profile-allergens-page__eyebrow">
-            PERSONALIZOVANA UPOZORENJA
+      <section className="profile-allergens-hero">
+        <div className="profile-allergens-hero__content">
+          <span className="profile-allergens-hero__eyebrow">
+            VAŠE PREFERENCE
           </span>
 
-          <h1 className="profile-allergens-page__title">Moji alergeni</h1>
+          <h1 className="profile-allergens-hero__title">Moji alergeni</h1>
 
-          <p className="profile-allergens-page__description">
-            Izaberite alergene na koje želite upozorenje. Jela koja ih sadrže
-            biće posebno označena u meniju.
+          <p className="profile-allergens-hero__description">
+            Označite alergene na koje želite upozorenje. Kada pregledate meni,
+            posebno ćemo označiti jela koja sadrže neki od izabranih alergena.
           </p>
+
+          <div className="profile-allergens-hero__note">
+            <span
+              className="profile-allergens-hero__note-icon"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 3 4.5 6.4v5.2c0 4.5 3.1 7.7 7.5 9.4 4.4-1.7 7.5-4.9 7.5-9.4V6.4L12 3Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinejoin="round"
+                />
+
+                <path
+                  d="m9 12 2 2 4-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+
+            <span>
+              Promene se čuvaju automatski čim izaberete ili uklonite alergen.
+            </span>
+          </div>
         </div>
 
-        <div className="profile-allergens-page__summary">
-          <span className="profile-allergens-page__summary-label">
-            Izabrano
-          </span>
+        <aside className="profile-allergens-summary">
+          <div className="profile-allergens-summary__top">
+            <span
+              className="profile-allergens-summary__icon"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 3 4.5 6.4v5.2c0 4.5 3.1 7.7 7.5 9.4 4.4-1.7 7.5-4.9 7.5-9.4V6.4L12 3Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
 
-          <strong className="profile-allergens-page__summary-value">
-            {myAllergens.length}
-          </strong>
+            <span
+              className={[
+                "profile-allergens-summary__status",
+                myAllergens.length > 0
+                  ? "profile-allergens-summary__status--active"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <span />
+              {myAllergens.length > 0 ? "Aktivno" : "Nije podešeno"}
+            </span>
+          </div>
 
-          <span className="profile-allergens-page__summary-total">
-            od {allAllergens.length}
-          </span>
-        </div>
-      </header>
+          <div className="profile-allergens-summary__count">
+            <strong>{myAllergens.length}</strong>
 
-      <section className="profile-allergens-info">
-        <div className="profile-allergens-info__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <circle
-              cx="12"
-              cy="12"
-              r="9"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-            />
+            <span>izabranih alergena</span>
+          </div>
 
-            <path
-              d="M12 10v6M12 7.2v.2"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.9"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
+          {selectedPreview.length > 0 ? (
+            <div className="profile-allergens-summary__preview">
+              {selectedPreview.map((allergen) => (
+                <span key={allergen.id}>{allergen.name}</span>
+              ))}
+
+              {myAllergens.length > selectedPreview.length && (
+                <span>+{myAllergens.length - selectedPreview.length}</span>
+              )}
+            </div>
+          ) : (
+            <p className="profile-allergens-summary__empty">
+              Još niste izabrali nijedan alergen.
+            </p>
+          )}
+        </aside>
+      </section>
+
+      <section className="profile-allergens-safety">
+        <span className="profile-allergens-safety__icon" aria-hidden="true">
+          !
+        </span>
 
         <div>
-          <strong>Kako funkcionišu upozorenja?</strong>
+          <strong>Važno kod alergija na hranu</strong>
 
           <p>
-            Označeni alergeni koriste se da vas upozore kada jelo sadrži
-            sastojak koji ste dodali na svoj profil.
+            Oznake u aplikaciji služe kao dodatno upozorenje. Ako imate ozbiljnu
+            alergiju, proverite sastav proizvoda i obavestite restoran prilikom
+            poručivanja.
           </p>
         </div>
       </section>
@@ -185,7 +249,7 @@ export default function ProfileAllergensPage() {
           </span>
 
           <div>
-            <strong>Došlo je do greške</strong>
+            <strong>Nismo uspeli da sačuvamo promenu</strong>
             <p>{error}</p>
           </div>
         </div>
@@ -202,7 +266,7 @@ export default function ProfileAllergensPage() {
           </span>
 
           <div>
-            <strong>Profil je ažuriran</strong>
+            <strong>Izbor je sačuvan</strong>
             <p>{successMessage}</p>
           </div>
         </div>
@@ -223,39 +287,34 @@ export default function ProfileAllergensPage() {
             </svg>
           </div>
 
-          <span className="profile-allergens-empty__eyebrow">
-            NEMA DOSTUPNIH ALERGENA
-          </span>
+          <span>NEMA DOSTUPNIH ALERGENA</span>
 
-          <h2 className="profile-allergens-empty__title">
-            Lista je trenutno prazna
-          </h2>
+          <h2>Lista je trenutno prazna</h2>
 
-          <p className="profile-allergens-empty__description">
-            Administrator još nije dodao alergene u sistem.
-          </p>
+          <p>Trenutno nema alergena koje možete dodati na svoj profil.</p>
         </section>
       ) : (
         <section className="profile-allergens-selection">
           <header className="profile-allergens-selection__header">
             <div>
               <span className="profile-allergens-selection__eyebrow">
-                DOSTUPNI ALERGENI
+                PERSONALIZUJTE MENI
               </span>
 
-              <h2 className="profile-allergens-selection__title">
-                Izaberite alergene
-              </h2>
+              <h2>Izaberite alergene</h2>
+
+              <p>Kliknite na karticu da uključite ili isključite upozorenje.</p>
             </div>
 
-            <span className="profile-allergens-selection__hint">
-              Kliknite na karticu da promenite izbor
-            </span>
+            <div className="profile-allergens-selection__count">
+              <strong>{myAllergens.length}</strong>
+              <span>od {allAllergens.length}</span>
+            </div>
           </header>
 
-          <div className="profile-allergens-grid" aria-label="Izbor alergena">
-            {allAllergens.map((allergen, index) => {
-              const isAdded = myAllergenIds.has(allergen.id);
+          <div className="profile-allergens-grid">
+            {allAllergens.map((allergen) => {
+              const isSelected = myAllergenIds.has(allergen.id);
               const isSaving = savingId === allergen.id;
 
               return (
@@ -264,29 +323,26 @@ export default function ProfileAllergensPage() {
                   type="button"
                   className={[
                     "profile-allergen-card",
-                    isAdded ? "profile-allergen-card--selected" : "",
+                    isSelected ? "profile-allergen-card--selected" : "",
+                    isSaving ? "profile-allergen-card--saving" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
                   disabled={isSaving}
-                  aria-pressed={isAdded}
+                  aria-pressed={isSelected}
+                  aria-busy={isSaving}
                   onClick={() => toggleAllergen(allergen)}
                 >
-                  <span className="profile-allergen-card__top">
-                    <span
-                      className="profile-allergen-card__number"
-                      aria-hidden="true"
-                    >
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
+                  <span className="profile-allergen-card__header">
+                    <span className="profile-allergen-card__type">ALERGEN</span>
 
                     <span
-                      className="profile-allergen-card__selection"
+                      className="profile-allergen-card__check"
                       aria-hidden="true"
                     >
                       {isSaving ? (
                         <span className="profile-allergen-card__spinner" />
-                      ) : isAdded ? (
+                      ) : isSelected ? (
                         "✓"
                       ) : (
                         "+"
@@ -294,28 +350,31 @@ export default function ProfileAllergensPage() {
                     </span>
                   </span>
 
-                  <span className="profile-allergen-card__content">
-                    <span className="profile-allergen-card__eyebrow">
-                      ALERGEN
-                    </span>
+                  <strong className="profile-allergen-card__name">
+                    {allergen.name}
+                  </strong>
 
-                    <strong className="profile-allergen-card__name">
-                      {allergen.name}
-                    </strong>
-
-                    <span className="profile-allergen-card__status">
-                      {isSaving
-                        ? "Čuvam promenu..."
-                        : isAdded
-                          ? "Dodato na profil"
-                          : "Nije izabrano"}
-                    </span>
+                  <span className="profile-allergen-card__description">
+                    {isSaving
+                      ? "Čuvamo promenu..."
+                      : isSelected
+                        ? "Upozorenje uključeno"
+                        : "Kliknite da uključite upozorenje"}
                   </span>
 
-                  <span className="profile-allergen-card__action">
-                    {isAdded ? "Ukloni sa profila" : "Dodaj na profil"}
+                  <span className="profile-allergen-card__footer">
+                    <span
+                      className={[
+                        "profile-allergen-card__indicator",
+                        isSelected
+                          ? "profile-allergen-card__indicator--active"
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                    />
 
-                    <span aria-hidden="true">→</span>
+                    {isSelected ? "Izabrano" : "Nije izabrano"}
                   </span>
                 </button>
               );
@@ -326,39 +385,26 @@ export default function ProfileAllergensPage() {
 
       {allAllergens.length > 0 && (
         <footer className="profile-allergens-footer">
-          <div>
+          <div className="profile-allergens-footer__content">
+            <span className="profile-allergens-footer__eyebrow">
+              VAŠ MENI JE PERSONALIZOVAN
+            </span>
+
             <strong>
-              {myAllergens.length === 0
-                ? "Niste izabrali nijedan alergen"
-                : `${myAllergens.length} ${
-                    myAllergens.length === 1
-                      ? "alergen je izabran"
-                      : "alergena je izabrano"
-                  }`}
+              {myAllergens.length > 0
+                ? `Pratimo ${myAllergens.length} ${
+                    myAllergens.length === 1 ? "alergen" : "alergena"
+                  }`
+                : "Upozorenja još nisu podešena"}
             </strong>
 
-            <p>Izbor možete promeniti u bilo kom trenutku.</p>
+            <p>Vaš izbor možete promeniti u bilo kom trenutku.</p>
           </div>
 
-          <span
-            className={[
-              "profile-allergens-footer__status",
-              myAllergens.length > 0
-                ? "profile-allergens-footer__status--active"
-                : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            <span
-              className="profile-allergens-footer__status-dot"
-              aria-hidden="true"
-            />
-
-            {myAllergens.length > 0
-              ? "Upozorenja su aktivna"
-              : "Upozorenja nisu podešena"}
-          </span>
+          <Link to="/menu" className="btn btn--primary">
+            Pogledaj meni
+            <span aria-hidden="true">→</span>
+          </Link>
         </footer>
       )}
     </main>

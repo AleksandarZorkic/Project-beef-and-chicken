@@ -38,7 +38,8 @@
   background:
     radial-gradient(
       circle at 88% 12%,
-      rgba($color-primary, 0.085) transparent 30rem
+      rgba($color-primary, 0.085),
+      transparent 30rem
     ),
     radial-gradient(
       circle at 8% 90%,
@@ -180,6 +181,11 @@
   background: transparent;
   border-bottom: 1px solid transparent;
 
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+
+  box-shadow: none;
+
   transition:
     background-color 320ms ease,
     border-color 320ms ease,
@@ -187,42 +193,31 @@
     backdrop-filter 320ms ease;
 
   &--scrolled {
-    background: rgba(25, 28, 26, 0.9);
+    background: rgba(18, 25, 20, 0.94);
     border-bottom-color: rgba(255, 255, 255, 0.08);
 
-    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
 
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+    box-shadow:
+      0 14px 38px rgba(0, 0, 0, 0.34),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.035);
   }
 
   &__inner {
     display: flex;
+    min-height: $header-height;
     align-items: center;
-    justify-content: space-between;
-    gap: $space-6;
-
-    // Wider than the normal 1240px container.
-    // This moves the logo closer to the left edge.
-    width: min(1480px, calc(100% - 48px));
-
-    min-height: 88px;
-    margin-inline: auto;
+    gap: $space-5;
   }
 
   &__brand {
     display: inline-flex;
+    min-width: max-content;
     align-items: center;
     gap: $space-3;
 
-    min-width: max-content;
-
     border-radius: $radius-md;
-
-    transition: transform $transition-base;
-
-    &:hover {
-      transform: translateY(-2px);
-    }
 
     &:focus-visible {
       outline: 3px solid rgba($color-accent, 0.75);
@@ -232,69 +227,63 @@
 
   &__logo {
     display: block;
-
-    width: 64px;
-    height: 64px;
-    flex: 0 0 64px;
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
 
     object-fit: contain;
+    border-radius: 50%;
 
-    filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 7px 14px rgba(0, 0, 0, 0.32));
   }
 
   &__brand-content {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 1px;
   }
 
   &__brand-name {
     color: $color-text;
 
     font-family: $font-family-display;
-    font-size: 1.32rem;
+    font-size: 1.28rem;
     font-weight: $font-weight-extra-bold;
     line-height: 1;
-    letter-spacing: 0.045em;
+    letter-spacing: 0.015em;
     text-transform: uppercase;
-
-    text-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
   }
 
   &__brand-description {
-    color: rgba($color-text, 0.66);
+    color: $color-accent;
 
-    font-size: 0.7rem;
-    font-weight: $font-weight-semibold;
+    font-size: 0.69rem;
+    font-weight: $font-weight-bold;
     line-height: 1;
-    letter-spacing: 0.09em;
-
-    transition: color $transition-base;
-  }
-
-  &--scrolled &__brand-description {
-    color: $color-text-muted;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
   }
 
   &__nav {
     display: flex;
+    min-width: 0;
+    margin-left: auto;
     align-items: center;
-    gap: $space-2;
+    gap: $space-1;
   }
 
   &__nav-link {
     position: relative;
 
     display: inline-flex;
+    min-height: 40px;
+    padding-inline: $space-3;
     align-items: center;
     justify-content: center;
 
-    min-height: 40px;
-    padding-inline: $space-3;
+    color: $color-text-soft;
 
-    color: rgba($color-text, 0.78);
-
-    font-size: 0.84rem;
+    font-size: 0.86rem;
     font-weight: $font-weight-semibold;
     line-height: 1;
     white-space: nowrap;
@@ -307,20 +296,21 @@
 
     &:hover {
       color: $color-text;
-      background: rgba(255, 255, 255, 0.07);
+      background: rgba(255, 255, 255, 0.05);
     }
 
     &::after {
       position: absolute;
       right: $space-3;
-      bottom: 4px;
+      bottom: 5px;
       left: $space-3;
 
       height: 2px;
 
       content: "";
 
-      background: $color-accent;
+      background: linear-gradient(90deg, $color-primary, $color-accent);
+
       border-radius: $radius-pill;
 
       transform: scaleX(0);
@@ -462,20 +452,20 @@
     position: relative;
     z-index: 3;
 
-    // Wider container moves the text toward the left.
-    width: min(1480px, calc(100% - 48px));
+    width: 100%;
+    max-width: calc(#{$container-width} + #{2 * $container-padding-desktop});
 
     margin-inline: auto;
+    padding-inline: $container-padding-desktop;
 
     padding-top: clamp(115px, 13vh, 155px);
     padding-bottom: clamp(100px, 12vh, 135px);
   }
 
   &__content {
-    max-width: 760px;
+    max-width: 720px;
 
-    // Moves the complete text group slightly upward.
-    transform: translateY(-24px);
+    transform: translateY(-10px);
   }
 
   // Small label above the main title.
@@ -520,18 +510,18 @@
   &__title {
     display: flex;
     flex-direction: column;
+    gap: 0.08em;
 
-    max-width: 800px;
+    width: fit-content;
+    max-width: 760px;
     margin: 0;
 
     font-family: $font-family-display;
-    font-size: clamp(4.6rem, 8.5vw, 8rem);
+    font-size: clamp(3.8rem, 5.7vw, 6rem);
     font-weight: $font-weight-black;
-    line-height: 0.86;
-    letter-spacing: 0.018em;
+    line-height: 0.92;
+    letter-spacing: 0.008em;
     text-transform: uppercase;
-
-    text-wrap: balance;
   }
 
   &__title-line {
@@ -542,25 +532,23 @@
     text-shadow: 0 10px 35px rgba(0, 0, 0, 0.42);
 
     &--accent {
-      margin-top: 0.08em;
-
       color: $color-accent;
 
       text-shadow:
         0 10px 35px rgba(0, 0, 0, 0.45),
-        0 0 30px rgba($color-accent, 0.12);
+        0 0 26px rgba($color-accent, 0.1);
     }
   }
 
   &__text {
-    max-width: 620px;
+    max-width: 580px;
 
-    margin: $space-6 0 0;
+    margin: $space-5 0 0;
 
-    color: rgba($color-text, 0.82);
+    color: rgba($color-text, 0.78);
 
-    font-size: clamp(1rem, 1.5vw, 1.1rem);
-    line-height: 1.8;
+    font-size: clamp(0.95rem, 1.2vw, 1.05rem);
+    line-height: 1.7;
 
     text-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
   }
@@ -764,16 +752,30 @@
   }
 
   &__number {
-    display: block;
-
-    margin-bottom: $space-7;
+    display: inline-grid;
+    width: 64px;
+    height: 64px;
+    margin-bottom: $space-6;
+    place-items: center;
 
     color: $color-primary;
 
     font-family: $font-family-display;
-    font-size: 3rem;
+    font-size: 1.65rem;
     font-weight: $font-weight-black;
     line-height: 1;
+
+    border: 1px solid rgba($color-primary, 0.24);
+    border-radius: 18px;
+    background: linear-gradient(
+      145deg,
+      rgba($color-primary, 0.15),
+      rgba($color-primary, 0.035)
+    );
+
+    box-shadow:
+      inset 0 1px rgba(255, 255, 255, 0.06),
+      0 10px 26px rgba(0, 0, 0, 0.18);
   }
 
   &__title {
@@ -799,6 +801,9 @@
   padding: 0 $container-padding-desktop $space-9;
 
   &__inner {
+    position: relative;
+    isolation: isolate;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -808,6 +813,8 @@
 
     margin-inline: auto;
     padding: clamp(32px, 5vw, 58px);
+
+    overflow: hidden;
 
     background:
       radial-gradient(
@@ -821,6 +828,31 @@
     border-radius: $radius-xl;
 
     box-shadow: $shadow-lg;
+
+    // Decorative brand watermark.
+    &::after {
+      position: absolute;
+      right: -70px;
+      bottom: -100px;
+      z-index: 0;
+
+      width: 330px;
+      height: 330px;
+
+      pointer-events: none;
+      content: "";
+
+      opacity: 0.06;
+      background: url("/logo.png") center / contain no-repeat;
+
+      transform: rotate(-7deg);
+    }
+  }
+
+  &__content,
+  &__actions {
+    position: relative;
+    z-index: 1;
   }
 
   &__content {
@@ -844,6 +876,8 @@
 
     font-size: clamp(2.2rem, 4vw, 3.6rem);
     letter-spacing: 0.01em;
+
+    text-wrap: balance;
   }
 
   &__text {
@@ -852,6 +886,7 @@
     margin: 0;
 
     color: $color-text-soft;
+
     line-height: 1.75;
   }
 
@@ -862,6 +897,10 @@
     gap: $space-3;
 
     min-width: max-content;
+
+    .btn {
+      gap: 10px;
+    }
   }
 }
 
@@ -870,73 +909,493 @@
 // ======================================================
 
 .home-footer {
-  border-top: 1px solid $color-border;
+  position: relative;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 8% 10%,
+      rgba($color-primary, 0.09),
+      transparent 24rem
+    ),
+    linear-gradient(180deg, rgba(14, 20, 16, 0.98), rgba(7, 12, 9, 1));
+
+  border-top: 1px solid rgba($color-accent, 0.16);
+
+  &::before {
+    position: absolute;
+    top: 0;
+    right: 16%;
+    left: 16%;
+
+    height: 1px;
+
+    content: "";
+
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba($color-primary, 0.65),
+      rgba($color-accent, 0.45),
+      transparent
+    );
+  }
+
+  // ------------------------------------------------------
+  // Main footer grid
+  // ------------------------------------------------------
 
   &__inner {
     display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: $space-6;
 
-    width: min(
-      #{$container-width},
-      calc(100% - #{2 * $container-padding-desktop})
-    );
+    grid-template-columns:
+      minmax(250px, 1.15fr)
+      minmax(135px, 0.55fr)
+      minmax(240px, 0.9fr)
+      minmax(230px, 0.9fr);
 
-    min-height: 120px;
+    align-items: start;
+
+    gap: clamp(24px, 3vw, 42px);
+
+    width: min(1120px, calc(100% - #{2 * $container-padding-desktop}));
+
     margin-inline: auto;
+
+    padding-block: clamp(34px, 4vw, 46px);
+  }
+
+  // ------------------------------------------------------
+  // Brand
+  // ------------------------------------------------------
+
+  &__about {
+    max-width: 340px;
   }
 
   &__brand {
     display: inline-flex;
+
     align-items: center;
     gap: $space-3;
 
     color: $color-text;
 
-    font-family: $font-family-display;
-    font-size: 1.1rem;
-    font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+    border-radius: $radius-md;
+
+    &:focus-visible {
+      outline: 3px solid rgba($color-accent, 0.7);
+
+      outline-offset: 4px;
+    }
   }
 
   &__logo {
-    width: 44px;
-    height: 44px;
+    display: block;
+
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
 
     object-fit: contain;
+
+    border-radius: 50%;
+
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.4));
+  }
+
+  &__brand-content {
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+  }
+
+  &__brand-name {
+    color: $color-text;
+
+    font-family: $font-family-display;
+
+    font-size: 1.22rem;
+    font-weight: $font-weight-extra-bold;
+
+    line-height: 1;
+
+    letter-spacing: 0.015em;
+
+    text-transform: uppercase;
+  }
+
+  &__brand-description {
+    color: $color-accent;
+
+    font-size: 0.63rem;
+    font-weight: $font-weight-bold;
+
+    line-height: 1;
+
+    letter-spacing: 0.11em;
+
+    text-transform: uppercase;
   }
 
   &__text {
-    max-width: 560px;
+    max-width: 330px;
 
-    margin: 0 auto;
+    margin: $space-4 0 0;
 
     color: $color-text-muted;
 
-    font-size: 0.87rem;
-    line-height: 1.6;
-    text-align: center;
+    font-size: 0.82rem;
+    line-height: 1.65;
+
+    text-align: left;
   }
 
-  &__nav {
-    display: flex;
-    align-items: center;
-    gap: $space-4;
+  // ------------------------------------------------------
+  // Sections
+  // ------------------------------------------------------
 
-    a {
+  &__section {
+    display: flex;
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 9px;
+
+    min-width: 0;
+    margin: 0;
+
+    font-style: normal;
+
+    > a:not(.home-footer__contact-link) {
+      position: relative;
+
       color: $color-text-muted;
 
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: $font-weight-semibold;
 
-      transition: color $transition-fast;
+      transition:
+        color $transition-fast,
+        transform $transition-fast;
 
       &:hover {
         color: $color-accent;
+
+        transform: translateX(3px);
+      }
+
+      &:focus-visible {
+        outline: 2px solid rgba($color-accent, 0.7);
+
+        outline-offset: 3px;
+
+        border-radius: 3px;
       }
     }
+  }
+
+  &__section-title {
+    margin-bottom: 5px;
+
+    color: $color-text;
+
+    font-size: 0.67rem;
+    font-weight: $font-weight-extra-bold;
+
+    letter-spacing: 0.12em;
+
+    text-transform: uppercase;
+  }
+
+  // ------------------------------------------------------
+  // Contact
+  // ------------------------------------------------------
+
+  &__contact {
+    gap: 7px;
+  }
+
+  &__contact-link {
+    display: flex;
+
+    width: 100%;
+    min-width: 0;
+    min-height: 52px;
+
+    padding: 8px 10px;
+
+    align-items: center;
+
+    gap: 9px;
+
+    color: $color-text-soft;
+
+    background: rgba(255, 255, 255, 0.022);
+
+    border: 1px solid rgba(255, 255, 255, 0.065);
+
+    border-radius: $radius-md;
+
+    transition:
+      color $transition-fast,
+      background-color $transition-fast,
+      border-color $transition-fast,
+      transform $transition-fast;
+
+    &:hover {
+      color: $color-text;
+
+      background: rgba($color-primary, 0.075);
+
+      border-color: rgba($color-primary, 0.25);
+
+      transform: translateY(-1px);
+    }
+
+    &:focus-visible {
+      outline: 3px solid rgba($color-accent, 0.55);
+
+      outline-offset: 2px;
+    }
+
+    > span:last-child {
+      display: grid;
+
+      min-width: 0;
+
+      gap: 1px;
+    }
+
+    small {
+      color: $color-text-muted;
+
+      font-size: 0.55rem;
+      font-weight: $font-weight-bold;
+
+      letter-spacing: 0.07em;
+
+      text-transform: uppercase;
+    }
+
+    strong {
+      color: $color-text;
+
+      font-size: 0.72rem;
+      font-weight: $font-weight-bold;
+      line-height: 1.35;
+
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__contact-icon {
+    display: inline-grid;
+
+    width: 32px;
+    height: 32px;
+
+    flex: 0 0 32px;
+
+    place-items: center;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.07);
+
+    border: 1px solid rgba($color-accent, 0.18);
+
+    border-radius: 10px;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  // ------------------------------------------------------
+  // Working hours
+  // ------------------------------------------------------
+
+  &__hours {
+    gap: 7px;
+  }
+
+  &__hours-card {
+    width: 100%;
+
+    padding: 10px;
+
+    background: linear-gradient(
+      145deg,
+      rgba($color-accent, 0.025),
+      rgba(255, 255, 255, 0.015)
+    );
+
+    border: 1px solid rgba(255, 255, 255, 0.065);
+
+    border-radius: $radius-md;
+  }
+
+  &__hours-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+
+    > div {
+      display: grid;
+      gap: 1px;
+
+      min-width: 0;
+    }
+
+    strong {
+      color: $color-text;
+
+      font-size: 0.7rem;
+    }
+
+    div > span {
+      color: $color-text-muted;
+
+      font-size: 0.52rem;
+    }
+  }
+
+  &__hours-list {
+    display: grid;
+
+    gap: 0;
+  }
+
+  &__hours-row {
+    display: flex;
+
+    min-height: 29px;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding-inline: 3px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+
+    > span {
+      color: $color-text-muted;
+
+      font-size: 0.66rem;
+    }
+
+    > strong {
+      color: $color-text;
+
+      font-size: 0.67rem;
+      font-weight: $font-weight-bold;
+
+      white-space: nowrap;
+    }
+
+    &--closed {
+      > strong {
+        color: rgba($color-danger, 0.82);
+      }
+    }
+  }
+
+  &__hours-loading {
+    display: flex;
+
+    min-height: 45px;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    color: $color-text-muted;
+
+    font-size: 0.62rem;
+  }
+
+  &__hours-spinner {
+    width: 13px;
+    height: 13px;
+
+    border: 2px solid rgba($color-accent, 0.13);
+
+    border-top-color: $color-accent;
+
+    border-radius: 50%;
+
+    animation: home-footer-spin 700ms linear infinite;
+  }
+
+  &__hours-unavailable {
+    margin: 0;
+
+    padding: 7px 3px;
+
+    color: $color-text-muted;
+
+    font-size: 0.62rem;
+    line-height: 1.45;
+  }
+
+  // ------------------------------------------------------
+  // Bottom
+  // ------------------------------------------------------
+
+  &__bottom {
+    display: flex;
+
+    width: min(1120px, calc(100% - #{2 * $container-padding-desktop}));
+
+    margin-inline: auto;
+
+    padding-block: 13px;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: $space-4;
+
+    color: $color-text-muted;
+
+    font-size: 0.67rem;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.055);
+
+    p {
+      margin: 0;
+    }
+
+    span {
+      color: rgba($color-accent, 0.72);
+
+      font-weight: $font-weight-semibold;
+    }
+  }
+}
+
+@keyframes home-footer-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -958,15 +1417,37 @@
     flex-direction: column;
   }
 
-  .home-footer__inner {
-    grid-template-columns: 1fr;
-    justify-items: center;
+  .home-footer {
+    &__inner {
+      grid-template-columns:
+        minmax(0, 1.1fr)
+        minmax(0, 0.75fr);
 
-    padding-block: $space-6;
-  }
+      gap: 28px 34px;
 
-  .home-footer__text {
-    order: 3;
+      padding-block: 34px;
+    }
+
+    &__about {
+      max-width: 100%;
+    }
+
+    &__text {
+      max-width: 420px;
+    }
+
+    &__section {
+      min-width: 0;
+    }
+
+    &__contact-link,
+    &__hours-card {
+      width: 100%;
+    }
+
+    &__bottom {
+      padding-block: 12px;
+    }
   }
 }
 
@@ -977,18 +1458,14 @@
 @media (max-width: $breakpoint-tablet) {
   .home-header {
     &__inner {
-      width: calc(100% - 28px);
-      min-height: 76px;
+      min-height: 72px;
+      gap: $space-3;
     }
 
     &__logo {
-      width: 54px;
-      height: 54px;
-      flex-basis: 54px;
-    }
-
-    &__brand-name {
-      font-size: 1.1rem;
+      width: 50px;
+      height: 50px;
+      flex-basis: 50px;
     }
 
     &__brand-description {
@@ -1029,9 +1506,11 @@
       display: flex;
       align-items: flex-end;
 
-      width: calc(100% - 28px);
+      width: 100%;
+      max-width: none;
       min-height: 700px;
 
+      padding-inline: $container-padding-mobile;
       padding-top: 120px;
       padding-bottom: $space-7;
     }
@@ -1089,6 +1568,51 @@
       font-size: clamp(2.5rem, 8vw, 3.7rem);
     }
   }
+
+  .home-footer {
+    &__inner,
+    &__bottom {
+      width: calc(100% - #{2 * $container-padding-mobile});
+    }
+
+    &__inner {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+
+      gap: 26px;
+
+      padding-block: 32px;
+    }
+
+    &__about {
+      max-width: none;
+    }
+
+    &__text {
+      max-width: 100%;
+
+      font-size: 0.78rem;
+    }
+
+    &__section {
+      gap: 8px;
+    }
+
+    &__contact-link {
+      min-height: 50px;
+    }
+
+    &__hours-card {
+      padding: 9px;
+    }
+
+    &__hours-row {
+      min-height: 28px;
+    }
+
+    &__bottom {
+      padding-block: 12px;
+    }
+  }
 }
 
 // ======================================================
@@ -1098,25 +1622,13 @@
 @media (max-width: $breakpoint-mobile) {
   .home-header {
     &__inner {
-      min-height: 72px;
-    }
-
-    &__logo {
-      width: 52px;
-      height: 52px;
-      flex-basis: 52px;
-    }
-  }
-  .home-header {
-    &__inner {
-      width: calc(100% - 24px);
       min-height: 70px;
     }
 
     &__logo {
-      width: 50px;
-      height: 50px;
-      flex-basis: 50px;
+      width: 46px;
+      height: 46px;
+      flex-basis: 46px;
     }
 
     &__brand-content {
@@ -1218,10 +1730,110 @@
     }
   }
 
-  .home-footer__nav {
-    flex-wrap: wrap;
-    justify-content: center;
+  .home-footer {
+    &__inner {
+      grid-template-columns: 1fr;
+
+      gap: 24px;
+
+      padding-block: 30px;
+    }
+
+    &__about {
+      max-width: none;
+
+      grid-column: auto;
+    }
+
+    &__brand {
+      gap: 10px;
+    }
+
+    &__logo {
+      width: 48px;
+      height: 48px;
+      flex-basis: 48px;
+    }
+
+    &__brand-name {
+      font-size: 1.08rem;
+    }
+
+    &__brand-description {
+      font-size: 0.56rem;
+      letter-spacing: 0.08em;
+    }
+
+    &__text {
+      max-width: 100%;
+
+      margin-top: 12px;
+
+      font-size: 0.77rem;
+      line-height: 1.55;
+    }
+
+    &__section {
+      gap: 7px;
+    }
+
+    &__section-title {
+      margin-bottom: 4px;
+    }
+
+    &__contact-link {
+      width: 100%;
+      max-width: 100%;
+      min-height: 50px;
+
+      padding: 8px 10px;
+    }
+
+    &__contact-icon {
+      width: 31px;
+      height: 31px;
+      flex-basis: 31px;
+    }
+
+    &__hours-card {
+      width: 100%;
+
+      padding: 9px;
+    }
+
+    &__hours-header {
+      margin-bottom: 7px;
+      padding-bottom: 7px;
+    }
+
+    &__hours-row {
+      min-height: 28px;
+
+      > span {
+        font-size: 0.65rem;
+      }
+
+      > strong {
+        font-size: 0.66rem;
+      }
+    }
+
+    &__bottom {
+      align-items: flex-start;
+      flex-direction: column;
+
+      gap: 4px;
+
+      padding-block: 11px;
+
+      font-size: 0.62rem;
+
+      span {
+        display: none;
+      }
+    }
   }
+
   .home-menu-highlights {
     padding-block: $space-7;
 
@@ -1268,51 +1880,68 @@
   }
 
   &__section-header {
-    position: relative;
-
     display: flex;
-    align-items: center;
-    gap: $space-4;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: $space-2;
 
-    min-height: 54px;
     padding-bottom: $space-4;
 
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
-    h2,
+    > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+
+      color: $color-text-soft;
+
+      font-size: 0.78rem;
+      font-weight: $font-weight-bold;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+
+      &::before {
+        width: 8px;
+        height: 8px;
+
+        content: "";
+
+        background: $color-primary;
+        border-radius: 50%;
+
+        box-shadow: 0 0 14px rgba($color-primary, 0.65);
+      }
+    }
+
     h3 {
+      position: relative;
+
       margin: 0;
+
+      padding-bottom: 12px;
 
       color: $color-text;
 
-      font-size: clamp(2rem, 3.4vw, 3rem);
+      font-size: clamp(2.25rem, 4vw, 3.4rem);
       line-height: 0.95;
       letter-spacing: 0.015em;
       text-transform: uppercase;
-    }
 
-    &::before {
-      width: 9px;
-      height: 9px;
-      flex: 0 0 9px;
+      &::after {
+        position: absolute;
+        bottom: 0;
+        left: 0;
 
-      content: "";
+        width: 64px;
+        height: 3px;
 
-      background: $color-primary;
-      border-radius: 50%;
+        content: "";
 
-      box-shadow: 0 0 16px rgba($color-primary, 0.7);
-    }
+        background: linear-gradient(90deg, $color-primary, $color-accent);
 
-    &::after {
-      width: 54px;
-      height: 3px;
-
-      content: "";
-
-      background: linear-gradient(90deg, $color-primary, $color-accent);
-
-      border-radius: $radius-pill;
+        border-radius: $radius-pill;
+      }
     }
   }
 
@@ -1645,12 +2274,6 @@
   }
 }
 
-@media (min-width: 1100px) {
-  .home-hero__title {
-    font-size: clamp(6.5rem, 8.5vw, 8rem);
-  }
-}
-
 @media (max-width: $breakpoint-laptop) {
   .home-featured-dishes__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1682,5 +2305,17 @@
     &__badges {
       right: 14px;
     }
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .home-cta__inner::after {
+    right: -90px;
+    bottom: -60px;
+
+    width: 220px;
+    height: 220px;
+
+    opacity: 0.045;
   }
 }

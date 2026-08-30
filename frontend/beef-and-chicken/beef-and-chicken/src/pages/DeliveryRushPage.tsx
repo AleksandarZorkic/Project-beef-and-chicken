@@ -11,11 +11,8 @@ export default function DeliveryRushPage() {
     useState<DeliveryRushLeaderboard | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
-
   const [error, setError] = useState<string | null>(null);
-
   const [reloadKey, setReloadKey] = useState(0);
-
   const [isGameFocused, setIsGameFocused] = useState(false);
 
   const arenaRef = useRef<HTMLElement | null>(null);
@@ -102,6 +99,8 @@ export default function DeliveryRushPage() {
     };
   }, [isGameFocused]);
 
+  const leaderboardEntryCount = leaderboard?.entries.length ?? 0;
+
   return (
     <main
       className={[
@@ -113,7 +112,7 @@ export default function DeliveryRushPage() {
     >
       <div className="container">
         <header className="delivery-rush-page__header">
-          <span className="badge">
+          <span className="delivery-rush-page__badge">
             <span
               className="delivery-rush-page__badge-dot"
               aria-hidden="true"
@@ -140,8 +139,10 @@ export default function DeliveryRushPage() {
             </div>
 
             <div>
-              <span>Dozvoljeno</span>
-              <strong>{deliveryRushGameRules.maximumCollisions} sudara</strong>
+              <span>Kraj partije</span>
+              <strong>
+                Nakon {deliveryRushGameRules.maximumCollisions} sudara
+              </strong>
             </div>
 
             <div>
@@ -163,7 +164,8 @@ export default function DeliveryRushPage() {
         </section>
 
         <section
-          className="card delivery-rush-page__leaderboard"
+          className="delivery-rush-page__leaderboard"
+          aria-labelledby="delivery-rush-leaderboard-title"
           aria-busy={isLoading}
         >
           <div className="delivery-rush-page__leaderboard-header">
@@ -172,24 +174,40 @@ export default function DeliveryRushPage() {
                 Nova nedelja, novi rekord
               </span>
 
-              <h2>Nedeljna rang-lista</h2>
+              <h2 id="delivery-rush-leaderboard-title">Nedeljna rang-lista</h2>
 
               {leaderboard && (
-                <p>
-                  {formatDate(leaderboard.weekStartDate)}
-                  {" – "}
-                  {formatDate(leaderboard.weekEndDate)}
-                </p>
+                <div className="delivery-rush-page__leaderboard-meta">
+                  <span>
+                    {formatDate(leaderboard.weekStartDate)}
+                    {" – "}
+                    {formatDate(leaderboard.weekEndDate)}
+                  </span>
+
+                  <span aria-hidden="true">•</span>
+
+                  <strong>
+                    {leaderboardEntryCount}{" "}
+                    {getPlayerCountLabel(leaderboardEntryCount)}
+                  </strong>
+                </div>
               )}
             </div>
 
             <button
               type="button"
-              className="btn btn--ghost btn--sm"
+              className="delivery-rush-page__refresh-button"
               onClick={() => setReloadKey((current) => current + 1)}
               disabled={isLoading}
             >
-              Osveži
+              {isLoading && (
+                <span
+                  className="delivery-rush-page__refresh-spinner"
+                  aria-hidden="true"
+                />
+              )}
+
+              <span>{isLoading ? "Osvežavam..." : "Osveži"}</span>
             </button>
           </div>
 
@@ -204,15 +222,14 @@ export default function DeliveryRushPage() {
                 aria-hidden="true"
               />
 
-              <p>Učitavanje rang-liste...</p>
+              <strong>Učitavamo rang-listu</strong>
+
+              <p>Preuzimamo najbolje rezultate za ovu nedelju.</p>
             </div>
           )}
 
           {!isLoading && error && (
-            <div
-              className="alert alert--error delivery-rush-page__error"
-              role="alert"
-            >
+            <div className="delivery-rush-page__error" role="alert">
               <div>
                 <strong>Rang-lista nije učitana</strong>
                 <p>{error}</p>
@@ -220,7 +237,7 @@ export default function DeliveryRushPage() {
 
               <button
                 type="button"
-                className="btn btn--ghost btn--sm"
+                className="delivery-rush-page__retry-button"
                 onClick={() => setReloadKey((current) => current + 1)}
               >
                 Pokušaj ponovo
@@ -230,7 +247,15 @@ export default function DeliveryRushPage() {
 
           {!isLoading && !error && leaderboard?.entries.length === 0 && (
             <div className="delivery-rush-page__state">
+              <span
+                className="delivery-rush-page__empty-icon"
+                aria-hidden="true"
+              >
+                🏁
+              </span>
+
               <strong>Rang-lista je još prazna</strong>
+
               <p>Završi partiju i postavi prvi rezultat ove nedelje.</p>
             </div>
           )}
@@ -239,7 +264,7 @@ export default function DeliveryRushPage() {
             !error &&
             leaderboard &&
             leaderboard.entries.length > 0 && (
-              <div className="table-wrapper">
+              <div className="delivery-rush-page__table-wrapper">
                 <table>
                   <thead>
                     <tr>
@@ -299,10 +324,13 @@ export default function DeliveryRushPage() {
                           </td>
 
                           <td data-label="Distanca">{entry.distance}</td>
+
                           <td data-label="Izbegnuto">
                             {entry.avoidedObstacles}
                           </td>
+
                           <td data-label="Sudari">{entry.collisionCount}</td>
+
                           <td data-label="Combo">{entry.maxCombo}</td>
                         </tr>
                       );
@@ -325,4 +353,23 @@ function formatDate(value: string): string {
   }
 
   return `${day}.${month}.${year}.`;
+}
+
+function getPlayerCountLabel(count: number) {
+  if (count === 1) {
+    return "igrač";
+  }
+
+  const lastTwoDigits = count % 100;
+  const lastDigit = count % 10;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return "igrača";
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return "igrača";
+  }
+
+  return "igrača";
 }

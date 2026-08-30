@@ -9,6 +9,25 @@ function formatPrice(value: number) {
   return `${value.toLocaleString("sr-RS")} RSD`;
 }
 
+function getItemCountLabel(count: number) {
+  if (count === 1) {
+    return "stavka";
+  }
+
+  const lastTwoDigits = count % 100;
+  const lastDigit = count % 10;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return "stavki";
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return "stavke";
+  }
+
+  return "stavki";
+}
+
 export default function CartPage() {
   const { user } = useAuth();
   const { state, dispatch } = useCart();
@@ -21,48 +40,117 @@ export default function CartPage() {
   }
 
   const subtotal = cartSubtotal(state);
-  const deliveryFee = 200;
-  const total = state.items.length > 0 ? subtotal + deliveryFee : 0;
+
+  const totalItemQuantity = state.items.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  );
+
+  function setQuantity(cartItemId: string, quantity: number) {
+    if (quantity < 1) {
+      return;
+    }
+
+    dispatch({
+      type: "SET-QTY",
+      payload: {
+        cartItemId,
+        quantity,
+      },
+    });
+  }
+
+  function removeItem(cartItemId: string) {
+    dispatch({
+      type: "REMOVE-ITEM",
+      payload: {
+        cartItemId,
+      },
+    });
+  }
 
   return (
     <main className="cart-page">
-      <header className="cart-page__header">
-        <div>
-          <span className="cart-page__eyebrow">TVOJA PORUDŽBINA</span>
+      <section className="cart-hero">
+        <div className="cart-hero__content">
+          <span className="cart-hero__eyebrow">
+            BEEF N&apos; CHICKEN • TVOJA PORUDŽBINA
+          </span>
 
-          <h1 className="cart-page__title">Korpa</h1>
+          <h1 className="cart-hero__title">Tvoja korpa</h1>
 
-          <p className="cart-page__description">
-            Pregledaj odabrana jela, promeni količinu i dodaj posebnu napomenu
-            za restoran.
+          <p className="cart-hero__description">
+            Proveri odabrana jela, prilagodi količinu i dodaj napomenu pre nego
+            što nastaviš na podatke za preuzimanje ili dostavu.
           </p>
         </div>
 
-        <div className="cart-page__item-count">
-          <strong>{state.items.length}</strong>
+        <aside className="cart-hero__summary">
+          <div className="cart-hero__summary-top">
+            <span className="cart-hero__summary-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M6 4h12l1 16H5L6 4Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinejoin="round"
+                />
 
-          <span>{state.items.length === 1 ? "stavka" : "stavke"}</span>
-        </div>
-      </header>
+                <path
+                  d="M9 8a3 3 0 0 0 6 0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+
+            <span className="cart-hero__summary-label">Trenutna korpa</span>
+          </div>
+
+          <div className="cart-hero__summary-count">
+            <strong>{totalItemQuantity}</strong>
+
+            <span>
+              {getItemCountLabel(totalItemQuantity)}
+              <small>
+                {" "}
+                u {state.items.length} {getItemCountLabel(state.items.length)}
+              </small>
+            </span>
+          </div>
+
+          <div className="cart-hero__summary-footer">
+            <span>Međuzbir</span>
+
+            <strong>{formatPrice(subtotal)}</strong>
+          </div>
+        </aside>
+      </section>
 
       <div className="cart-layout">
         <section className="cart-content" aria-labelledby="cart-items-title">
-          <div className="cart-content__header">
+          <header className="cart-content__header">
             <div>
               <span className="cart-content__eyebrow">ODABRANA JELA</span>
 
               <h2 id="cart-items-title" className="cart-content__title">
                 Sadržaj korpe
               </h2>
+
+              <p className="cart-content__description">
+                Sve što će biti uključeno u tvoju porudžbinu.
+              </p>
             </div>
 
             {state.items.length > 0 && (
               <span className="cart-content__quantity">
-                {state.items.length}{" "}
-                {state.items.length === 1 ? "stavka" : "stavke"}
+                {totalItemQuantity} {getItemCountLabel(totalItemQuantity)}
               </span>
             )}
-          </div>
+          </header>
 
           {state.items.length === 0 ? (
             <div className="cart-empty-state">
@@ -79,9 +167,16 @@ export default function CartPage() {
               <h3 className="cart-empty-state__title">Korpa je prazna</h3>
 
               <p className="cart-empty-state__description">
-                Dodaj omiljeni burger, hrskavu piletinu ili neki od naših obroka
-                iz menija.
+                Izaberi nešto iz menija i napravi obrok baš po svom ukusu.
               </p>
+
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => navigate("/menu")}
+              >
+                Pogledaj meni
+              </button>
             </div>
           ) : (
             <div className="cart-items">
@@ -113,10 +208,10 @@ export default function CartPage() {
                           alt={item.name}
                           className="cart-item__image"
                           loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = "/logo.png";
-                            e.currentTarget.className = "cart-item__logo";
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = "/logo.png";
+                            event.currentTarget.className = "cart-item__logo";
                           }}
                         />
                       ) : (
@@ -138,7 +233,7 @@ export default function CartPage() {
                           <h3 className="cart-item__name">{item.name}</h3>
                         </div>
 
-                        <strong className="cart-item__total-mobile">
+                        <strong className="cart-item__heading-total">
                           {formatPrice(itemTotal)}
                         </strong>
                       </div>
@@ -149,72 +244,78 @@ export default function CartPage() {
                         <strong>{formatPrice(item.unitPrice)}</strong>
                       </div>
 
-                      {sideDishes.length > 0 && (
-                        <div className="cart-item__options">
-                          <span className="cart-item__options-label">
-                            Prilozi
-                          </span>
-
-                          <div className="cart-item__option-list">
-                            {sideDishes.map((option) => (
-                              <span
-                                key={option.optionId}
-                                className="cart-item__option"
-                              >
-                                {option.name}
-
-                                {option.unitPrice > 0 && (
-                                  <small>
-                                    +{formatPrice(option.unitPrice)}
-                                  </small>
-                                )}
+                      {(sideDishes.length > 0 ||
+                        spices.length > 0 ||
+                        sweetAdditions.length > 0) && (
+                        <div className="cart-item__selected">
+                          {sideDishes.length > 0 && (
+                            <div className="cart-item__options">
+                              <span className="cart-item__options-label">
+                                Prilozi
                               </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
 
-                      {spices.length > 0 && (
-                        <div className="cart-item__options">
-                          <span className="cart-item__options-label">
-                            Začini
-                          </span>
+                              <div className="cart-item__option-list">
+                                {sideDishes.map((option) => (
+                                  <span
+                                    key={option.optionId}
+                                    className="cart-item__option"
+                                  >
+                                    {option.name}
 
-                          <div className="cart-item__option-list">
-                            {spices.map((option) => (
-                              <span
-                                key={option.optionId}
-                                className="cart-item__option cart-item__option--spice"
-                              >
-                                {option.name}
+                                    {option.unitPrice > 0 && (
+                                      <small>
+                                        +{formatPrice(option.unitPrice)}
+                                      </small>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {spices.length > 0 && (
+                            <div className="cart-item__options">
+                              <span className="cart-item__options-label">
+                                Začini
                               </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
 
-                      {sweetAdditions.length > 0 && (
-                        <div className="cart-item__options">
-                          <span className="cart-item__options-label">
-                            Slatki dodaci
-                          </span>
+                              <div className="cart-item__option-list">
+                                {spices.map((option) => (
+                                  <span
+                                    key={option.optionId}
+                                    className="cart-item__option cart-item__option--spice"
+                                  >
+                                    {option.name}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
-                          <div className="cart-item__option-list">
-                            {sweetAdditions.map((option) => (
-                              <span
-                                key={option.optionId}
-                                className="cart-item__option cart-item__option--sweet"
-                              >
-                                {option.name}
-
-                                {option.unitPrice > 0 && (
-                                  <small>
-                                    +{formatPrice(option.unitPrice)}
-                                  </small>
-                                )}
+                          {sweetAdditions.length > 0 && (
+                            <div className="cart-item__options">
+                              <span className="cart-item__options-label">
+                                Slatki dodaci
                               </span>
-                            ))}
-                          </div>
+
+                              <div className="cart-item__option-list">
+                                {sweetAdditions.map((option) => (
+                                  <span
+                                    key={option.optionId}
+                                    className="cart-item__option cart-item__option--sweet"
+                                  >
+                                    {option.name}
+
+                                    {option.unitPrice > 0 && (
+                                      <small>
+                                        +{formatPrice(option.unitPrice)}
+                                      </small>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -226,63 +327,68 @@ export default function CartPage() {
                         </div>
                       )}
 
-                      <div className="cart-item__prices">
-                        <div>
-                          <span>Cena po komadu</span>
+                      <div className="cart-item__price-breakdown">
+                        <span>Cena po komadu</span>
 
-                          <strong>{formatPrice(itemUnitTotal)}</strong>
-                        </div>
-
-                        <div>
-                          <span>Ukupno za stavku</span>
-
-                          <strong>{formatPrice(itemTotal)}</strong>
-                        </div>
+                        <strong>{formatPrice(itemUnitTotal)}</strong>
                       </div>
                     </div>
 
                     <div className="cart-item__controls">
-                      <label
-                        className="cart-item__quantity-label"
-                        htmlFor={`cart-quantity-${item.cartItemId}`}
-                      >
+                      <span className="cart-item__quantity-label">
                         Količina
-                      </label>
+                      </span>
 
-                      <input
-                        id={`cart-quantity-${item.cartItemId}`}
-                        className="cart-item__quantity-input"
-                        type="number"
-                        min={1}
-                        value={item.quantity}
-                        onChange={(e) => {
-                          const quantity = Number(e.target.value);
-
-                          if (quantity < 1) {
-                            return;
+                      <div
+                        className="cart-item__stepper"
+                        aria-label={`Količina za ${item.name}`}
+                      >
+                        <button
+                          type="button"
+                          aria-label={`Smanji količinu za ${item.name}`}
+                          disabled={item.quantity <= 1}
+                          onClick={() =>
+                            setQuantity(item.cartItemId, item.quantity - 1)
                           }
+                        >
+                          −
+                        </button>
 
-                          dispatch({
-                            type: "SET-QTY",
-                            payload: {
-                              cartItemId: item.cartItemId,
-                              quantity,
-                            },
-                          });
-                        }}
-                      />
+                        <input
+                          id={`cart-quantity-${item.cartItemId}`}
+                          className="cart-item__quantity-input"
+                          type="number"
+                          min={1}
+                          value={item.quantity}
+                          aria-label={`Količina za ${item.name}`}
+                          onChange={(event) => {
+                            const quantity = Number(event.target.value);
+
+                            if (Number.isInteger(quantity) && quantity >= 1) {
+                              setQuantity(item.cartItemId, quantity);
+                            }
+                          }}
+                        />
+
+                        <button
+                          type="button"
+                          aria-label={`Povećaj količinu za ${item.name}`}
+                          onClick={() =>
+                            setQuantity(item.cartItemId, item.quantity + 1)
+                          }
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <strong className="cart-item__controls-total">
+                        {formatPrice(itemTotal)}
+                      </strong>
 
                       <button
                         type="button"
                         className="cart-item__remove-button"
-                        onClick={() =>
-                          dispatch({
-                            type: "REMOVE-ITEM",
-                            payload: {
-                              cartItemId: item.cartItemId,
-                            },
-                          })
-                        }
+                        onClick={() => removeItem(item.cartItemId)}
                       >
                         <svg
                           viewBox="0 0 24 24"
@@ -308,45 +414,67 @@ export default function CartPage() {
             </div>
           )}
 
-          <section className="cart-notes" aria-labelledby="cart-notes-title">
-            <div className="cart-notes__header">
-              <div>
-                <span className="cart-notes__eyebrow">DODATNE INFORMACIJE</span>
+          {state.items.length > 0 && (
+            <section className="cart-notes" aria-labelledby="cart-notes-title">
+              <div className="cart-notes__header">
+                <div>
+                  <span className="cart-notes__eyebrow">
+                    DODATNE INFORMACIJE
+                  </span>
 
-                <h2 id="cart-notes-title" className="cart-notes__title">
-                  Beleška za porudžbinu
-                </h2>
+                  <h2 id="cart-notes-title" className="cart-notes__title">
+                    Beleška za restoran
+                  </h2>
+                </div>
+
+                <span className="cart-notes__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M5 19h4L19 9l-4-4L5 15v4Z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinejoin="round"
+                    />
+
+                    <path
+                      d="m13.5 6.5 4 4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    />
+                  </svg>
+                </span>
               </div>
 
-              <span className="cart-notes__icon" aria-hidden="true">
-                ✎
-              </span>
-            </div>
+              <label className="cart-notes__label" htmlFor="order-notes">
+                Posebna napomena
+              </label>
 
-            <label className="cart-notes__label" htmlFor="order-notes">
-              Posebna napomena
-            </label>
+              <textarea
+                id="order-notes"
+                className="cart-notes__textarea"
+                value={state.notes}
+                maxLength={500}
+                onChange={(event) =>
+                  dispatch({
+                    type: "SET-NOTES",
+                    payload: {
+                      notes: event.target.value,
+                    },
+                  })
+                }
+                rows={4}
+                placeholder="Na primer: bez luka, dobro pečeno..."
+              />
 
-            <textarea
-              id="order-notes"
-              className="cart-notes__textarea"
-              value={state.notes}
-              onChange={(e) =>
-                dispatch({
-                  type: "SET-NOTES",
-                  payload: {
-                    notes: e.target.value,
-                  },
-                })
-              }
-              rows={4}
-              placeholder="Na primer: bez luka, dobro pečeno, pozvati pre dostave..."
-            />
+              <div className="cart-notes__footer">
+                <p>Restoran će videti ovu napomenu prilikom pripreme.</p>
 
-            <p className="cart-notes__hint">
-              Restoran će videti ovu napomenu prilikom pripreme porudžbine.
-            </p>
-          </section>
+                <span>{state.notes.length}/500</span>
+              </div>
+            </section>
+          )}
         </section>
 
         <aside className="cart-summary" aria-labelledby="cart-summary-title">
@@ -358,13 +486,13 @@ export default function CartPage() {
             </h2>
 
             <p className="cart-summary__description">
-              Proveri konačan iznos pre nastavka na unos podataka za dostavu.
+              Konačna cena dostave zavisi od izbora na sledećem koraku.
             </p>
           </div>
 
           <div className="cart-summary__rows">
             <div className="cart-summary__row">
-              <span>Međuzbir</span>
+              <span>Jela i dodaci</span>
 
               <strong>{formatPrice(subtotal)}</strong>
             </div>
@@ -372,22 +500,31 @@ export default function CartPage() {
             <div className="cart-summary__row">
               <span>Dostava</span>
 
-              <strong>{formatPrice(deliveryFee)}</strong>
+              <strong className="cart-summary__pending-value">
+                Na checkout-u
+              </strong>
             </div>
           </div>
 
           <div className="cart-summary__total">
-            <span>Ukupno</span>
+            <div>
+              <span>Međuzbir</span>
 
-            <strong>{formatPrice(total)}</strong>
+              <small>pre dostave</small>
+            </div>
+
+            <strong>{formatPrice(subtotal)}</strong>
           </div>
 
           <div className="cart-summary__delivery-note">
             <span className="cart-summary__delivery-icon" aria-hidden="true">
-              ✓
+              i
             </span>
 
-            <p>Cena dostave je uključena u prikazani ukupan iznos.</p>
+            <p>
+              Na sledećem koraku biraš dostavu ili lično preuzimanje i tada
+              dobijaš konačan iznos porudžbine.
+            </p>
           </div>
 
           <button
@@ -411,9 +548,11 @@ export default function CartPage() {
             Nastavi kupovinu
           </button>
 
-          <p className="cart-summary__security">
-            Sigurna obrada podataka porudžbine
-          </p>
+          <div className="cart-summary__trust">
+            <span aria-hidden="true">✓</span>
+
+            <p>Sve izmene možeš proveriti pre slanja porudžbine.</p>
+          </div>
         </aside>
       </div>
     </main>

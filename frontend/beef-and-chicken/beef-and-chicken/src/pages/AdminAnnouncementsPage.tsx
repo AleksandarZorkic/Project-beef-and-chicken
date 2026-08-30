@@ -15,6 +15,7 @@ import {
   type AnnouncementDto,
   type AnnouncementType,
 } from "../api/announcementApi";
+import { useAppDialog } from "../components/dialogs/AppDialogContext";
 import { getApiErrorMessage } from "../utils/apiErrors";
 import "../styles/AdminAnnouncementsPage.scss";
 
@@ -28,7 +29,17 @@ type AnnouncementFormState = {
   endsAt: string;
 };
 
-type AnnouncementFilter = "all" | "active" | "inactive" | "pinned";
+type AnnouncementFilter =
+  | "all"
+  | "live"
+  | "scheduled"
+  | "expired"
+  | "inactive"
+  | "pinned";
+
+type AnnouncementTypeFilter = AnnouncementType | "all";
+
+type TimingStatus = "active" | "scheduled" | "expired" | "inactive";
 
 const announcementTypes: {
   value: AnnouncementType;
@@ -42,8 +53,16 @@ const announcementTypes: {
   { value: "Delivery", label: "Dostava" },
 ];
 
+const statusPriority: Record<TimingStatus, number> = {
+  active: 0,
+  scheduled: 1,
+  expired: 2,
+  inactive: 3,
+};
+
 function toDateTimeLocal(value: Date) {
   const offset = value.getTimezoneOffset();
+
   const localDate = new Date(value.getTime() - offset * 60_000);
 
   return localDate.toISOString().slice(0, 16);
@@ -66,7 +85,13 @@ function formatDate(value?: string | null) {
     return "Bez ograničenja";
   }
 
-  return new Date(value).toLocaleString("sr-RS", {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("sr-RS", {
     dateStyle: "medium",
     timeStyle: "short",
   });
@@ -92,8 +117,12 @@ function getInitialForm(): AnnouncementFormState {
   };
 }
 
-function getTimingStatus(announcement: AnnouncementDto) {
+function getTimingStatus(announcement: AnnouncementDto): {
+  label: string;
+  modifier: TimingStatus;
+} {
   const now = Date.now();
+
   const startsAt = new Date(announcement.startsAt).getTime();
 
   const endsAt = announcement.endsAt
@@ -122,12 +151,14 @@ function getTimingStatus(announcement: AnnouncementDto) {
   }
 
   return {
-    label: "Aktivna",
+    label: "Aktivna sada",
     modifier: "active",
   };
 }
 
 export default function AdminAnnouncementsPage() {
+  const { confirm } = useAppDialog();
+
   const [announcements, setAnnouncements] = useState<AnnouncementDto[]>([]);
 
   const [form, setForm] = useState<AnnouncementFormState>(getInitialForm());
@@ -136,10 +167,14 @@ export default function AdminAnnouncementsPage() {
 
   const [filter, setFilter] = useState<AnnouncementFilter>("all");
 
+  const [typeFilter, setTypeFilter] = useState<AnnouncementTypeFilter>("all");
+
   const [searchTerm, setSearchTerm] = useState("");
 
   const [loading, setLoading] = useState(true);
+
   const [refreshing, setRefreshing] = useState(false);
+
   const [saving, setSaving] = useState(false);
 
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
@@ -172,7 +207,7 @@ export default function AdminAnnouncementsPage() {
   }, []);
 
   useEffect(() => {
-    loadAnnouncements();
+    void loadAnnouncements();
   }, [loadAnnouncements]);
 
   useEffect(() => {
@@ -184,24 +219,46 @@ export default function AdminAnnouncementsPage() {
       setSuccessMessage(null);
     }, 3000);
 
-    return () => {
-      window.clearTimeout(timer);
-    };
+    return () => window.clearTimeout(timer);
   }, [successMessage]);
 
   const counts = useMemo(() => {
-    const active = announcements.filter(
-      (announcement) => announcement.isActive,
-    ).length;
+    let live = 0;
+    let scheduled = 0;
+    let expired = 0;
+    let inactive = 0;
+    let pinned = 0;
 
-    const pinned = announcements.filter(
-      (announcement) => announcement.isPinned,
-    ).length;
+    announcements.forEach((announcement) => {
+      const status = getTimingStatus(announcement);
+
+      if (status.modifier === "active") {
+        live += 1;
+      }
+
+      if (status.modifier === "scheduled") {
+        scheduled += 1;
+      }
+
+      if (status.modifier === "expired") {
+        expired += 1;
+      }
+
+      if (status.modifier === "inactive") {
+        inactive += 1;
+      }
+
+      if (announcement.isPinned) {
+        pinned += 1;
+      }
+    });
 
     return {
       all: announcements.length,
-      active,
-      inactive: announcements.length - active,
+      live,
+      scheduled,
+      expired,
+      inactive,
       pinned,
     };
   }, [announcements]);
@@ -211,15 +268,29 @@ export default function AdminAnnouncementsPage() {
 
     return announcements
       .filter((announcement) => {
-        if (filter === "active" && !announcement.isActive) {
+        const status = getTimingStatus(announcement);
+
+        if (filter === "live" && status.modifier !== "active") {
           return false;
         }
 
-        if (filter === "inactive" && announcement.isActive) {
+        if (filter === "scheduled" && status.modifier !== "scheduled") {
+          return false;
+        }
+
+        if (filter === "expired" && status.modifier !== "expired") {
+          return false;
+        }
+
+        if (filter === "inactive" && status.modifier !== "inactive") {
           return false;
         }
 
         if (filter === "pinned" && !announcement.isPinned) {
+          return false;
+        }
+
+        if (typeFilter !== "all" && announcement.type !== typeFilter) {
           return false;
         }
 
@@ -242,12 +313,23 @@ export default function AdminAnnouncementsPage() {
           return firstAnnouncement.isPinned ? -1 : 1;
         }
 
+        const firstStatus = getTimingStatus(firstAnnouncement).modifier;
+
+        const secondStatus = getTimingStatus(secondAnnouncement).modifier;
+
+        if (statusPriority[firstStatus] !== statusPriority[secondStatus]) {
+          return statusPriority[firstStatus] - statusPriority[secondStatus];
+        }
+
         return (
           new Date(secondAnnouncement.startsAt).getTime() -
           new Date(firstAnnouncement.startsAt).getTime()
         );
       });
-  }, [announcements, filter, searchTerm]);
+  }, [announcements, filter, typeFilter, searchTerm]);
+
+  const hasActiveFilters =
+    filter !== "all" || typeFilter !== "all" || searchTerm.trim().length > 0;
 
   function clearForm() {
     setForm(getInitialForm());
@@ -256,8 +338,15 @@ export default function AdminAnnouncementsPage() {
 
   function resetForm() {
     clearForm();
+
     setError(null);
     setSuccessMessage(null);
+  }
+
+  function resetFilters() {
+    setFilter("all");
+    setTypeFilter("all");
+    setSearchTerm("");
   }
 
   function scrollToEditor() {
@@ -280,7 +369,9 @@ export default function AdminAnnouncementsPage() {
 
   function startNewAnnouncement() {
     setForm(getInitialForm());
+
     setEditingId(null);
+
     setError(null);
     setSuccessMessage(null);
 
@@ -307,19 +398,22 @@ export default function AdminAnnouncementsPage() {
   }
 
   function validateForm() {
-    if (!form.title.trim()) {
+    const title = form.title.trim();
+    const content = form.content.trim();
+
+    if (!title) {
       return "Naslov novosti je obavezan.";
     }
 
-    if (form.title.trim().length < 2 || form.title.trim().length > 120) {
+    if (title.length < 2 || title.length > 120) {
       return "Naslov mora imati između 2 i 120 karaktera.";
     }
 
-    if (!form.content.trim()) {
+    if (!content) {
       return "Tekst novosti je obavezan.";
     }
 
-    if (form.content.trim().length < 5 || form.content.trim().length > 1000) {
+    if (content.length < 5 || content.length > 1000) {
       return "Tekst novosti mora imati između 5 i 1000 karaktera.";
     }
 
@@ -327,9 +421,18 @@ export default function AdminAnnouncementsPage() {
       return "Datum početka prikazivanja je obavezan.";
     }
 
+    const startsAt = new Date(form.startsAt);
+
+    if (Number.isNaN(startsAt.getTime())) {
+      return "Datum početka nije validan.";
+    }
+
     if (form.endsAt) {
-      const startsAt = new Date(form.startsAt);
       const endsAt = new Date(form.endsAt);
+
+      if (Number.isNaN(endsAt.getTime())) {
+        return "Datum završetka nije validan.";
+      }
 
       if (endsAt <= startsAt) {
         return "Datum završetka mora biti posle datuma početka.";
@@ -349,28 +452,27 @@ export default function AdminAnnouncementsPage() {
       return;
     }
 
+    const wasEditing = editingId !== null;
+
     const payload = {
       title: form.title.trim(),
       content: form.content.trim(),
       type: form.type,
       isActive: form.isActive,
       isPinned: form.isPinned,
-      startsAt:
-        editingId !== null
-          ? dateTimeLocalToIso(form.startsAt)
-          : new Date().toISOString(),
+
+      // Important: use the selected time
+      // both for creation and editing.
+      startsAt: dateTimeLocalToIso(form.startsAt),
+
       endsAt: form.endsAt ? dateTimeLocalToIso(form.endsAt) : null,
     };
 
     try {
       setSaving(true);
+
       setError(null);
       setSuccessMessage(null);
-
-      const message =
-        editingId !== null
-          ? "Novost je uspešno izmenjena."
-          : "Novost je uspešno dodata.";
 
       if (editingId !== null) {
         await updateAnnouncement(editingId, payload);
@@ -379,9 +481,14 @@ export default function AdminAnnouncementsPage() {
       }
 
       clearForm();
+
       await loadAnnouncements(false);
 
-      setSuccessMessage(message);
+      setSuccessMessage(
+        wasEditing
+          ? "Novost je uspešno izmenjena."
+          : "Novost je uspešno kreirana.",
+      );
     } catch (error) {
       setError(getApiErrorMessage(error));
     } finally {
@@ -390,9 +497,19 @@ export default function AdminAnnouncementsPage() {
   }
 
   async function handleDeactivate(announcement: AnnouncementDto) {
-    const confirmed = window.confirm(
-      `Da li želiš da deaktiviraš novost "${announcement.title}"?`,
-    );
+    const confirmed = await confirm({
+      title: "Deaktivacija novosti",
+      message: (
+        <p>
+          Da li želite da deaktivirate objavu{" "}
+          <strong>„{announcement.title}“</strong>? Više se neće prikazivati
+          kupcima, ali je kasnije možete ponovo aktivirati.
+        </p>
+      ),
+      confirmText: "Deaktiviraj",
+      cancelText: "Odustani",
+      tone: "danger",
+    });
 
     if (!confirmed) {
       return;
@@ -401,6 +518,7 @@ export default function AdminAnnouncementsPage() {
     try {
       setError(null);
       setSuccessMessage(null);
+
       setActionLoadingId(announcement.id);
 
       await deactivateAnnouncement(announcement.id);
@@ -423,9 +541,11 @@ export default function AdminAnnouncementsPage() {
     try {
       setError(null);
       setSuccessMessage(null);
+
       setActionLoadingId(announcement.id);
 
       await activateAnnouncement(announcement.id);
+
       await loadAnnouncements(false);
 
       setSuccessMessage("Novost je aktivirana.");
@@ -437,9 +557,19 @@ export default function AdminAnnouncementsPage() {
   }
 
   async function handleDelete(announcement: AnnouncementDto) {
-    const confirmed = window.confirm(
-      `Da li želiš trajno da obrišeš novost "${announcement.title}"?`,
-    );
+    const confirmed = await confirm({
+      title: "Brisanje novosti",
+      message: (
+        <p>
+          Da li želite trajno da obrišete objavu{" "}
+          <strong>„{announcement.title}“</strong>? Ovu radnju nije moguće
+          poništiti.
+        </p>
+      ),
+      confirmText: "Obriši",
+      cancelText: "Odustani",
+      tone: "danger",
+    });
 
     if (!confirmed) {
       return;
@@ -448,6 +578,7 @@ export default function AdminAnnouncementsPage() {
     try {
       setError(null);
       setSuccessMessage(null);
+
       setActionLoadingId(announcement.id);
 
       await deleteAnnouncement(announcement.id);
@@ -458,7 +589,7 @@ export default function AdminAnnouncementsPage() {
 
       await loadAnnouncements(false);
 
-      setSuccessMessage("Novost je obrisana.");
+      setSuccessMessage("Novost je trajno obrisana.");
     } catch (error) {
       setError(getApiErrorMessage(error));
     } finally {
@@ -469,7 +600,7 @@ export default function AdminAnnouncementsPage() {
   if (loading) {
     return (
       <main className="admin-announcements-page">
-        <section className="admin-announcements-state">
+        <section className="admin-announcements-state" aria-live="polite">
           <span
             className="admin-announcements-state__spinner"
             aria-hidden="true"
@@ -477,7 +608,8 @@ export default function AdminAnnouncementsPage() {
 
           <div>
             <strong>Učitavamo novosti</strong>
-            <p>Sačekajte trenutak.</p>
+
+            <p>Pripremamo objave i njihov trenutni status.</p>
           </div>
         </section>
       </main>
@@ -486,31 +618,85 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <main className="admin-announcements-page">
-      <header className="admin-announcements-page__header">
-        <div className="admin-announcements-page__heading">
-          <span className="admin-announcements-page__eyebrow">
-            KOMUNIKACIJA SA KUPCIMA
+      <section className="admin-announcements-hero">
+        <div className="admin-announcements-hero__content">
+          <span className="admin-announcements-hero__eyebrow">
+            BEEF N&apos; CHICKEN • ADMIN
           </span>
 
-          <h1 className="admin-announcements-page__title">Novosti</h1>
+          <h1 className="admin-announcements-hero__title">Novosti</h1>
 
-          <p className="admin-announcements-page__description">
-            Objavite akcije, važne informacije, promene u dostavi, nova jela i
-            obaveštenja o radnom vremenu.
+          <p className="admin-announcements-hero__description">
+            Upravljajte akcijama, važnim informacijama, novim jelima, promenama
+            dostave i drugim obaveštenjima koja vide vaši kupci.
           </p>
+
+          <div className="admin-announcements-hero__meta">
+            <span className="admin-announcements-hero__live">
+              <span aria-hidden="true" />
+              {counts.live} aktivnih sada
+            </span>
+
+            <span className="admin-announcements-hero__scheduled">
+              {counts.scheduled} zakazanih
+            </span>
+          </div>
         </div>
 
-        <button
-          type="button"
-          className="admin-announcements-page__new-button"
-          onClick={startNewAnnouncement}
-        >
-          <span aria-hidden="true">+</span>
-          Nova novost
-        </button>
-      </header>
+        <aside className="admin-announcements-summary">
+          <header className="admin-announcements-summary__header">
+            <span
+              className="admin-announcements-summary__icon"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M5 5h14v14H5V5Zm3 4h8M8 13h8M8 17h5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
 
-      <section className="admin-announcement-stats">
+            <span className="admin-announcements-summary__label">OBJAVE</span>
+          </header>
+
+          <div className="admin-announcements-summary__value">
+            <strong>{counts.all}</strong>
+
+            <span>novosti u sistemu</span>
+          </div>
+
+          <footer className="admin-announcements-summary__footer">
+            <div>
+              <span>Važne</span>
+              <strong>{counts.pinned}</strong>
+            </div>
+
+            <div>
+              <span>Završene</span>
+              <strong>{counts.expired}</strong>
+            </div>
+
+            <button
+              type="button"
+              className="admin-announcements-summary__new"
+              aria-label="Dodaj novu novost"
+              onClick={startNewAnnouncement}
+            >
+              +
+            </button>
+          </footer>
+        </aside>
+      </section>
+
+      <section
+        className="admin-announcement-stats"
+        aria-label="Pregled novosti"
+      >
         <article className="admin-announcement-stat">
           <span className="admin-announcement-stat__label">Ukupno</span>
 
@@ -524,14 +710,38 @@ export default function AdminAnnouncementsPage() {
         </article>
 
         <article className="admin-announcement-stat admin-announcement-stat--active">
-          <span className="admin-announcement-stat__label">Aktivne</span>
+          <span className="admin-announcement-stat__label">Aktivne sada</span>
 
           <strong className="admin-announcement-stat__value">
-            {counts.active}
+            {counts.live}
           </strong>
 
           <span className="admin-announcement-stat__description">
-            Uključene objave
+            Trenutno vidljive
+          </span>
+        </article>
+
+        <article className="admin-announcement-stat admin-announcement-stat--scheduled">
+          <span className="admin-announcement-stat__label">Zakazane</span>
+
+          <strong className="admin-announcement-stat__value">
+            {counts.scheduled}
+          </strong>
+
+          <span className="admin-announcement-stat__description">
+            Čekaju početak
+          </span>
+        </article>
+
+        <article className="admin-announcement-stat admin-announcement-stat--expired">
+          <span className="admin-announcement-stat__label">Završene</span>
+
+          <strong className="admin-announcement-stat__value">
+            {counts.expired}
+          </strong>
+
+          <span className="admin-announcement-stat__description">
+            Period je istekao
           </span>
         </article>
 
@@ -543,7 +753,7 @@ export default function AdminAnnouncementsPage() {
           </strong>
 
           <span className="admin-announcement-stat__description">
-            Isključene objave
+            Ručno isključene
           </span>
         </article>
 
@@ -555,7 +765,7 @@ export default function AdminAnnouncementsPage() {
           </strong>
 
           <span className="admin-announcement-stat__description">
-            Istaknute iznad ostalih
+            Istaknute objave
           </span>
         </article>
       </section>
@@ -568,7 +778,8 @@ export default function AdminAnnouncementsPage() {
             </span>
 
             <div>
-              <strong>Uspešno završeno</strong>
+              <strong>Promena je sačuvana</strong>
+
               <p>{successMessage}</p>
             </div>
           </div>
@@ -584,7 +795,8 @@ export default function AdminAnnouncementsPage() {
             </span>
 
             <div>
-              <strong>Došlo je do greške</strong>
+              <strong>Proverite podatke</strong>
+
               <p>{error}</p>
             </div>
           </div>
@@ -610,9 +822,22 @@ export default function AdminAnnouncementsPage() {
               <h2 className="admin-announcement-editor__title">
                 {isEditing ? "Izmeni novost" : "Dodaj novost"}
               </h2>
+
+              <p>
+                {isEditing
+                  ? "Promenite sadržaj ili period prikazivanja postojeće objave."
+                  : "Kreirajte novu informaciju koja će biti prikazana kupcima."}
+              </p>
             </div>
 
-            <span className="admin-announcement-editor__mode">
+            <span
+              className={[
+                "admin-announcement-editor__mode",
+                isEditing ? "admin-announcement-editor__mode--editing" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
               {isEditing ? "Izmena" : "Kreiranje"}
             </span>
           </header>
@@ -621,128 +846,155 @@ export default function AdminAnnouncementsPage() {
             className="form admin-announcement-form"
             onSubmit={handleSubmit}
           >
-            <div className="form-field">
-              <label className="form-label" htmlFor="announcement-title">
-                Naslov
-                <span className="form-label__required">*</span>
-              </label>
+            <section className="admin-announcement-form-section">
+              <header className="admin-announcement-form-section__header">
+                <span>01</span>
 
-              <input
-                id="announcement-title"
-                className="form-control"
-                type="text"
-                value={form.title}
-                maxLength={120}
-                placeholder="Na primer: Neradni dani za praznike"
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    title: event.target.value,
-                  }))
-                }
-              />
+                <div>
+                  <strong>Sadržaj objave</strong>
 
-              <p className="form-help">{form.title.length}/120 karaktera</p>
-            </div>
+                  <p>Naslov, tekst i tip novosti.</p>
+                </div>
+              </header>
 
-            <div className="form-field">
-              <label className="form-label" htmlFor="announcement-content">
-                Tekst novosti
-                <span className="form-label__required">*</span>
-              </label>
+              <div className="form-field">
+                <label className="form-label" htmlFor="announcement-title">
+                  Naslov
+                  <span className="form-label__required">*</span>
+                </label>
 
-              <textarea
-                id="announcement-content"
-                className="form-textarea"
-                value={form.content}
-                maxLength={1000}
-                rows={6}
-                placeholder="Unesite detalje obaveštenja..."
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    content: event.target.value,
-                  }))
-                }
-              />
+                <input
+                  id="announcement-title"
+                  className="form-control"
+                  type="text"
+                  value={form.title}
+                  maxLength={120}
+                  placeholder="Na primer: Praznična akcija"
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      title: event.target.value,
+                    }))
+                  }
+                />
 
-              <p className="form-help">{form.content.length}/1000 karaktera</p>
-            </div>
+                <p className="form-help">{form.title.length}/120</p>
+              </div>
 
-            <div className="form-field">
-              <label className="form-label" htmlFor="announcement-type">
-                Tip novosti
-              </label>
+              <div className="form-field">
+                <label className="form-label" htmlFor="announcement-content">
+                  Tekst novosti
+                  <span className="form-label__required">*</span>
+                </label>
 
-              <select
-                id="announcement-type"
-                className="form-select"
-                value={form.type}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    type: event.target.value as AnnouncementType,
-                  }))
-                }
-              >
-                {announcementTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <textarea
+                  id="announcement-content"
+                  className="form-textarea"
+                  value={form.content}
+                  maxLength={1000}
+                  rows={6}
+                  placeholder="Unesite detalje obaveštenja..."
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      content: event.target.value,
+                    }))
+                  }
+                />
 
-            <div className="form-field">
-              <label className="form-label" htmlFor="announcement-start">
-                Početak prikazivanja
-                <span className="form-label__required">*</span>
-              </label>
+                <p className="form-help">{form.content.length}/1000</p>
+              </div>
 
-              <input
-                id="announcement-start"
-                className="form-control"
-                type="datetime-local"
-                value={form.startsAt}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    startsAt: event.target.value,
-                  }))
-                }
-              />
-            </div>
+              <div className="form-field">
+                <label className="form-label" htmlFor="announcement-type">
+                  Tip novosti
+                </label>
 
-            <div className="form-field">
-              <label className="form-label" htmlFor="announcement-end">
-                Kraj prikazivanja
-                <span className="form-label__optional">opciono</span>
-              </label>
+                <select
+                  id="announcement-type"
+                  className="form-select"
+                  value={form.type}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      type: event.target.value as AnnouncementType,
+                    }))
+                  }
+                >
+                  {announcementTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </section>
 
-              <input
-                id="announcement-end"
-                className="form-control"
-                type="datetime-local"
-                value={form.endsAt}
-                min={form.startsAt}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    endsAt: event.target.value,
-                  }))
-                }
-              />
+            <section className="admin-announcement-schedule">
+              <header className="admin-announcement-schedule__header">
+                <span>02</span>
 
-              <p className="form-help">
-                Ostavite prazno ako objava nema datum završetka.
-              </p>
-            </div>
+                <div>
+                  <strong>Period prikazivanja</strong>
+
+                  <p>Odredite kada objava postaje vidljiva.</p>
+                </div>
+              </header>
+
+              <div className="form-field">
+                <label className="form-label" htmlFor="announcement-start">
+                  Početak
+                  <span className="form-label__required">*</span>
+                </label>
+
+                <input
+                  id="announcement-start"
+                  className="form-control"
+                  type="datetime-local"
+                  value={form.startsAt}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      startsAt: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="form-field">
+                <label className="form-label" htmlFor="announcement-end">
+                  Završetak
+                  <span className="form-label__optional">opciono</span>
+                </label>
+
+                <input
+                  id="announcement-end"
+                  className="form-control"
+                  type="datetime-local"
+                  value={form.endsAt}
+                  min={form.startsAt}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      endsAt: event.target.value,
+                    }))
+                  }
+                />
+
+                <p className="form-help">
+                  Prazno znači da objava nema automatski datum završetka.
+                </p>
+              </div>
+            </section>
 
             <section className="admin-announcement-settings">
               <label className="admin-announcement-setting">
                 <span className="admin-announcement-setting__content">
-                  <strong>Aktivna novost</strong>
-                  <small>Objava može da se prikazuje kupcima.</small>
+                  <strong>Aktivna objava</strong>
+
+                  <small>
+                    Omogućava prikaz objave u odgovarajućem periodu.
+                  </small>
                 </span>
 
                 <span className="admin-announcement-switch">
@@ -768,8 +1020,9 @@ export default function AdminAnnouncementsPage() {
 
               <label className="admin-announcement-setting">
                 <span className="admin-announcement-setting__content">
-                  <strong>Važna novost</strong>
-                  <small>Prikazuje se iznad ostalih objava.</small>
+                  <strong>Važna objava</strong>
+
+                  <small>Ističe se i prikazuje pre ostalih novosti.</small>
                 </span>
 
                 <span className="admin-announcement-switch">
@@ -800,19 +1053,18 @@ export default function AdminAnnouncementsPage() {
                 className="admin-announcement-button admin-announcement-button--primary"
                 disabled={saving}
               >
-                {saving ? (
-                  <>
-                    <span
-                      className="admin-announcement-button__spinner"
-                      aria-hidden="true"
-                    />
-                    Čuvam...
-                  </>
-                ) : isEditing ? (
-                  "Sačuvaj izmene"
-                ) : (
-                  "Dodaj novost"
+                {saving && (
+                  <span
+                    className="admin-announcement-button__spinner"
+                    aria-hidden="true"
+                  />
                 )}
+
+                {saving
+                  ? "Čuvam..."
+                  : isEditing
+                    ? "Sačuvaj izmene"
+                    : "Objavi novost"}
               </button>
 
               {isEditing && (
@@ -833,104 +1085,153 @@ export default function AdminAnnouncementsPage() {
           <header className="admin-announcement-catalog__header">
             <div>
               <span className="admin-announcement-catalog__eyebrow">
-                PREGLED OBJAVA
+                UPRAVLJANJE OBJAVAMA
               </span>
 
               <h2 className="admin-announcement-catalog__title">Sve novosti</h2>
+
+              <p>Pretražite, filtrirajte i upravljajte postojećim objavama.</p>
             </div>
 
-            <button
-              type="button"
-              className="admin-announcement-catalog__refresh"
-              disabled={refreshing}
-              onClick={() => loadAnnouncements(false)}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M20 7v5h-5M4 17v-5h5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+            <div className="admin-announcement-catalog__header-actions">
+              <div className="admin-announcement-catalog__result">
+                <strong>{visibleAnnouncements.length}</strong>
 
-                <path
-                  d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+                <span>prikazano</span>
+              </div>
 
-              {refreshing ? "Osvežavam..." : "Osveži"}
-            </button>
+              <button
+                type="button"
+                className="admin-announcement-catalog__refresh"
+                disabled={refreshing}
+                onClick={() => void loadAnnouncements(false)}
+              >
+                {refreshing ? (
+                  <span className="admin-announcement-catalog__spinner" />
+                ) : (
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M20 7v5h-5M4 17v-5h5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+
+                    <path
+                      d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+
+                {refreshing ? "Osvežavam..." : "Osveži"}
+              </button>
+            </div>
           </header>
 
           <div className="admin-announcement-filters">
-            <div className="admin-announcement-search">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle
-                  cx="11"
-                  cy="11"
-                  r="7"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
+            <label className="admin-announcement-search">
+              <span>Pretraga</span>
+
+              <div className="admin-announcement-search__control">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle
+                    cx="11"
+                    cy="11"
+                    r="7"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+
+                  <path
+                    d="m16.2 16.2 4 4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                </svg>
+
+                <input
+                  type="search"
+                  value={searchTerm}
+                  placeholder="Naslov ili sadržaj..."
+                  onChange={(event) => setSearchTerm(event.target.value)}
                 />
+              </div>
+            </label>
 
-                <path
-                  d="m16.2 16.2 4 4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                />
-              </svg>
+            <label className="admin-announcement-type-filter">
+              <span>Tip</span>
 
-              <input
-                type="search"
-                value={searchTerm}
-                placeholder="Pretraži novosti..."
-                aria-label="Pretraži novosti"
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </div>
+              <select
+                value={typeFilter}
+                onChange={(event) =>
+                  setTypeFilter(event.target.value as AnnouncementTypeFilter)
+                }
+              >
+                <option value="all">Svi tipovi</option>
 
-            <div
-              className="admin-announcement-filter-tabs"
-              role="group"
-              aria-label="Filtriranje novosti"
-            >
-              {(
-                [
-                  ["all", "Sve", counts.all],
-                  ["active", "Aktivne", counts.active],
-                  ["inactive", "Neaktivne", counts.inactive],
-                  ["pinned", "Važne", counts.pinned],
-                ] as const
-              ).map(([value, label, count]) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={[
-                    "admin-announcement-filter-tabs__button",
-                    filter === value
-                      ? "admin-announcement-filter-tabs__button--active"
-                      : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  aria-pressed={filter === value}
-                  onClick={() => setFilter(value)}
-                >
-                  {label}
-                  <span>{count}</span>
-                </button>
-              ))}
-            </div>
+                {announcementTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                className="admin-announcement-filters__clear"
+                onClick={resetFilters}
+              >
+                Poništi filtere
+              </button>
+            )}
+          </div>
+
+          <div
+            className="admin-announcement-filter-tabs"
+            role="group"
+            aria-label="Status novosti"
+          >
+            {(
+              [
+                ["all", "Sve", counts.all],
+                ["live", "Aktivne", counts.live],
+                ["scheduled", "Zakazane", counts.scheduled],
+                ["expired", "Završene", counts.expired],
+                ["inactive", "Neaktivne", counts.inactive],
+                ["pinned", "Važne", counts.pinned],
+              ] as const
+            ).map(([value, label, count]) => (
+              <button
+                key={value}
+                type="button"
+                className={[
+                  "admin-announcement-filter-tabs__button",
+                  filter === value
+                    ? "admin-announcement-filter-tabs__button--active"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-pressed={filter === value}
+                onClick={() => setFilter(value)}
+              >
+                {label}
+
+                <span>{count}</span>
+              </button>
+            ))}
           </div>
 
           {visibleAnnouncements.length === 0 ? (
@@ -956,11 +1257,11 @@ export default function AdminAnnouncementsPage() {
               </span>
 
               <h3 className="admin-announcement-empty__title">
-                Nema novosti za izabrani filter
+                Nema odgovarajućih novosti
               </h3>
 
               <p className="admin-announcement-empty__description">
-                Promenite filter ili dodajte novu objavu.
+                Promenite filtere ili kreirajte novu objavu.
               </p>
             </div>
           ) : (
@@ -978,7 +1279,7 @@ export default function AdminAnnouncementsPage() {
                       announcement.isPinned
                         ? "admin-announcement-card--pinned"
                         : "",
-                      !announcement.isActive
+                      timingStatus.modifier === "inactive"
                         ? "admin-announcement-card--inactive"
                         : "",
                       editingId === announcement.id
@@ -989,52 +1290,69 @@ export default function AdminAnnouncementsPage() {
                       .join(" ")}
                   >
                     <header className="admin-announcement-card__header">
-                      <span
-                        className={[
-                          "admin-announcement-type",
-                          getTypeClass(announcement.type),
-                        ].join(" ")}
-                      >
-                        {getTypeLabel(announcement.type)}
-                      </span>
-
-                      <span
-                        className={[
-                          "admin-announcement-status",
-                          `admin-announcement-status--${timingStatus.modifier}`,
-                        ].join(" ")}
-                      >
+                      <div className="admin-announcement-card__badges">
                         <span
-                          className="admin-announcement-status__dot"
-                          aria-hidden="true"
-                        />
+                          className={[
+                            "admin-announcement-type",
+                            getTypeClass(announcement.type),
+                          ].join(" ")}
+                        >
+                          {getTypeLabel(announcement.type)}
+                        </span>
 
-                        {timingStatus.label}
+                        <span
+                          className={[
+                            "admin-announcement-status",
+                            `admin-announcement-status--${timingStatus.modifier}`,
+                          ].join(" ")}
+                        >
+                          <span
+                            className="admin-announcement-status__dot"
+                            aria-hidden="true"
+                          />
+
+                          {timingStatus.label}
+                        </span>
+
+                        {announcement.isPinned && (
+                          <span className="admin-announcement-card__pinned">
+                            ★ Važna
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="admin-announcement-card__id">
+                        #{announcement.id}
                       </span>
                     </header>
 
-                    {announcement.isPinned && (
-                      <span className="admin-announcement-card__pinned-label">
-                        VAŽNA OBJAVA
-                      </span>
-                    )}
+                    <div className="admin-announcement-card__main">
+                      <h3 className="admin-announcement-card__title">
+                        {announcement.title}
+                      </h3>
 
-                    <h3 className="admin-announcement-card__title">
-                      {announcement.title}
-                    </h3>
+                      <p className="admin-announcement-card__content">
+                        {announcement.content}
+                      </p>
+                    </div>
 
-                    <p className="admin-announcement-card__content">
-                      {announcement.content}
-                    </p>
-
-                    <div className="admin-announcement-card__dates">
+                    <div className="admin-announcement-card__schedule">
                       <div>
                         <span>Početak</span>
+
                         <strong>{formatDate(announcement.startsAt)}</strong>
                       </div>
 
+                      <span
+                        className="admin-announcement-card__schedule-arrow"
+                        aria-hidden="true"
+                      >
+                        →
+                      </span>
+
                       <div>
                         <span>Završetak</span>
+
                         <strong>{formatDate(announcement.endsAt)}</strong>
                       </div>
                     </div>
@@ -1054,7 +1372,7 @@ export default function AdminAnnouncementsPage() {
                           type="button"
                           className="admin-announcement-card__action admin-announcement-card__action--deactivate"
                           disabled={isActionLoading || saving}
-                          onClick={() => handleDeactivate(announcement)}
+                          onClick={() => void handleDeactivate(announcement)}
                         >
                           {isActionLoading ? "Obrađujem..." : "Deaktiviraj"}
                         </button>
@@ -1063,7 +1381,7 @@ export default function AdminAnnouncementsPage() {
                           type="button"
                           className="admin-announcement-card__action admin-announcement-card__action--activate"
                           disabled={isActionLoading || saving}
-                          onClick={() => handleActivate(announcement)}
+                          onClick={() => void handleActivate(announcement)}
                         >
                           {isActionLoading ? "Obrađujem..." : "Aktiviraj"}
                         </button>
@@ -1073,7 +1391,7 @@ export default function AdminAnnouncementsPage() {
                         type="button"
                         className="admin-announcement-card__action admin-announcement-card__action--delete"
                         disabled={isActionLoading || saving}
-                        onClick={() => handleDelete(announcement)}
+                        onClick={() => void handleDelete(announcement)}
                       >
                         Obriši
                       </button>

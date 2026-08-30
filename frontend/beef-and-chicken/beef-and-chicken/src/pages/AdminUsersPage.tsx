@@ -21,6 +21,7 @@ import {
 } from "../components/admin/users/AdminUserForm";
 import { AdminUsersFilters } from "../components/admin/users/AdminUsersFilters";
 import { AdminUsersTable } from "../components/admin/users/AdminUsersTable";
+import { useAppDialog } from "../components/dialogs/AppDialogContext";
 import "../styles/AdminUsersPage.scss";
 
 const emptyForm: AdminUserFormState = {
@@ -38,6 +39,7 @@ type UsersTab = "staff" | "customers";
 
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
+  const { alert: showAlert, confirm } = useAppDialog();
 
   const currentUserId = currentUser?.id ? Number(currentUser.id) : null;
 
@@ -55,6 +57,7 @@ export default function AdminUsersPage() {
   const [customerPage, setCustomerPage] = useState(1);
 
   const [staffSearch, setStaffSearch] = useState("");
+
   const [customerSearch, setCustomerSearch] = useState("");
 
   const [staffStatus, setStaffStatus] = useState<AdminUsersStatus>("all");
@@ -157,6 +160,7 @@ export default function AdminUsersPage() {
 
   function resetForm() {
     clearForm();
+
     setError(null);
     setSuccessMessage(null);
   }
@@ -263,15 +267,13 @@ export default function AdminUsersPage() {
       return;
     }
 
+    const wasEditing = editingUserId !== null;
+
     try {
       setSaving(true);
+
       setError(null);
       setSuccessMessage(null);
-
-      const message =
-        editingUserId !== null
-          ? "Korisnik je uspešno izmenjen."
-          : "Korisnik je uspešno kreiran.";
 
       if (editingUserId !== null) {
         await updateUserByAdmin(editingUserId, {
@@ -296,9 +298,14 @@ export default function AdminUsersPage() {
       }
 
       clearForm();
+
       await reloadVisibleTables();
 
-      setSuccessMessage(message);
+      setSuccessMessage(
+        wasEditing
+          ? "Korisnik je uspešno izmenjen."
+          : "Korisnik je uspešno kreiran.",
+      );
     } catch (error) {
       setError(getApiErrorMessage(error));
     } finally {
@@ -306,40 +313,55 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function showActionError(message: string) {
+    setError(message);
+    setSuccessMessage(null);
+
+    await showAlert({
+      title: "Radnja nije dozvoljena",
+      message: <p>{message}</p>,
+      confirmText: "U redu",
+    });
+  }
+
   async function handleAnonymize(user: AdminUserDto) {
     if (currentUserId === user.id) {
-      const message = "Ne možeš anonimizovati sopstveni nalog.";
-
-      setError(message);
-      setSuccessMessage(null);
-      window.alert(message);
+      await showActionError("Ne možete anonimizovati sopstveni nalog.");
 
       return;
     }
 
     if (user.isAnonymized) {
-      const message = "Korisnik je već anonimizovan.";
-
-      setError(message);
-      setSuccessMessage(null);
-      window.alert(message);
+      await showActionError("Korisnik je već anonimizovan.");
 
       return;
     }
 
     if (!user.isBlocked) {
-      const message = "Korisnik mora biti blokiran pre anonimizacije.";
-
-      setError(message);
-      setSuccessMessage(null);
-      window.alert(message);
+      await showActionError("Korisnik mora biti blokiran pre anonimizacije.");
 
       return;
     }
 
-    const confirmed = window.confirm(
-      `Da li sigurno želiš da anonimizuješ korisnika "${user.userName}"?\n\nOva akcija menja lične podatke korisnika i ne treba je koristiti bez razloga.`,
-    );
+    const confirmed = await confirm({
+      title: "Anonimizacija korisnika",
+      message: (
+        <>
+          <p>
+            Da li želite da anonimizujete korisnika{" "}
+            <strong>„{user.userName}“</strong>?
+          </p>
+
+          <p>
+            Lični podaci korisnika biće zamenjeni anonimnim podacima. Ovu radnju
+            koristite samo kada za to postoji razlog.
+          </p>
+        </>
+      ),
+      confirmText: "Anonimizuj",
+      cancelText: "Odustani",
+      tone: "danger",
+    });
 
     if (!confirmed) {
       return;
@@ -348,12 +370,18 @@ export default function AdminUsersPage() {
     try {
       setError(null);
       setSuccessMessage(null);
+
       setActionLoadingId(user.id);
 
       await anonymizeUser(user.id);
+
+      if (editingUserId === user.id) {
+        clearForm();
+      }
+
       await reloadVisibleTables();
 
-      setSuccessMessage(`Korisnik "${user.userName}" je anonimizovan.`);
+      setSuccessMessage(`Korisnik „${user.userName}“ je anonimizovan.`);
     } catch (error) {
       setError(getApiErrorMessage(error));
     } finally {
@@ -363,38 +391,35 @@ export default function AdminUsersPage() {
 
   async function handleBlock(user: AdminUserDto) {
     if (currentUserId === user.id) {
-      const message = "Ne možeš blokirati sopstveni nalog.";
-
-      setError(message);
-      setSuccessMessage(null);
-      window.alert(message);
+      await showActionError("Ne možete blokirati sopstveni nalog.");
 
       return;
     }
 
     if (user.isAnonymized) {
-      const message = "Anonimizovan korisnik ne može biti blokiran.";
-
-      setError(message);
-      setSuccessMessage(null);
-      window.alert(message);
+      await showActionError("Anonimizovan korisnik ne može biti blokiran.");
 
       return;
     }
 
     if (user.isBlocked) {
-      const message = "Korisnik je već blokiran.";
-
-      setError(message);
-      setSuccessMessage(null);
-      window.alert(message);
+      await showActionError("Korisnik je već blokiran.");
 
       return;
     }
 
-    const confirmed = window.confirm(
-      `Da li sigurno želiš da blokiraš korisnika "${user.userName}"?`,
-    );
+    const confirmed = await confirm({
+      title: "Blokiranje korisnika",
+      message: (
+        <p>
+          Da li želite da blokirate korisnika <strong>„{user.userName}“</strong>
+          ? Nakon blokiranja neće moći normalno da koristi nalog.
+        </p>
+      ),
+      confirmText: "Blokiraj",
+      cancelText: "Odustani",
+      tone: "danger",
+    });
 
     if (!confirmed) {
       return;
@@ -403,12 +428,14 @@ export default function AdminUsersPage() {
     try {
       setError(null);
       setSuccessMessage(null);
+
       setActionLoadingId(user.id);
 
       await blockUser(user.id);
+
       await reloadVisibleTables();
 
-      setSuccessMessage(`Korisnik "${user.userName}" je blokiran.`);
+      setSuccessMessage(`Korisnik „${user.userName}“ je blokiran.`);
     } catch (error) {
       setError(getApiErrorMessage(error));
     } finally {
@@ -417,9 +444,19 @@ export default function AdminUsersPage() {
   }
 
   async function handleUnblock(user: AdminUserDto) {
-    const confirmed = window.confirm(
-      `Da li želiš da odblokiraš korisnika "${user.userName}"?`,
-    );
+    const confirmed = await confirm({
+      title: "Odblokiranje korisnika",
+      message: (
+        <p>
+          Da li želite da odblokirate korisnika{" "}
+          <strong>„{user.userName}“</strong>? Korisnik će ponovo moći da koristi
+          svoj nalog.
+        </p>
+      ),
+      confirmText: "Odblokiraj",
+      cancelText: "Odustani",
+      tone: "success",
+    });
 
     if (!confirmed) {
       return;
@@ -428,12 +465,14 @@ export default function AdminUsersPage() {
     try {
       setError(null);
       setSuccessMessage(null);
+
       setActionLoadingId(user.id);
 
       await unblockUser(user.id);
+
       await reloadVisibleTables();
 
-      setSuccessMessage(`Korisnik "${user.userName}" je odblokiran.`);
+      setSuccessMessage(`Korisnik „${user.userName}“ je odblokiran.`);
     } catch (error) {
       setError(getApiErrorMessage(error));
     } finally {
@@ -443,6 +482,9 @@ export default function AdminUsersPage() {
 
   async function handleTabChange(tab: UsersTab) {
     setActiveTab(tab);
+
+    setError(null);
+    setSuccessMessage(null);
 
     if (tab === "customers" && !customersLoaded) {
       await loadCustomerUsers(1);
@@ -455,31 +497,100 @@ export default function AdminUsersPage() {
     ? (customersResult?.totalCount ?? 0)
     : null;
 
+  const currentResult = activeTab === "staff" ? staffResult : customersResult;
+
+  const currentPage = activeTab === "staff" ? staffPage : customerPage;
+
+  const currentLoading =
+    activeTab === "staff" ? staffLoading : customersLoading;
+
+  const currentGroupLabel = activeTab === "staff" ? "Interni nalozi" : "Kupci";
+
   return (
     <main className="admin-users-page">
-      <header className="admin-users-page__header">
-        <div>
-          <span className="admin-users-page__eyebrow">
-            UPRAVLJANJE NALOZIMA
+      <section className="admin-users-hero">
+        <div className="admin-users-hero__content">
+          <span className="admin-users-hero__eyebrow">
+            BEEF N&apos; CHICKEN • ADMIN
           </span>
 
-          <h1 className="admin-users-page__title">Korisnici</h1>
+          <h1 className="admin-users-hero__title">Korisnici</h1>
 
-          <p className="admin-users-page__description">
-            Kreirajte korisnike, menjajte njihove podatke i role i upravljajte
-            statusom korisničkih naloga.
+          <p className="admin-users-hero__description">
+            Kreirajte naloge zaposlenih, upravljajte rolama i kontrolišite
+            status naloga zaposlenih i kupaca iz jednog centralnog panela.
           </p>
+
+          <div className="admin-users-hero__meta">
+            <span className="admin-users-hero__status">
+              <span aria-hidden="true" />
+              {staffTotal} internih naloga
+            </span>
+
+            <span className="admin-users-hero__customers">
+              {customerTotal === null
+                ? "Kupci se učitavaju po potrebi"
+                : `${customerTotal} kupaca`}
+            </span>
+          </div>
         </div>
 
-        <button
-          type="button"
-          className="admin-users-page__new-button"
-          onClick={startNewUser}
-        >
-          <span aria-hidden="true">+</span>
-          Novi korisnik
-        </button>
-      </header>
+        <aside className="admin-users-summary">
+          <header className="admin-users-summary__header">
+            <span className="admin-users-summary__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle
+                  cx="9"
+                  cy="8"
+                  r="3"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                />
+
+                <path
+                  d="M3.5 19c.4-3.1 2.3-5 5.5-5s5.1 1.9 5.5 5M16 8.5a2.5 2.5 0 1 1 0 5M16.5 14c2.5.2 3.8 1.8 4 4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+
+            <span className="admin-users-summary__label">NALOZI</span>
+          </header>
+
+          <div className="admin-users-summary__value">
+            <strong>{currentResult?.totalCount ?? 0}</strong>
+
+            <span>{currentGroupLabel.toLowerCase()}</span>
+          </div>
+
+          <footer className="admin-users-summary__footer">
+            <div>
+              <span>Aktivni pregled</span>
+
+              <strong>{currentGroupLabel}</strong>
+            </div>
+
+            <div>
+              <span>Stranica</span>
+
+              <strong>{currentPage}</strong>
+            </div>
+
+            <button
+              type="button"
+              className="admin-users-summary__new"
+              onClick={startNewUser}
+              aria-label="Kreiraj novog korisnika"
+            >
+              +
+            </button>
+          </footer>
+        </aside>
+      </section>
 
       <div className="admin-users-page__messages" aria-live="polite">
         {successMessage && (
@@ -489,7 +600,8 @@ export default function AdminUsersPage() {
             </span>
 
             <div>
-              <strong>Uspešno završeno</strong>
+              <strong>Promena je sačuvana</strong>
+
               <p>{successMessage}</p>
             </div>
           </div>
@@ -505,7 +617,8 @@ export default function AdminUsersPage() {
             </span>
 
             <div>
-              <strong>Došlo je do greške</strong>
+              <strong>Proverite radnju</strong>
+
               <p>{error}</p>
             </div>
           </div>
@@ -522,6 +635,35 @@ export default function AdminUsersPage() {
             .filter(Boolean)
             .join(" ")}
         >
+          <div className="admin-user-editor__intro">
+            <div>
+              <span className="admin-user-editor__eyebrow">
+                {isEditing ? "IZMENA NALOGA" : "NOVI KORISNIK"}
+              </span>
+
+              <h2 className="admin-user-editor__title">
+                {isEditing ? "Izmeni korisnika" : "Kreiraj korisnika"}
+              </h2>
+
+              <p>
+                {isEditing
+                  ? "Promenite podatke ili role izabranog korisnika."
+                  : "Kreirajte novi nalog i odmah mu dodelite odgovarajuće role."}
+              </p>
+            </div>
+
+            <span
+              className={[
+                "admin-user-editor__mode",
+                isEditing ? "admin-user-editor__mode--editing" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {isEditing ? `ID ${editingUserId}` : "Kreiranje"}
+            </span>
+          </div>
+
           <AdminUserForm
             form={form}
             isEditing={isEditing}
@@ -536,11 +678,25 @@ export default function AdminUsersPage() {
         <section className="admin-users-panel">
           <header className="admin-users-panel__header">
             <div>
-              <span className="admin-users-panel__eyebrow">PREGLED NALOGA</span>
+              <span className="admin-users-panel__eyebrow">
+                UPRAVLJANJE NALOZIMA
+              </span>
 
               <h2 className="admin-users-panel__title">
-                Upravljanje korisnicima
+                {activeTab === "staff" ? "Zaposleni i administratori" : "Kupci"}
               </h2>
+
+              <p className="admin-users-panel__description">
+                {activeTab === "staff"
+                  ? "Upravljajte internim nalozima, rolama i pristupom administraciji."
+                  : "Pronađite kupce i upravljajte statusom njihovih naloga."}
+              </p>
+            </div>
+
+            <div className="admin-users-panel__count">
+              <strong>{currentResult?.totalCount ?? 0}</strong>
+
+              <span>naloga</span>
             </div>
           </header>
 
@@ -561,8 +717,34 @@ export default function AdminUsersPage() {
                 .join(" ")}
               onClick={() => void handleTabChange("staff")}
             >
-              Zaposleni i administratori
-              <span>{staffTotal}</span>
+              <span className="admin-users-tabs__icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle
+                    cx="9"
+                    cy="8"
+                    r="3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+
+                  <path
+                    d="M3.5 19c.4-3.1 2.3-5 5.5-5s5.1 1.9 5.5 5M17 7v6m-3-3h6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+
+              <span className="admin-users-tabs__content">
+                <strong>Zaposleni i administratori</strong>
+
+                <small>Interni pristup sistemu</small>
+              </span>
+
+              <span className="admin-users-tabs__count">{staffTotal}</span>
             </button>
 
             <button
@@ -579,8 +761,36 @@ export default function AdminUsersPage() {
                 .join(" ")}
               onClick={() => void handleTabChange("customers")}
             >
-              Kupci
-              <span>{customerTotal ?? "—"}</span>
+              <span className="admin-users-tabs__icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle
+                    cx="12"
+                    cy="8"
+                    r="3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+
+                  <path
+                    d="M5 19c.5-3.4 2.8-5.2 7-5.2s6.5 1.8 7 5.2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+
+              <span className="admin-users-tabs__content">
+                <strong>Kupci</strong>
+
+                <small>Korisnički nalozi</small>
+              </span>
+
+              <span className="admin-users-tabs__count">
+                {customerTotal ?? "—"}
+              </span>
             </button>
           </div>
 
@@ -589,16 +799,27 @@ export default function AdminUsersPage() {
               <AdminUsersFilters
                 search={staffSearch}
                 status={staffStatus}
-                placeholder="Pretraži zaposlene..."
+                placeholder="Ime, email ili korisničko ime..."
                 onSearchChange={setStaffSearch}
                 onStatusChange={setStaffStatus}
                 onSubmit={() => loadStaffUsers(1)}
               />
 
               {staffLoading ? (
-                <div className="admin-users-loading">Učitavam zaposlene...</div>
-              ) : (
-                staffResult && (
+                <div className="admin-users-loading">
+                  <span
+                    className="admin-users-loading__spinner"
+                    aria-hidden="true"
+                  />
+
+                  <div>
+                    <strong>Učitavamo interne naloge</strong>
+
+                    <p>Sačekajte trenutak.</p>
+                  </div>
+                </div>
+              ) : staffResult ? (
+                staffResult.items.length > 0 ? (
                   <>
                     <AdminUsersTable
                       users={staffResult.items}
@@ -617,24 +838,62 @@ export default function AdminUsersPage() {
                       onPageChange={loadStaffUsers}
                     />
                   </>
+                ) : (
+                  <div className="admin-users-empty">
+                    <span className="admin-users-empty__icon">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle
+                          cx="10"
+                          cy="8"
+                          r="3"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                        />
+
+                        <path
+                          d="M4 19c.5-3.3 2.5-5 6-5 2.1 0 3.7.6 4.7 1.8M17 13l4 4m0-4-4 4"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
+
+                    <strong>Nema pronađenih naloga</strong>
+
+                    <p>Promenite pretragu ili status filter.</p>
+                  </div>
                 )
-              )}
+              ) : null}
             </>
           ) : (
             <>
               <AdminUsersFilters
                 search={customerSearch}
                 status={customerStatus}
-                placeholder="Pretraži kupce..."
+                placeholder="Ime, email ili korisničko ime..."
                 onSearchChange={setCustomerSearch}
                 onStatusChange={setCustomerStatus}
                 onSubmit={() => loadCustomerUsers(1)}
               />
 
               {customersLoading ? (
-                <div className="admin-users-loading">Učitavam kupce...</div>
-              ) : (
-                customersResult && (
+                <div className="admin-users-loading">
+                  <span
+                    className="admin-users-loading__spinner"
+                    aria-hidden="true"
+                  />
+
+                  <div>
+                    <strong>Učitavamo kupce</strong>
+
+                    <p>Sačekajte trenutak.</p>
+                  </div>
+                </div>
+              ) : customersResult ? (
+                customersResult.items.length > 0 ? (
                   <>
                     <AdminUsersTable
                       users={customersResult.items}
@@ -653,8 +912,35 @@ export default function AdminUsersPage() {
                       onPageChange={loadCustomerUsers}
                     />
                   </>
+                ) : (
+                  <div className="admin-users-empty">
+                    <span className="admin-users-empty__icon">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle
+                          cx="10"
+                          cy="8"
+                          r="3"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                        />
+
+                        <path
+                          d="M4 19c.5-3.3 2.5-5 6-5 2.1 0 3.7.6 4.7 1.8M17 13l4 4m0-4-4 4"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
+
+                    <strong>Nema pronađenih kupaca</strong>
+
+                    <p>Promenite pretragu ili status filter.</p>
+                  </div>
                 )
-              )}
+              ) : null}
             </>
           )}
         </section>

@@ -56,6 +56,11 @@ export default function CheckoutPage() {
 
   const subtotal = cartSubtotal(state);
 
+  const totalItemQuantity = state.items.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  );
+
   const [restaurantSettings, setRestaurantSettings] =
     useState<RestaurantSettingsDto | null>(null);
 
@@ -215,6 +220,10 @@ export default function CheckoutPage() {
   const isDelivery = fulfillmentType === "Delivery";
   const isPickup = fulfillmentType === "Pickup";
 
+  const addressStep = 2;
+  const phoneStep = isDelivery ? 3 : 2;
+  const paymentStep = isDelivery ? 4 : 3;
+
   const deliveryFee = isPickup
     ? 0
     : restaurantSettings?.freeDeliveryThreshold &&
@@ -355,6 +364,14 @@ export default function CheckoutPage() {
           <p className="checkout-state__text">
             Prijavite se kako biste nastavili sa kreiranjem porudžbine.
           </p>
+
+          <button
+            type="button"
+            className="checkout-state__button"
+            onClick={() => navigate("/login")}
+          >
+            Prijavi se
+          </button>
         </div>
       </main>
     );
@@ -375,6 +392,14 @@ export default function CheckoutPage() {
           <p className="checkout-state__text">
             Dodajte jela u korpu pre nego što nastavite sa poručivanjem.
           </p>
+
+          <button
+            type="button"
+            className="checkout-state__button"
+            onClick={() => navigate("/menu")}
+          >
+            Pogledaj meni
+          </button>
         </div>
       </main>
     );
@@ -386,11 +411,11 @@ export default function CheckoutPage() {
         <div className="checkout-page__heading">
           <span className="checkout-page__eyebrow">ZAVRŠETAK PORUDŽBINE</span>
 
-          <h1 className="checkout-page__title">Checkout</h1>
+          <h1 className="checkout-page__title">Završi porudžbinu</h1>
 
           <p className="checkout-page__description">
-            Izaberite adresu, proverite kontakt podatke i odaberite način
-            plaćanja.
+            Još nekoliko koraka i porudžbina je spremna. Izaberite način
+            preuzimanja, proverite kontakt podatke i potvrdite plaćanje.
           </p>
         </div>
 
@@ -513,7 +538,33 @@ export default function CheckoutPage() {
                   <span
                     className="checkout-choice__payment-icon"
                     aria-hidden="true"
-                  ></span>
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path
+                        d="M3 6h11v11H3V6Zm11 4h3.2l3.8 4v3h-7V10Z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinejoin="round"
+                      />
+                      <circle
+                        cx="7"
+                        cy="18"
+                        r="1.6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                      />
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="1.6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                      />
+                    </svg>
+                  </span>
 
                   <span className="checkout-choice__content">
                     <strong>Dostava</strong>
@@ -541,7 +592,24 @@ export default function CheckoutPage() {
                   <span
                     className="checkout-choice__payment-icon"
                     aria-hidden="true"
-                  ></span>
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path
+                        d="M5 9h14l-1 11H6L5 9Zm2-5h10l2 5H5l2-5Z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M9 13h6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </span>
 
                   <span className="checkout-choice__content">
                     <strong>Lično preuzimanje</strong>
@@ -560,7 +628,7 @@ export default function CheckoutPage() {
             >
               <header className="checkout-card__header">
                 <span className="checkout-card__number" aria-hidden="true">
-                  1
+                  {addressStep}
                 </span>
 
                 <div>
@@ -662,7 +730,7 @@ export default function CheckoutPage() {
           >
             <header className="checkout-card__header">
               <span className="checkout-card__number" aria-hidden="true">
-                2
+                {phoneStep}
               </span>
 
               <div>
@@ -784,7 +852,7 @@ export default function CheckoutPage() {
           >
             <header className="checkout-card__header">
               <span className="checkout-card__number" aria-hidden="true">
-                3
+                {paymentStep}
               </span>
 
               <div>
@@ -798,7 +866,7 @@ export default function CheckoutPage() {
                 </h2>
 
                 <p className="checkout-card__description">
-                  Izaberite način plaćanja prilikom preuzimanja porudžbine.
+                  Izaberite način plaćanja koji vam najviše odgovara.
                 </p>
               </div>
             </header>
@@ -923,9 +991,9 @@ export default function CheckoutPage() {
           </header>
 
           <div className="checkout-summary__item-count">
-            <span>Broj stavki</span>
+            <span>Ukupno jela</span>
 
-            <strong>{state.items.length}</strong>
+            <strong>{totalItemQuantity}</strong>
           </div>
 
           {loadingSettings && (
@@ -970,17 +1038,37 @@ export default function CheckoutPage() {
               </div>
 
               <div className="checkout-summary__rules">
-                Minimalna porudžbina
-                {isDelivery && restaurantSettings.freeDeliveryThreshold && (
-                  <div>
-                    <span>Besplatna dostava preko</span>
+                {isDelivery ? (
+                  <>
+                    <div>
+                      <span>Minimalna porudžbina</span>
 
-                    <strong>
-                      {restaurantSettings.freeDeliveryThreshold.toLocaleString(
-                        "sr-RS",
-                      )}{" "}
-                      RSD
-                    </strong>
+                      <strong>
+                        {restaurantSettings.minimumOrderAmount.toLocaleString(
+                          "sr-RS",
+                        )}{" "}
+                        RSD
+                      </strong>
+                    </div>
+
+                    {restaurantSettings.freeDeliveryThreshold && (
+                      <div>
+                        <span>Besplatna dostava preko</span>
+
+                        <strong>
+                          {restaurantSettings.freeDeliveryThreshold.toLocaleString(
+                            "sr-RS",
+                          )}{" "}
+                          RSD
+                        </strong>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div>
+                    <span>Lično preuzimanje</span>
+
+                    <strong>Bez naknade</strong>
                   </div>
                 )}
               </div>
@@ -1037,6 +1125,7 @@ export default function CheckoutPage() {
               loadingOrder ||
               (isDelivery && loadingAddresses) ||
               loadingSettings ||
+              !restaurantSettings ||
               (isDelivery && !selectedAddressId) ||
               (isDelivery && !restaurantSettings?.isDeliveryEnabled) ||
               missingForMinimum > 0
@@ -1055,6 +1144,16 @@ export default function CheckoutPage() {
                 →
               </span>
             )}
+          </button>
+
+          <button
+            type="button"
+            className="checkout-summary__back-button"
+            disabled={loadingOrder}
+            onClick={() => navigate("/cart")}
+          >
+            <span aria-hidden="true">←</span>
+            Nazad u korpu
           </button>
 
           <p className="checkout-summary__security">

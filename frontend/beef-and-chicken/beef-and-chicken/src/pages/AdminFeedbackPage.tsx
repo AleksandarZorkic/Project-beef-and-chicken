@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   archiveFeedback,
   getAdminFeedback,
@@ -7,8 +7,17 @@ import {
   type FeedbackMessageStatus,
   type FeedbackMessageType,
 } from "../api/feedbackApi";
+import { useAppDialog } from "../components/dialogs/AppDialogContext";
 import { getApiErrorMessage } from "../utils/apiErrors";
 import "../styles/AdminFeedbackPage.scss";
+
+type StatusFilter = FeedbackMessageStatus | "All";
+
+type TypeFilter = FeedbackMessageType | "All";
+
+type FeedbackAction = "read" | "archive";
+
+const FEEDBACK_LOAD_LIMIT = 150;
 
 const statusLabels: Record<FeedbackMessageStatus, string> = {
   New: "Novo",
@@ -24,91 +33,238 @@ const typeLabels: Record<FeedbackMessageType, string> = {
 };
 
 function formatDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
   return new Intl.DateTimeFormat("sr-RS", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(value));
+  }).format(date);
 }
 
-function getSenderLabel(message: FeedbackMessageDto) {
-  if (message.userEmail || message.userName) {
-    return message.userEmail ?? message.userName ?? "Korisnik";
+function getSenderName(message: FeedbackMessageDto) {
+  if (message.userName) {
+    return message.userName;
   }
 
-  if (message.contactEmail) {
-    return message.contactEmail;
+  if (message.userId) {
+    return `Korisnik #${message.userId}`;
   }
 
   return "Gost";
 }
 
+function getSenderContact(message: FeedbackMessageDto) {
+  return message.userEmail ?? message.contactEmail ?? "Kontakt nije ostavljen";
+}
+
 function getStatusClass(status: FeedbackMessageStatus) {
-  return `admin-feedback-status admin-feedback-status--${status.toLowerCase()}`;
+  return [
+    "admin-feedback-status",
+    `admin-feedback-status--${status.toLowerCase()}`,
+  ].join(" ");
+}
+
+function getTypeClass(type: FeedbackMessageType) {
+  return [
+    "admin-feedback-type",
+    `admin-feedback-type--${type.toLowerCase()}`,
+  ].join(" ");
 }
 
 export default function AdminFeedbackPage() {
+  const { confirm, alert } = useAppDialog();
+
   const [messages, setMessages] = useState<FeedbackMessageDto[]>([]);
-  const [statusFilter, setStatusFilter] = useState<
-    FeedbackMessageStatus | "All"
-  >("All");
-  const [typeFilter, setTypeFilter] = useState<FeedbackMessageType | "All">(
-    "All",
-  );
-  const [includeArchived, setIncludeArchived] = useState(false);
+
   const [selectedMessage, setSelectedMessage] =
     useState<FeedbackMessageDto | null>(null);
+
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
+
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("All");
+
+  const [includeArchived, setIncludeArchived] = useState(false);
+
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [loading, setLoading] = useState(true);
-  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [actionLoading, setActionLoading] = useState<{
+    id: number;
+    type: FeedbackAction;
+  } | null>(null);
+
   const [error, setError] = useState<string | null>(null);
 
-  async function loadMessages() {
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const loadMessages = useCallback(async (showInitialLoading = true) => {
     try {
-      setLoading(true);
       setError(null);
 
+      if (showInitialLoading) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
+      /*
+       * Load a larger inbox batch once.
+       * Search and filters are handled locally
+       * for instant interaction.
+       */
       const data = await getAdminFeedback({
-        status: statusFilter === "All" ? undefined : statusFilter,
-        type: typeFilter === "All" ? undefined : typeFilter,
-        includeArchived,
-        take: 150,
+        includeArchived: true,
+        take: FEEDBACK_LOAD_LIMIT,
       });
 
       setMessages(data);
-
-      setSelectedMessage((current) => {
-        if (!current) {
-          return data[0] ?? null;
-        }
-
-        return (
-          data.find((message) => message.id === current.id) ?? data[0] ?? null
-        );
-      });
-    } catch (err: any) {
-      setError(getApiErrorMessage(err));
+    } catch (error) {
+      setError(getApiErrorMessage(error));
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void loadMessages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, typeFilter, includeArchived]);
+  }, [loadMessages]);
+
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSuccessMessage(null);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [successMessage]);
 
   const stats = useMemo(() => {
     return {
       total: messages.length,
+
       newCount: messages.filter((message) => message.status === "New").length,
+
       readCount: messages.filter((message) => message.status === "Read").length,
+
       archivedCount: messages.filter((message) => message.status === "Archived")
         .length,
     };
   }, [messages]);
 
+  const visibleMessages = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLocaleLowerCase("sr-RS");
+
+    return messages
+      .filter((message) => {
+        if (!includeArchived && message.status === "Archived") {
+          return false;
+        }
+
+        if (statusFilter !== "All" && message.status !== statusFilter) {
+          return false;
+        }
+
+        if (typeFilter !== "All" && message.type !== typeFilter) {
+          return false;
+        }
+
+        if (!normalizedSearch) {
+          return true;
+        }
+
+        const searchableText = [
+          message.message,
+          message.userName ?? "",
+          message.userEmail ?? "",
+          message.contactEmail ?? "",
+          message.pageUrl ?? "",
+          typeLabels[message.type],
+          statusLabels[message.status],
+        ]
+          .join(" ")
+          .toLocaleLowerCase("sr-RS");
+
+        return searchableText.includes(normalizedSearch);
+      })
+      .sort((first, second) => {
+        const firstDate = new Date(first.createdAtUtc).getTime();
+
+        const secondDate = new Date(second.createdAtUtc).getTime();
+
+        return secondDate - firstDate;
+      });
+  }, [messages, statusFilter, typeFilter, includeArchived, searchTerm]);
+
+  useEffect(() => {
+    setSelectedMessage((current) => {
+      if (visibleMessages.length === 0) {
+        return null;
+      }
+
+      if (current) {
+        const updatedCurrent = visibleMessages.find(
+          (message) => message.id === current.id,
+        );
+
+        if (updatedCurrent) {
+          return updatedCurrent;
+        }
+      }
+
+      return visibleMessages[0];
+    });
+  }, [visibleMessages]);
+
+  const hasFilters =
+    statusFilter !== "All" ||
+    typeFilter !== "All" ||
+    includeArchived ||
+    searchTerm.trim().length > 0;
+
+  const hasReachedLoadLimit = messages.length >= FEEDBACK_LOAD_LIMIT;
+
+  function clearFilters() {
+    setStatusFilter("All");
+    setTypeFilter("All");
+    setIncludeArchived(false);
+    setSearchTerm("");
+  }
+
+  async function showActionError(caughtError: unknown) {
+    const message = getApiErrorMessage(caughtError);
+
+    setError(message);
+
+    await alert({
+      title: "Greška",
+      message: <p>{message}</p>,
+      confirmText: "Razumem",
+      tone: "danger",
+    });
+  }
+
   async function handleMarkAsRead(message: FeedbackMessageDto) {
     try {
-      setActionLoadingId(message.id);
+      setError(null);
+      setSuccessMessage(null);
+
+      setActionLoading({
+        id: message.id,
+        type: "read",
+      });
 
       const updated = await markFeedbackAsRead(message.id);
 
@@ -117,281 +273,620 @@ export default function AdminFeedbackPage() {
       );
 
       setSelectedMessage(updated);
-    } catch (err: any) {
-      setError(getApiErrorMessage(err));
+
+      setSuccessMessage("Poruka je označena kao pročitana.");
+    } catch (error) {
+      await showActionError(error);
     } finally {
-      setActionLoadingId(null);
+      setActionLoading(null);
     }
   }
 
   async function handleArchive(message: FeedbackMessageDto) {
+    const confirmed = await confirm({
+      title: "Arhiviranje poruke",
+
+      message: (
+        <>
+          <p>
+            Da li želite da arhivirate ovu{" "}
+            <strong>{typeLabels[message.type].toLowerCase()}</strong>?
+          </p>
+
+          <p>
+            Poruka će biti uklonjena iz glavnog inboxa, ali će ostati dostupna
+            kroz arhivirane poruke.
+          </p>
+        </>
+      ),
+
+      confirmText: "Arhiviraj",
+
+      cancelText: "Odustani",
+
+      tone: "danger",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
     try {
-      setActionLoadingId(message.id);
+      setError(null);
+      setSuccessMessage(null);
+
+      setActionLoading({
+        id: message.id,
+        type: "archive",
+      });
 
       const updated = await archiveFeedback(message.id);
 
       setMessages((current) =>
-        includeArchived
-          ? current.map((item) => (item.id === updated.id ? updated : item))
-          : current.filter((item) => item.id !== updated.id),
+        current.map((item) => (item.id === updated.id ? updated : item)),
       );
 
-      setSelectedMessage((current) => {
-        if (!current || current.id !== updated.id) {
-          return current;
-        }
+      setSelectedMessage(updated);
 
-        const nextMessages = messages.filter((item) => item.id !== updated.id);
-        return nextMessages[0] ?? null;
-      });
-    } catch (err: any) {
-      setError(getApiErrorMessage(err));
+      setSuccessMessage("Poruka je arhivirana.");
+    } catch (error) {
+      await showActionError(error);
     } finally {
-      setActionLoadingId(null);
+      setActionLoading(null);
     }
+  }
+
+  if (loading) {
+    return (
+      <main className="admin-feedback-page">
+        <section className="admin-feedback-state" aria-live="polite">
+          <span className="admin-feedback-state__spinner" aria-hidden="true" />
+
+          <div>
+            <strong>Učitavamo poruke korisnika</strong>
+
+            <p>Pripremamo predloge, probleme i ostale povratne informacije.</p>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   return (
     <main className="admin-feedback-page">
       <section className="admin-feedback-hero">
-        <div>
-          <span className="admin-feedback-hero__eyebrow">Admin inbox</span>
+        <div className="admin-feedback-hero__content">
+          <span className="admin-feedback-hero__eyebrow">
+            BEEF N&apos; CHICKEN • ADMIN
+          </span>
 
-          <h1>Sugestije korisnika</h1>
+          <h1 className="admin-feedback-hero__title">Sugestije korisnika</h1>
 
-          <p>
-            Pregledajte predloge, probleme i komentare koje korisnici šalju iz
-            aplikacije.
+          <p className="admin-feedback-hero__description">
+            Pregledajte predloge, prijavljene probleme, pohvale i druge poruke
+            koje korisnici šalju direktno iz aplikacije.
           </p>
+
+          <div className="admin-feedback-hero__meta">
+            <span className="admin-feedback-hero__new">
+              <span aria-hidden="true" />
+              {stats.newCount} novih poruka
+            </span>
+
+            <span className="admin-feedback-hero__total">
+              {stats.total} učitano
+            </span>
+          </div>
         </div>
 
-        <button
-          type="button"
-          className="admin-feedback-hero__refresh"
-          onClick={() => void loadMessages()}
-          disabled={loading}
-        >
-          {loading ? "Učitavam..." : "Osveži"}
-        </button>
+        <aside className="admin-feedback-summary">
+          <header className="admin-feedback-summary__header">
+            <span className="admin-feedback-summary__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M4 5h16v12H9l-5 4V5Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinejoin="round"
+                />
+
+                <path
+                  d="M8 9h8M8 13h5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+
+            <span className="admin-feedback-summary__label">INBOX</span>
+          </header>
+
+          <div className="admin-feedback-summary__value">
+            <strong>{stats.newCount}</strong>
+
+            <span>novih poruka čeka pregled</span>
+          </div>
+
+          <footer className="admin-feedback-summary__footer">
+            <div>
+              <span>Pročitano</span>
+
+              <strong>{stats.readCount}</strong>
+            </div>
+
+            <div>
+              <span>Arhivirano</span>
+
+              <strong>{stats.archivedCount}</strong>
+            </div>
+
+            <button
+              type="button"
+              className="admin-feedback-summary__refresh"
+              disabled={refreshing}
+              onClick={() => void loadMessages(false)}
+              aria-label="Osveži poruke"
+            >
+              {refreshing ? (
+                <span className="admin-feedback-summary__spinner" />
+              ) : (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M20 7v5h-5M4 17v-5h5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+
+                  <path
+                    d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
+          </footer>
+        </aside>
       </section>
 
-      <section
-        className="admin-feedback-stats"
-        aria-label="Statistika sugestija"
-      >
-        <article>
-          <span>Ukupno</span>
-          <strong>{stats.total}</strong>
+      <section className="admin-feedback-stats" aria-label="Statistika poruka">
+        <article className="admin-feedback-stat">
+          <span className="admin-feedback-stat__label">Učitano</span>
+
+          <strong className="admin-feedback-stat__value">{stats.total}</strong>
+
+          <span className="admin-feedback-stat__description">
+            Poruke u trenutnom inboxu
+          </span>
         </article>
 
-        <article>
-          <span>Novo</span>
-          <strong>{stats.newCount}</strong>
+        <article className="admin-feedback-stat admin-feedback-stat--new">
+          <span className="admin-feedback-stat__label">Novo</span>
+
+          <strong className="admin-feedback-stat__value">
+            {stats.newCount}
+          </strong>
+
+          <span className="admin-feedback-stat__description">Čeka pregled</span>
         </article>
 
-        <article>
-          <span>Pročitano</span>
-          <strong>{stats.readCount}</strong>
+        <article className="admin-feedback-stat admin-feedback-stat--read">
+          <span className="admin-feedback-stat__label">Pročitano</span>
+
+          <strong className="admin-feedback-stat__value">
+            {stats.readCount}
+          </strong>
+
+          <span className="admin-feedback-stat__description">
+            Pregledane poruke
+          </span>
         </article>
 
-        <article>
-          <span>Arhivirano</span>
-          <strong>{stats.archivedCount}</strong>
+        <article className="admin-feedback-stat admin-feedback-stat--archived">
+          <span className="admin-feedback-stat__label">Arhivirano</span>
+
+          <strong className="admin-feedback-stat__value">
+            {stats.archivedCount}
+          </strong>
+
+          <span className="admin-feedback-stat__description">
+            Van aktivnog inboxa
+          </span>
         </article>
       </section>
 
-      <section className="admin-feedback-toolbar">
-        <label>
-          Status
-          <select
-            value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(
-                event.target.value as FeedbackMessageStatus | "All",
-              )
-            }
-          >
-            <option value="All">Svi statusi</option>
-            <option value="New">Novo</option>
-            <option value="Read">Pročitano</option>
-            <option value="Archived">Arhivirano</option>
-          </select>
-        </label>
+      {hasReachedLoadLimit && (
+        <div className="admin-feedback-limit-note">
+          <span aria-hidden="true">i</span>
 
-        <label>
-          Tip
-          <select
-            value={typeFilter}
-            onChange={(event) =>
-              setTypeFilter(event.target.value as FeedbackMessageType | "All")
-            }
-          >
-            <option value="All">Svi tipovi</option>
-            <option value="Suggestion">Predlog</option>
-            <option value="Problem">Problem</option>
-            <option value="Praise">Pohvala</option>
-            <option value="Other">Ostalo</option>
-          </select>
-        </label>
-
-        <label className="admin-feedback-toolbar__checkbox">
-          <input
-            type="checkbox"
-            checked={includeArchived}
-            onChange={(event) => setIncludeArchived(event.target.checked)}
-          />
-          Prikaži arhivirane
-        </label>
-      </section>
-
-      {error && (
-        <div className="admin-feedback-error" role="alert">
-          <span aria-hidden="true">!</span>
-          <p>{error}</p>
+          <p>
+            Učitano je poslednjih <strong>{FEEDBACK_LOAD_LIMIT}</strong> poruka.
+            Kada broj poruka poraste preko ovog limita, ovoj stranici treba
+            dodati server-side paginaciju.
+          </p>
         </div>
       )}
 
-      <section className="admin-feedback-layout">
-        <div className="admin-feedback-list" aria-label="Lista sugestija">
-          {loading && (
-            <div className="admin-feedback-empty">
-              <p>Učitavam sugestije...</p>
+      <div className="admin-feedback-page__messages" aria-live="polite">
+        {successMessage && (
+          <div className="admin-feedback-alert admin-feedback-alert--success">
+            <span className="admin-feedback-alert__icon" aria-hidden="true">
+              ✓
+            </span>
+
+            <div>
+              <strong>Promena je sačuvana</strong>
+
+              <p>{successMessage}</p>
             </div>
-          )}
+          </div>
+        )}
 
-          {!loading && messages.length === 0 && (
-            <div className="admin-feedback-empty">
-              <p>Nema sugestija za izabrane filtere.</p>
+        {error && (
+          <div
+            className="admin-feedback-alert admin-feedback-alert--error"
+            role="alert"
+          >
+            <span className="admin-feedback-alert__icon" aria-hidden="true">
+              !
+            </span>
+
+            <div>
+              <strong>Došlo je do greške</strong>
+
+              <p>{error}</p>
             </div>
+          </div>
+        )}
+      </div>
+
+      <section className="admin-feedback-inbox">
+        <header className="admin-feedback-inbox__header">
+          <div>
+            <span className="admin-feedback-inbox__eyebrow">
+              POVRATNE INFORMACIJE
+            </span>
+
+            <h2 className="admin-feedback-inbox__title">Admin inbox</h2>
+
+            <p>
+              Pronađite poruku, pregledajte detalje i promenite njen status.
+            </p>
+          </div>
+
+          <div className="admin-feedback-inbox__result">
+            <strong>{visibleMessages.length}</strong>
+
+            <span>prikazano</span>
+          </div>
+        </header>
+
+        <div className="admin-feedback-toolbar">
+          <div className="admin-feedback-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle
+                cx="11"
+                cy="11"
+                r="7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+              />
+
+              <path
+                d="m16.2 16.2 4 4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+              />
+            </svg>
+
+            <input
+              type="search"
+              value={searchTerm}
+              placeholder="Pretraži poruke, korisnike ili email..."
+              aria-label="Pretraži sugestije"
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+          </div>
+
+          <label className="admin-feedback-toolbar__field">
+            <span>Status</span>
+
+            <select
+              value={statusFilter}
+              onChange={(event) => {
+                const nextStatus = event.target.value as StatusFilter;
+
+                setStatusFilter(nextStatus);
+
+                if (nextStatus === "Archived") {
+                  setIncludeArchived(true);
+                }
+              }}
+            >
+              <option value="All">Svi statusi</option>
+
+              <option value="New">Novo</option>
+
+              <option value="Read">Pročitano</option>
+
+              <option value="Archived">Arhivirano</option>
+            </select>
+          </label>
+
+          <label className="admin-feedback-toolbar__field">
+            <span>Tip</span>
+
+            <select
+              value={typeFilter}
+              onChange={(event) =>
+                setTypeFilter(event.target.value as TypeFilter)
+              }
+            >
+              <option value="All">Svi tipovi</option>
+
+              <option value="Suggestion">Predlog</option>
+
+              <option value="Problem">Problem</option>
+
+              <option value="Praise">Pohvala</option>
+
+              <option value="Other">Ostalo</option>
+            </select>
+          </label>
+
+          <label className="admin-feedback-toolbar__archive-toggle">
+            <input
+              type="checkbox"
+              checked={includeArchived}
+              onChange={(event) => {
+                const checked = event.target.checked;
+
+                setIncludeArchived(checked);
+
+                if (!checked && statusFilter === "Archived") {
+                  setStatusFilter("All");
+                }
+              }}
+            />
+
+            <span className="admin-feedback-toolbar__archive-control">
+              <span />
+            </span>
+
+            <span>Prikaži arhivirane</span>
+          </label>
+
+          {hasFilters && (
+            <button
+              type="button"
+              className="admin-feedback-toolbar__clear"
+              onClick={clearFilters}
+            >
+              Poništi filtere
+            </button>
           )}
-
-          {!loading &&
-            messages.map((message) => {
-              const active = selectedMessage?.id === message.id;
-
-              return (
-                <button
-                  key={message.id}
-                  type="button"
-                  className={[
-                    "admin-feedback-list-card",
-                    active ? "admin-feedback-list-card--active" : "",
-                    message.status === "New"
-                      ? "admin-feedback-list-card--new"
-                      : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  onClick={() => setSelectedMessage(message)}
-                >
-                  <span className="admin-feedback-list-card__top">
-                    <strong>{typeLabels[message.type]}</strong>
-
-                    <span className={getStatusClass(message.status)}>
-                      {statusLabels[message.status]}
-                    </span>
-                  </span>
-
-                  <span className="admin-feedback-list-card__sender">
-                    {getSenderLabel(message)}
-                  </span>
-
-                  <span className="admin-feedback-list-card__message">
-                    {message.message}
-                  </span>
-
-                  <span className="admin-feedback-list-card__date">
-                    {formatDate(message.createdAtUtc)}
-                  </span>
-                </button>
-              );
-            })}
         </div>
 
-        <article className="admin-feedback-details">
-          {!selectedMessage ? (
-            <div className="admin-feedback-empty admin-feedback-empty--details">
-              <p>Izaberite sugestiju za pregled.</p>
-            </div>
-          ) : (
-            <>
-              <header className="admin-feedback-details__header">
-                <div>
-                  <span className="admin-feedback-details__eyebrow">
-                    {typeLabels[selectedMessage.type]}
-                  </span>
+        <div className="admin-feedback-layout">
+          <aside className="admin-feedback-list" aria-label="Lista poruka">
+            {visibleMessages.length === 0 ? (
+              <div className="admin-feedback-empty">
+                <div className="admin-feedback-empty__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M4 5h16v12H9l-5 4V5Z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinejoin="round"
+                    />
 
-                  <h2>{getSenderLabel(selectedMessage)}</h2>
-
-                  <p>{formatDate(selectedMessage.createdAtUtc)}</p>
+                    <path
+                      d="m9 9 6 6m0-6-6 6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                    />
+                  </svg>
                 </div>
 
-                <span className={getStatusClass(selectedMessage.status)}>
-                  {statusLabels[selectedMessage.status]}
-                </span>
-              </header>
+                <strong>Nema poruka</strong>
 
-              <div className="admin-feedback-details__meta">
-                <div>
-                  <span>Korisnik</span>
-                  <strong>
-                    {selectedMessage.userId
-                      ? `ID ${selectedMessage.userId}`
-                      : "Gost"}
-                  </strong>
-                </div>
-
-                <div>
-                  <span>Email</span>
-                  <strong>
-                    {selectedMessage.userEmail ||
-                      selectedMessage.contactEmail ||
-                      "Nije ostavljen"}
-                  </strong>
-                </div>
-
-                <div>
-                  <span>Visitor ID</span>
-                  <strong>{selectedMessage.visitorId || "Nema"}</strong>
-                </div>
-
-                <div>
-                  <span>Stranica</span>
-                  <strong>{selectedMessage.pageUrl || "Nije poznato"}</strong>
-                </div>
+                <p>Promenite filter ili tekst pretrage.</p>
               </div>
+            ) : (
+              visibleMessages.map((message) => {
+                const active = selectedMessage?.id === message.id;
 
-              <div className="admin-feedback-details__message">
-                <span>Poruka</span>
-                <p>{selectedMessage.message}</p>
+                return (
+                  <button
+                    key={message.id}
+                    type="button"
+                    className={[
+                      "admin-feedback-list-card",
+
+                      active ? "admin-feedback-list-card--active" : "",
+
+                      message.status === "New"
+                        ? "admin-feedback-list-card--new"
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    onClick={() => setSelectedMessage(message)}
+                  >
+                    <span className="admin-feedback-list-card__header">
+                      <span className={getTypeClass(message.type)}>
+                        {typeLabels[message.type]}
+                      </span>
+
+                      <span className={getStatusClass(message.status)}>
+                        {statusLabels[message.status]}
+                      </span>
+                    </span>
+
+                    <span className="admin-feedback-list-card__sender">
+                      <strong>{getSenderName(message)}</strong>
+
+                      <span>{getSenderContact(message)}</span>
+                    </span>
+
+                    <span className="admin-feedback-list-card__message">
+                      {message.message}
+                    </span>
+
+                    <span className="admin-feedback-list-card__footer">
+                      <span>{formatDate(message.createdAtUtc)}</span>
+
+                      {message.status === "New" && (
+                        <span className="admin-feedback-list-card__unread">
+                          Nova
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </aside>
+
+          <article className="admin-feedback-details">
+            {!selectedMessage ? (
+              <div className="admin-feedback-empty admin-feedback-empty--details">
+                <div className="admin-feedback-empty__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M4 5h16v12H9l-5 4V5Z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+
+                <strong>Izaberite poruku</strong>
+
+                <p>Detalji izabrane poruke pojaviće se ovde.</p>
               </div>
+            ) : (
+              <>
+                <header className="admin-feedback-details__header">
+                  <div className="admin-feedback-details__heading">
+                    <div className="admin-feedback-details__badges">
+                      <span className={getTypeClass(selectedMessage.type)}>
+                        {typeLabels[selectedMessage.type]}
+                      </span>
 
-              <footer className="admin-feedback-details__actions">
-                {selectedMessage.status === "New" && (
-                  <button
-                    type="button"
-                    className="admin-feedback-details__secondary"
-                    disabled={actionLoadingId === selectedMessage.id}
-                    onClick={() => void handleMarkAsRead(selectedMessage)}
-                  >
-                    Označi kao pročitano
-                  </button>
-                )}
+                      <span className={getStatusClass(selectedMessage.status)}>
+                        {statusLabels[selectedMessage.status]}
+                      </span>
+                    </div>
 
-                {selectedMessage.status !== "Archived" && (
-                  <button
-                    type="button"
-                    className="admin-feedback-details__danger"
-                    disabled={actionLoadingId === selectedMessage.id}
-                    onClick={() => void handleArchive(selectedMessage)}
-                  >
-                    Arhiviraj
-                  </button>
-                )}
-              </footer>
-            </>
-          )}
-        </article>
+                    <span className="admin-feedback-details__eyebrow">
+                      PORUKA KORISNIKA
+                    </span>
+
+                    <h2>{getSenderName(selectedMessage)}</h2>
+
+                    <p>{formatDate(selectedMessage.createdAtUtc)}</p>
+                  </div>
+                </header>
+
+                <section className="admin-feedback-details__meta">
+                  <div>
+                    <span>Korisnik</span>
+
+                    <strong>
+                      {selectedMessage.userId
+                        ? `ID ${selectedMessage.userId}`
+                        : "Gost"}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Kontakt</span>
+
+                    <strong>{getSenderContact(selectedMessage)}</strong>
+                  </div>
+
+                  <div>
+                    <span>Visitor ID</span>
+
+                    <strong>{selectedMessage.visitorId || "Nema"}</strong>
+                  </div>
+
+                  <div>
+                    <span>Stranica</span>
+
+                    <strong>{selectedMessage.pageUrl || "Nije poznato"}</strong>
+                  </div>
+                </section>
+
+                <section className="admin-feedback-details__message">
+                  <header>
+                    <span>PORUKA</span>
+
+                    <strong>{typeLabels[selectedMessage.type]}</strong>
+                  </header>
+
+                  <p>{selectedMessage.message}</p>
+                </section>
+
+                <footer className="admin-feedback-details__actions">
+                  <div className="admin-feedback-details__action-info">
+                    <span>ID poruke</span>
+
+                    <strong>#{selectedMessage.id}</strong>
+                  </div>
+
+                  <div className="admin-feedback-details__buttons">
+                    {selectedMessage.status === "New" && (
+                      <button
+                        type="button"
+                        className="admin-feedback-button admin-feedback-button--primary"
+                        disabled={actionLoading?.id === selectedMessage.id}
+                        onClick={() => void handleMarkAsRead(selectedMessage)}
+                      >
+                        {actionLoading?.id === selectedMessage.id &&
+                        actionLoading.type === "read"
+                          ? "Označavam..."
+                          : "Označi kao pročitano"}
+                      </button>
+                    )}
+
+                    {selectedMessage.status !== "Archived" && (
+                      <button
+                        type="button"
+                        className="admin-feedback-button admin-feedback-button--danger"
+                        disabled={actionLoading?.id === selectedMessage.id}
+                        onClick={() => void handleArchive(selectedMessage)}
+                      >
+                        {actionLoading?.id === selectedMessage.id &&
+                        actionLoading.type === "archive"
+                          ? "Arhiviram..."
+                          : "Arhiviraj"}
+                      </button>
+                    )}
+                  </div>
+                </footer>
+              </>
+            )}
+          </article>
+        </div>
       </section>
     </main>
   );

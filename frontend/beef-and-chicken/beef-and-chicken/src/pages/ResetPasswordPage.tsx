@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword } from "../api/authApi";
 import { getApiErrorMessage } from "../utils/apiErrors";
@@ -28,7 +28,27 @@ export default function ResetPasswordPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const hasValidResetLink = Boolean(email && token);
+
+  const hasMinimumLength = form.newPassword.length >= 8;
+  const passwordsMatch =
+    form.confirmPassword.length > 0 &&
+    form.newPassword === form.confirmPassword;
+
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      navigate("/login", { replace: true });
+    }, 1800);
+
+    return () => window.clearTimeout(timer);
+  }, [successMessage, navigate]);
 
   function validateForm(value: ResetPasswordForm) {
     const nextErrors: ResetPasswordErrors = {};
@@ -49,7 +69,7 @@ export default function ResetPasswordPage() {
     return nextErrors;
   }
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setGeneralError(null);
@@ -78,11 +98,9 @@ export default function ResetPasswordPage() {
         confirmPassword: form.confirmPassword,
       });
 
-      setSuccessMessage("Lozinka je uspešno promenjena.");
-
-      window.setTimeout(() => {
-        navigate("/login", { replace: true });
-      }, 1500);
+      setSuccessMessage(
+        "Lozinka je uspešno promenjena. Preusmeravamo te na prijavu...",
+      );
     } catch (error: any) {
       setGeneralError(getApiErrorMessage(error));
     } finally {
@@ -91,10 +109,13 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="auth-page">
+    <main className="auth-page auth-page--recovery">
       <div className="auth-page__overlay" aria-hidden="true" />
 
-      <section className="auth-card" aria-labelledby="reset-password-title">
+      <section
+        className="auth-card auth-card--recovery"
+        aria-labelledby="reset-password-title"
+      >
         <div className="auth-card__brand">
           <img
             src="/logo.png"
@@ -106,12 +127,64 @@ export default function ResetPasswordPage() {
             <span className="auth-card__brand-name">Beef n&apos; Chicken</span>
 
             <span className="auth-card__brand-description">
-              Burgeri • piletina • grill
+              Burgeri • piletina • roštilj
             </span>
           </div>
         </div>
 
-        <header className="auth-card__header">
+        <div
+          className={[
+            "auth-recovery-icon",
+            successMessage ? "auth-recovery-icon--success" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          aria-hidden="true"
+        >
+          {successMessage ? (
+            <svg viewBox="0 0 24 24">
+              <path
+                d="m6 12.5 4 4L18.5 8"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M7 10V8a5 5 0 0 1 10 0v2"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+              />
+
+              <rect
+                x="5"
+                y="10"
+                width="14"
+                height="10"
+                rx="2.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+              />
+
+              <path
+                d="M12 14v2.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+              />
+            </svg>
+          )}
+        </div>
+
+        <header className="auth-card__header auth-card__header--recovery">
           <span className="auth-card__eyebrow">NOVA LOZINKA</span>
 
           <h1 id="reset-password-title" className="auth-card__title">
@@ -119,164 +192,264 @@ export default function ResetPasswordPage() {
           </h1>
 
           <p className="auth-card__description">
-            Unesi novu lozinku za svoj Beef n&apos; Chicken nalog.
+            Izaberi novu lozinku za svoj Beef n&apos; Chicken nalog i potvrdi je
+            još jednom.
           </p>
         </header>
 
-        {!hasValidResetLink && (
-          <div className="auth-form__general-error" role="alert">
-            <span className="auth-form__general-error-icon" aria-hidden="true">
-              !
-            </span>
-
-            <p>Link za reset lozinke nije ispravan ili nedostaje token.</p>
-          </div>
-        )}
-
-        <form className="auth-form" onSubmit={onSubmit} noValidate>
-          <div className="auth-form__field">
-            <label className="auth-form__label" htmlFor="reset-new-password">
-              Nova lozinka
-            </label>
-
-            <input
-              id="reset-new-password"
-              name="newPassword"
-              className={[
-                "auth-form__input",
-                errors.newPassword ? "auth-form__input--error" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              type="password"
-              placeholder="Unesi novu lozinku"
-              value={form.newPassword}
-              autoComplete="new-password"
-              disabled={!hasValidResetLink || loading}
-              aria-invalid={Boolean(errors.newPassword)}
-              aria-describedby={
-                errors.newPassword ? "reset-new-password-error" : undefined
-              }
-              onChange={(event) => {
-                setForm((prev) => ({
-                  ...prev,
-                  newPassword: event.target.value,
-                }));
-
-                setErrors((prev) => ({
-                  ...prev,
-                  newPassword: undefined,
-                }));
-
-                setGeneralError(null);
-                setSuccessMessage(null);
-              }}
-            />
-
-            {errors.newPassword && (
-              <p
-                id="reset-new-password-error"
-                className="auth-form__error"
-                role="alert"
-              >
-                {errors.newPassword}
-              </p>
-            )}
-          </div>
-
-          <div className="auth-form__field">
-            <label
-              className="auth-form__label"
-              htmlFor="reset-confirm-password"
-            >
-              Potvrdi novu lozinku
-            </label>
-
-            <input
-              id="reset-confirm-password"
-              name="confirmPassword"
-              className={[
-                "auth-form__input",
-                errors.confirmPassword ? "auth-form__input--error" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              type="password"
-              placeholder="Ponovi novu lozinku"
-              value={form.confirmPassword}
-              autoComplete="new-password"
-              disabled={!hasValidResetLink || loading}
-              aria-invalid={Boolean(errors.confirmPassword)}
-              aria-describedby={
-                errors.confirmPassword
-                  ? "reset-confirm-password-error"
-                  : undefined
-              }
-              onChange={(event) => {
-                setForm((prev) => ({
-                  ...prev,
-                  confirmPassword: event.target.value,
-                }));
-
-                setErrors((prev) => ({
-                  ...prev,
-                  confirmPassword: undefined,
-                }));
-
-                setGeneralError(null);
-                setSuccessMessage(null);
-              }}
-            />
-
-            {errors.confirmPassword && (
-              <p
-                id="reset-confirm-password-error"
-                className="auth-form__error"
-                role="alert"
-              >
-                {errors.confirmPassword}
-              </p>
-            )}
-          </div>
-
-          {generalError && (
-            <div className="auth-form__general-error" role="alert">
-              <span
-                className="auth-form__general-error-icon"
-                aria-hidden="true"
-              >
+        {!hasValidResetLink ? (
+          <>
+            <div className="auth-recovery-invalid" role="alert">
+              <span className="auth-recovery-invalid__icon" aria-hidden="true">
                 !
               </span>
 
-              <p>{generalError}</p>
-            </div>
-          )}
+              <div>
+                <strong>Link nije ispravan</strong>
 
-          {successMessage && (
-            <div className="auth-form__general-success" role="status">
-              <span
-                className="auth-form__general-success-icon"
-                aria-hidden="true"
+                <p>
+                  Link za reset lozinke je nevažeći, nepotpun ili više nije
+                  dostupan.
+                </p>
+              </div>
+            </div>
+
+            <div className="auth-recovery-invalid__actions">
+              <Link
+                to="/forgot-password"
+                className="auth-form__submit auth-form__submit--link"
               >
-                ✓
-              </span>
-
-              <p>{successMessage}</p>
+                Zatraži novi link
+                <span aria-hidden="true">→</span>
+              </Link>
             </div>
-          )}
+          </>
+        ) : (
+          <>
+            <div className="auth-recovery-account">
+              <span>Menjaš lozinku za</span>
+              <strong>{email}</strong>
+            </div>
 
-          <button
-            className="auth-form__submit"
-            type="submit"
-            disabled={!hasValidResetLink || loading}
-          >
-            {loading && (
-              <span className="auth-form__spinner" aria-hidden="true" />
-            )}
+            <form className="auth-form" onSubmit={onSubmit} noValidate>
+              <div className="auth-form__field">
+                <label
+                  className="auth-form__label"
+                  htmlFor="reset-new-password"
+                >
+                  Nova lozinka
+                </label>
 
-            <span>{loading ? "Čuvam..." : "Promeni lozinku"}</span>
-          </button>
-        </form>
+                <div className="auth-form__password-wrapper">
+                  <input
+                    id="reset-new-password"
+                    name="newPassword"
+                    className={[
+                      "auth-form__input",
+                      "auth-form__input--password",
+                      errors.newPassword ? "auth-form__input--error" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="Najmanje 8 karaktera"
+                    value={form.newPassword}
+                    autoComplete="new-password"
+                    disabled={loading || Boolean(successMessage)}
+                    aria-invalid={Boolean(errors.newPassword)}
+                    aria-describedby={
+                      errors.newPassword
+                        ? "reset-new-password-error"
+                        : "reset-password-rules"
+                    }
+                    onChange={(event) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        newPassword: event.target.value,
+                      }));
+
+                      setErrors((prev) => ({
+                        ...prev,
+                        newPassword: undefined,
+                      }));
+
+                      setGeneralError(null);
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    className="auth-form__password-toggle"
+                    aria-label={
+                      showNewPassword ? "Sakrij lozinku" : "Prikaži lozinku"
+                    }
+                    disabled={loading || Boolean(successMessage)}
+                    onClick={() => setShowNewPassword((current) => !current)}
+                  >
+                    {showNewPassword ? "Sakrij" : "Prikaži"}
+                  </button>
+                </div>
+
+                {errors.newPassword && (
+                  <p
+                    id="reset-new-password-error"
+                    className="auth-form__error"
+                    role="alert"
+                  >
+                    {errors.newPassword}
+                  </p>
+                )}
+              </div>
+
+              <div className="auth-form__field">
+                <label
+                  className="auth-form__label"
+                  htmlFor="reset-confirm-password"
+                >
+                  Potvrdi novu lozinku
+                </label>
+
+                <div className="auth-form__password-wrapper">
+                  <input
+                    id="reset-confirm-password"
+                    name="confirmPassword"
+                    className={[
+                      "auth-form__input",
+                      "auth-form__input--password",
+                      errors.confirmPassword ? "auth-form__input--error" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Ponovi novu lozinku"
+                    value={form.confirmPassword}
+                    autoComplete="new-password"
+                    disabled={loading || Boolean(successMessage)}
+                    aria-invalid={Boolean(errors.confirmPassword)}
+                    aria-describedby={
+                      errors.confirmPassword
+                        ? "reset-confirm-password-error"
+                        : undefined
+                    }
+                    onChange={(event) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        confirmPassword: event.target.value,
+                      }));
+
+                      setErrors((prev) => ({
+                        ...prev,
+                        confirmPassword: undefined,
+                      }));
+
+                      setGeneralError(null);
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    className="auth-form__password-toggle"
+                    aria-label={
+                      showConfirmPassword ? "Sakrij lozinku" : "Prikaži lozinku"
+                    }
+                    disabled={loading || Boolean(successMessage)}
+                    onClick={() =>
+                      setShowConfirmPassword((current) => !current)
+                    }
+                  >
+                    {showConfirmPassword ? "Sakrij" : "Prikaži"}
+                  </button>
+                </div>
+
+                {errors.confirmPassword && (
+                  <p
+                    id="reset-confirm-password-error"
+                    className="auth-form__error"
+                    role="alert"
+                  >
+                    {errors.confirmPassword}
+                  </p>
+                )}
+              </div>
+
+              <div
+                id="reset-password-rules"
+                className="auth-password-rules auth-password-rules--recovery"
+              >
+                <span
+                  className={[
+                    "auth-password-rule",
+                    hasMinimumLength ? "auth-password-rule--valid" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  Najmanje 8 karaktera
+                </span>
+
+                <span
+                  className={[
+                    "auth-password-rule",
+                    passwordsMatch ? "auth-password-rule--valid" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  Lozinke se poklapaju
+                </span>
+              </div>
+
+              {generalError && (
+                <div className="auth-form__general-error" role="alert">
+                  <span
+                    className="auth-form__general-error-icon"
+                    aria-hidden="true"
+                  >
+                    !
+                  </span>
+
+                  <p>{generalError}</p>
+                </div>
+              )}
+
+              {successMessage && (
+                <div
+                  className="auth-form__general-success auth-form__general-success--recovery"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span
+                    className="auth-form__general-success-icon"
+                    aria-hidden="true"
+                  >
+                    ✓
+                  </span>
+
+                  <div>
+                    <strong>Lozinka je promenjena</strong>
+                    <p>{successMessage}</p>
+                  </div>
+                </div>
+              )}
+
+              <button
+                className="auth-form__submit"
+                type="submit"
+                disabled={loading || Boolean(successMessage)}
+              >
+                {loading && (
+                  <span className="auth-form__spinner" aria-hidden="true" />
+                )}
+
+                <span>{loading ? "Čuvam..." : "Promeni lozinku"}</span>
+
+                {!loading && !successMessage && (
+                  <span aria-hidden="true">→</span>
+                )}
+              </button>
+            </form>
+          </>
+        )}
 
         <footer className="auth-card__footer">
           <p className="auth-card__switch">
@@ -285,7 +458,7 @@ export default function ResetPasswordPage() {
           </p>
 
           <Link to="/" className="auth-card__back-link">
-            Nazad na početnu
+            ← Nazad na početnu
           </Link>
         </footer>
       </section>

@@ -1,126 +1,340 @@
 @use "./abstracts/variables" as *;
 
 // ======================================================
-// Admin order history page
+// Page
 // ======================================================
 
 .admin-orders-history-page {
+  position: relative;
+
+  display: grid;
+  gap: $space-5;
+
   width: 100%;
-  padding-block: clamp(46px, 6vw, 82px);
+  padding-block: clamp(30px, 4vw, 56px);
 
   color: $color-text;
 
-  &__header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: $space-7;
+  &::before {
+    position: absolute;
+    top: -100px;
+    right: -170px;
+    z-index: -1;
 
-    margin-bottom: clamp(34px, 5vw, 54px);
+    width: 440px;
+    height: 440px;
+
+    content: "";
+    pointer-events: none;
+
+    background: rgba($color-primary, 0.05);
+
+    border-radius: 50%;
+
+    filter: blur(110px);
   }
+}
 
-  &__heading {
+// ======================================================
+// Hero
+// ======================================================
+
+.admin-history-hero {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(285px, 350px);
+
+  align-items: stretch;
+  gap: clamp(24px, 4vw, 48px);
+
+  padding: clamp(26px, 4vw, 44px);
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(90deg, rgba($color-primary, 0.035), transparent 45%),
+    radial-gradient(
+      circle at 90% 5%,
+      rgba($color-accent, 0.07),
+      transparent 23rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.043),
+      rgba(255, 255, 255, 0.012)
+    ),
+    $color-surface-deep;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  box-shadow:
+    $shadow-surface,
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+  &__content {
+    align-self: center;
+
     max-width: 720px;
   }
 
   &__eyebrow {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
 
-    margin-bottom: $space-2;
+    margin-bottom: $space-3;
 
     color: $color-accent;
 
-    font-size: 0.72rem;
+    font-size: 0.66rem;
     font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.17em;
+
+    letter-spacing: 0.15em;
+
+    &::before {
+      width: 7px;
+      height: 7px;
+
+      content: "";
+
+      background: $color-primary;
+      border-radius: 50%;
+
+      box-shadow: 0 0 13px rgba($color-primary, 0.7);
+    }
   }
 
   &__title {
     margin: 0;
 
+    color: $color-text;
+
     font-family: $font-family-display;
-    font-size: clamp(3.4rem, 7vw, 5.8rem);
+
+    font-size: clamp(2.8rem, 5vw, 4.5rem);
+
     font-weight: $font-weight-black;
-    line-height: 0.9;
-    letter-spacing: 0.01em;
+
+    line-height: 0.92;
     text-transform: uppercase;
   }
 
   &__description {
-    max-width: 660px;
+    max-width: 650px;
 
     margin: $space-4 0 0;
 
     color: $color-text-soft;
 
-    font-size: 0.96rem;
+    font-size: 0.88rem;
     line-height: 1.7;
   }
 
-  &__header-actions {
+  &__meta {
     display: flex;
     align-items: center;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 9px;
+
+    margin-top: $space-5;
   }
 
-  &__realtime {
+  &__live,
+  &__period {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
 
-    min-height: 44px;
-    padding-inline: 13px;
+    min-height: 30px;
+    padding-inline: 10px;
 
-    color: #b8f3c9;
+    font-size: 0.59rem;
+    font-weight: $font-weight-semibold;
 
-    font-size: 0.67rem;
-    font-weight: $font-weight-bold;
-
-    background: rgba(46, 134, 70, 0.11);
-    border: 1px solid rgba(84, 210, 121, 0.17);
     border-radius: $radius-pill;
   }
 
-  &__realtime-dot {
+  &__live {
+    gap: 7px;
+
+    color: #b8f3c9;
+
+    background: rgba($color-success, 0.09);
+
+    border: 1px solid rgba($color-success, 0.17);
+  }
+
+  &__live-dot {
     position: relative;
 
     width: 7px;
     height: 7px;
 
-    background: #66d586;
+    background: $color-success;
     border-radius: 50%;
 
-    box-shadow: 0 0 0 4px rgba(102, 213, 134, 0.09);
+    box-shadow: 0 0 9px rgba($color-success, 0.5);
 
     &::after {
       position: absolute;
-      inset: -5px;
+      inset: -4px;
 
       content: "";
 
-      border: 1px solid rgba(102, 213, 134, 0.34);
+      border: 1px solid rgba($color-success, 0.38);
+
       border-radius: 50%;
 
       animation: admin-history-live-pulse 1.8s ease-out infinite;
     }
   }
 
-  &__refresh-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
+  &__period {
+    color: $color-text-muted;
 
-    min-height: 44px;
-    padding-inline: 15px;
+    background: rgba(255, 255, 255, 0.03);
+
+    border: 1px solid $color-border;
+  }
+}
+
+// ======================================================
+// Summary
+// ======================================================
+
+.admin-history-summary {
+  display: flex;
+  flex-direction: column;
+
+  min-height: 225px;
+  padding: $space-5;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba($color-accent, 0.055),
+      rgba(255, 255, 255, 0.018)
+    ),
+    rgba(0, 0, 0, 0.14);
+
+  border: 1px solid rgba($color-accent, 0.15);
+
+  border-radius: $radius-lg;
+
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__icon {
+    display: grid;
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.065);
+
+    border: 1px solid rgba($color-accent, 0.14);
+
+    border-radius: $radius-md;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &__label {
+    color: $color-text-muted;
+
+    font-size: 0.57rem;
+    font-weight: $font-weight-extra-bold;
+
+    letter-spacing: 0.11em;
+  }
+
+  &__value {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+
+    margin-top: auto;
+
+    strong {
+      color: $color-accent;
+
+      font-family: $font-family-display;
+
+      font-size: 4.2rem;
+      font-weight: $font-weight-black;
+
+      line-height: 0.8;
+    }
+
+    span {
+      max-width: 130px;
+
+      padding-bottom: 3px;
+
+      color: $color-text-muted;
+
+      font-size: 0.64rem;
+      line-height: 1.35;
+    }
+  }
+
+  &__footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+
+    align-items: end;
+    gap: 10px;
+
+    margin-top: $space-4;
+    padding-top: $space-4;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+
+    > div {
+      display: grid;
+      gap: 3px;
+
+      span {
+        color: $color-text-muted;
+
+        font-size: 0.5rem;
+        text-transform: uppercase;
+      }
+
+      strong {
+        color: $color-text;
+
+        font-size: 0.68rem;
+      }
+    }
+  }
+
+  &__refresh {
+    display: grid;
+    place-items: center;
+
+    width: 35px;
+    height: 35px;
+    padding: 0;
 
     color: $color-text-soft;
 
-    font: inherit;
-    font-size: 0.7rem;
-    font-weight: $font-weight-bold;
-
     background: rgba(255, 255, 255, 0.035);
+
     border: 1px solid $color-border;
     border-radius: $radius-md;
 
@@ -129,42 +343,36 @@
     transition:
       color $transition-fast,
       background-color $transition-fast,
-      border-color $transition-fast,
-      transform $transition-base;
+      border-color $transition-fast;
 
     svg {
-      width: 17px;
-      height: 17px;
-
-      color: $color-accent;
+      width: 16px;
+      height: 16px;
     }
 
     &:hover:not(:disabled) {
-      color: $color-text;
+      color: $color-accent;
 
-      background: rgba(255, 255, 255, 0.065);
-      border-color: rgba($color-accent, 0.22);
+      background: rgba(255, 255, 255, 0.06);
 
-      transform: translateY(-1px);
+      border-color: rgba($color-accent, 0.18);
     }
 
     &:disabled {
       opacity: 0.5;
-      cursor: not-allowed;
-    }
 
-    &:focus-visible {
-      outline: 3px solid rgba($color-accent, 0.28);
-      outline-offset: 4px;
+      cursor: not-allowed;
     }
   }
 
   &__spinner {
-    width: 17px;
-    height: 17px;
+    width: 14px;
+    height: 14px;
 
-    border: 2px solid rgba($color-text, 0.16);
+    border: 2px solid rgba($color-accent, 0.14);
+
     border-top-color: $color-accent;
+
     border-radius: 50%;
 
     animation: admin-history-spin 700ms linear infinite;
@@ -172,31 +380,29 @@
 }
 
 // ======================================================
-// Filters
+// Filter
 // ======================================================
 
 .admin-history-filter {
-  padding: clamp(20px, 4vw, 28px);
+  padding: clamp(20px, 3vw, 27px);
 
   background:
     radial-gradient(
       circle at top right,
-      rgba($color-primary, 0.07),
+      rgba($color-primary, 0.05),
       transparent 25rem
     ),
     linear-gradient(
       145deg,
-      rgba(255, 255, 255, 0.047),
-      rgba(255, 255, 255, 0.016)
+      rgba(255, 255, 255, 0.035),
+      rgba(255, 255, 255, 0.01)
     ),
-    $color-bg-soft;
+    $color-surface-deep;
 
   border: 1px solid $color-border;
   border-radius: $radius-xl;
 
-  box-shadow:
-    0 18px 45px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: $shadow-surface;
 
   &__header {
     display: flex;
@@ -207,7 +413,15 @@
     margin-bottom: $space-5;
     padding-bottom: $space-5;
 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+
+    p {
+      margin: 6px 0 0;
+
+      color: $color-text-muted;
+
+      font-size: 0.6rem;
+    }
   }
 
   &__eyebrow {
@@ -217,8 +431,9 @@
 
     color: $color-accent;
 
-    font-size: 0.62rem;
+    font-size: 0.58rem;
     font-weight: $font-weight-extra-bold;
+
     letter-spacing: 0.13em;
   }
 
@@ -227,36 +442,63 @@
 
     color: $color-text;
 
-    font-size: clamp(1.35rem, 3vw, 1.75rem);
+    font-family: $font-family-display;
+
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+
+    font-weight: $font-weight-extra-bold;
+
+    text-transform: uppercase;
   }
 
-  &__period {
-    color: $color-text-muted;
+  &__applied {
+    display: grid;
+    gap: 4px;
 
-    font-size: 0.68rem;
-    font-weight: $font-weight-semibold;
+    min-width: 190px;
+    padding: 10px 12px;
+
+    text-align: right;
+
+    background: rgba($color-accent, 0.04);
+
+    border: 1px solid rgba($color-accent, 0.1);
+
+    border-radius: $radius-md;
+
+    span {
+      color: $color-text-muted;
+
+      font-size: 0.48rem;
+      text-transform: uppercase;
+    }
+
+    strong {
+      color: $color-accent;
+
+      font-size: 0.6rem;
+    }
+  }
+
+  &__form {
+    display: grid;
+    gap: $space-5;
   }
 
   &__presets {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
-
-    margin-bottom: $space-5;
+    gap: 6px;
   }
 
   &__preset,
-  &__reset-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    min-height: 41px;
-    padding-inline: 13px;
+  &__clear-additional {
+    min-height: 36px;
+    padding-inline: 11px;
 
     font: inherit;
-    font-size: 0.68rem;
+    font-size: 0.55rem;
     font-weight: $font-weight-bold;
 
     border-radius: $radius-md;
@@ -269,67 +511,55 @@
       border-color $transition-fast,
       transform $transition-base;
 
-    &:focus-visible {
-      outline: 3px solid rgba($color-accent, 0.27);
-      outline-offset: 3px;
+    &:hover {
+      transform: translateY(-1px);
     }
   }
 
   &__preset {
-    color: $color-text-soft;
+    color: $color-text-muted;
 
-    background: rgba(255, 255, 255, 0.033);
+    background: rgba(255, 255, 255, 0.025);
+
     border: 1px solid $color-border;
 
     &:hover {
       color: $color-text;
 
-      background: rgba(255, 255, 255, 0.065);
-      border-color: rgba($color-accent, 0.2);
+      background: rgba(255, 255, 255, 0.05);
 
-      transform: translateY(-1px);
+      border-color: rgba($color-accent, 0.15);
     }
 
     &--active {
-      color: #11140f;
+      color: #15170f;
 
-      background: linear-gradient(135deg, $color-accent, #f0b628);
+      background: linear-gradient(135deg, $color-accent, $color-accent-soft);
 
-      border-color: $color-accent;
-
-      box-shadow:
-        0 10px 24px rgba($color-accent, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.24);
+      border-color: rgba(255, 255, 255, 0.15);
     }
   }
 
-  &__reset-button {
+  &__clear-additional {
     margin-left: auto;
 
-    color: #ffb3b3;
+    color: #ffd09f;
 
-    background: rgba(137, 29, 29, 0.12);
-    border: 1px solid rgba(255, 91, 91, 0.18);
+    background: rgba($color-warning, 0.065);
 
-    &:hover {
-      color: #ffd2d2;
-
-      background: rgba(166, 36, 36, 0.2);
-      border-color: rgba(255, 91, 91, 0.28);
-
-      transform: translateY(-1px);
-    }
+    border: 1px solid rgba($color-warning, 0.14);
   }
 
   &__grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+
+    gap: 11px;
   }
 
   &__field {
     display: grid;
-    gap: 7px;
+    gap: 6px;
 
     min-width: 0;
   }
@@ -337,9 +567,10 @@
   &__label {
     color: $color-text-muted;
 
-    font-size: 0.61rem;
+    font-size: 0.52rem;
     font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.08em;
+
+    letter-spacing: 0.07em;
     text-transform: uppercase;
   }
 
@@ -349,10 +580,11 @@
     svg {
       position: absolute;
       top: 50%;
-      left: 13px;
+      left: 11px;
+      z-index: 2;
 
-      width: 17px;
-      height: 17px;
+      width: 16px;
+      height: 16px;
 
       color: $color-accent;
 
@@ -364,16 +596,21 @@
     input,
     select {
       width: 100%;
-      min-height: 47px;
-      padding: 10px 13px 10px 41px;
+      min-height: 42px;
+
+      padding: 8px 10px 8px 35px;
 
       color: $color-text;
 
       font: inherit;
-      font-size: 0.74rem;
+      font-size: 0.61rem;
 
-      background: rgba(0, 0, 0, 0.21);
-      border: 1px solid $color-border-strong;
+      color-scheme: dark;
+
+      background: rgba(0, 0, 0, 0.18);
+
+      border: 1px solid $color-border;
+
       border-radius: $radius-md;
 
       outline: none;
@@ -383,24 +620,21 @@
         border-color $transition-fast,
         box-shadow $transition-fast;
 
+      &::placeholder {
+        color: rgba($color-text, 0.3);
+      }
+
       &:hover {
-        border-color: rgba($color-accent, 0.2);
+        border-color: rgba($color-accent, 0.16);
       }
 
       &:focus {
-        background: rgba(0, 0, 0, 0.28);
+        background: rgba(0, 0, 0, 0.25);
+
         border-color: $color-accent;
 
-        box-shadow: 0 0 0 3px rgba($color-accent, 0.1);
+        box-shadow: 0 0 0 3px rgba($color-accent, 0.08);
       }
-    }
-
-    input[type="date"] {
-      color-scheme: dark;
-    }
-
-    input::placeholder {
-      color: rgba($color-text, 0.32);
     }
 
     select {
@@ -408,12 +642,100 @@
     }
   }
 
-  &__hint {
-    margin: $space-4 0 0;
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-5;
+
+    padding-top: $space-4;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  &__state {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
 
     color: $color-text-muted;
 
-    font-size: 0.62rem;
+    font-size: 0.54rem;
+  }
+
+  &__state-dot {
+    width: 7px;
+    height: 7px;
+
+    background: $color-success;
+    border-radius: 50%;
+
+    box-shadow: 0 0 8px rgba($color-success, 0.4);
+
+    &--pending {
+      background: $color-warning;
+
+      box-shadow: 0 0 8px rgba($color-warning, 0.4);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 7px;
+  }
+
+  &__reset-button,
+  &__apply-button {
+    min-height: 40px;
+    padding-inline: 13px;
+
+    font: inherit;
+    font-size: 0.57rem;
+    font-weight: $font-weight-extra-bold;
+
+    border: 1px solid transparent;
+
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    transition:
+      filter $transition-fast,
+      transform $transition-base,
+      background-color $transition-fast,
+      border-color $transition-fast;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.45;
+
+      cursor: not-allowed;
+    }
+  }
+
+  &__reset-button {
+    color: $color-text-soft;
+
+    background: rgba(255, 255, 255, 0.035);
+
+    border-color: $color-border;
+  }
+
+  &__apply-button {
+    color: #15170f;
+
+    background: linear-gradient(135deg, $color-accent, $color-accent-soft);
+
+    border-color: rgba(255, 255, 255, 0.15);
+
+    box-shadow: 0 9px 22px rgba($color-accent, 0.11);
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.06);
+    }
   }
 }
 
@@ -426,24 +748,25 @@
   align-items: flex-start;
   gap: 12px;
 
-  margin-top: $space-5;
   padding: 14px 16px;
 
   color: #ffb3b3;
 
-  background: rgba(137, 29, 29, 0.16);
-  border: 1px solid rgba(255, 91, 91, 0.23);
+  background: rgba($color-danger, 0.1);
+
+  border: 1px solid rgba($color-danger, 0.22);
+
   border-radius: $radius-lg;
 
   &__icon {
     display: grid;
     place-items: center;
-    flex: 0 0 24px;
+    flex: 0 0 25px;
 
-    width: 24px;
-    height: 24px;
+    width: 25px;
+    height: 25px;
 
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: $font-weight-black;
 
     border: 1px solid currentColor;
@@ -455,13 +778,13 @@
 
     margin-bottom: 3px;
 
-    font-size: 0.8rem;
+    font-size: 0.77rem;
   }
 
   p {
     margin: 0;
 
-    font-size: 0.73rem;
+    font-size: 0.7rem;
     line-height: 1.55;
   }
 }
@@ -471,24 +794,22 @@
 // ======================================================
 
 .admin-history-results {
-  margin-top: $space-7;
+  min-width: 0;
 
   overflow: hidden;
 
   background:
     linear-gradient(
       145deg,
-      rgba(255, 255, 255, 0.045),
-      rgba(255, 255, 255, 0.015)
+      rgba(255, 255, 255, 0.035),
+      rgba(255, 255, 255, 0.01)
     ),
-    $color-bg-soft;
+    $color-surface-deep;
 
   border: 1px solid $color-border;
   border-radius: $radius-xl;
 
-  box-shadow:
-    0 18px 45px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: $shadow-surface;
 
   &__header {
     display: flex;
@@ -496,9 +817,17 @@
     justify-content: space-between;
     gap: $space-5;
 
-    padding: clamp(22px, 4vw, 29px);
+    padding: clamp(20px, 3vw, 26px);
 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+
+    > div:first-child > p {
+      margin: 6px 0 0;
+
+      color: $color-text-muted;
+
+      font-size: 0.57rem;
+    }
   }
 
   &__eyebrow {
@@ -508,9 +837,10 @@
 
     color: $color-accent;
 
-    font-size: 0.63rem;
+    font-size: 0.58rem;
     font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.14em;
+
+    letter-spacing: 0.13em;
   }
 
   &__title {
@@ -518,26 +848,83 @@
 
     color: $color-text;
 
-    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-family: $font-family-display;
+
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+
+    font-weight: $font-weight-extra-bold;
+
+    text-transform: uppercase;
+  }
+
+  &__header-right {
+    display: flex;
+    align-items: center;
+    gap: 9px;
   }
 
   &__summary {
-    display: flex;
-    align-items: baseline;
-    gap: 7px;
+    display: grid;
+    justify-items: center;
 
-    color: $color-text-muted;
+    min-width: 66px;
+    padding: 7px 9px;
 
-    font-size: 0.66rem;
+    background: rgba($color-accent, 0.045);
+
+    border: 1px solid rgba($color-accent, 0.11);
+
+    border-radius: $radius-md;
 
     strong {
       color: $color-accent;
 
       font-family: $font-family-display;
-      font-size: 1.8rem;
-      font-weight: $font-weight-black;
+
+      font-size: 1.2rem;
       line-height: 1;
     }
+
+    span {
+      margin-top: 2px;
+
+      color: $color-text-muted;
+
+      font-size: 0.48rem;
+      text-transform: uppercase;
+    }
+  }
+
+  &__refreshing {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    min-height: 34px;
+    padding-inline: 9px;
+
+    color: $color-text-muted;
+
+    font-size: 0.51rem;
+
+    background: rgba(255, 255, 255, 0.025);
+
+    border: 1px solid $color-border;
+
+    border-radius: $radius-pill;
+  }
+
+  &__spinner {
+    width: 12px;
+    height: 12px;
+
+    border: 2px solid rgba($color-accent, 0.12);
+
+    border-top-color: $color-accent;
+
+    border-radius: 50%;
+
+    animation: admin-history-spin 700ms linear infinite;
   }
 }
 
@@ -546,34 +933,43 @@
 // ======================================================
 
 .admin-history-table-wrapper {
+  width: 100%;
+
   overflow-x: auto;
+
+  scrollbar-width: thin;
+
+  scrollbar-color: rgba($color-accent, 0.45) rgba(255, 255, 255, 0.02);
 }
 
 .admin-history-table {
   width: 100%;
-  min-width: 1100px;
+  min-width: 1210px;
 
   border-collapse: collapse;
 
+  thead {
+    background: rgba(0, 0, 0, 0.17);
+  }
+
   th,
   td {
-    padding: 16px 17px;
+    padding: 14px 13px;
 
     text-align: left;
-    vertical-align: top;
+    vertical-align: middle;
 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
   }
 
   th {
     color: $color-text-muted;
 
-    font-size: 0.58rem;
+    font-size: 0.51rem;
     font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
 
-    background: rgba(0, 0, 0, 0.12);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   th:last-child,
@@ -595,21 +991,23 @@
 
   &__order {
     display: grid;
-    gap: 4px;
+    gap: 3px;
 
     span {
       color: $color-text-muted;
 
-      font-size: 0.55rem;
+      font-size: 0.46rem;
       font-weight: $font-weight-extra-bold;
-      letter-spacing: 0.08em;
+
+      letter-spacing: 0.07em;
     }
 
     strong {
       color: $color-text;
 
       font-family: $font-family-display;
-      font-size: 1.05rem;
+
+      font-size: 1rem;
       font-weight: $font-weight-black;
     }
   }
@@ -617,31 +1015,38 @@
   &__date {
     display: block;
 
-    max-width: 130px;
+    max-width: 120px;
 
     color: $color-text-soft;
 
-    font-size: 0.68rem;
-    line-height: 1.5;
+    font-size: 0.59rem;
+    line-height: 1.45;
   }
 
-  &__address {
+  &__address,
+  &__pickup {
     display: grid;
-    gap: 4px;
+    gap: 3px;
 
-    min-width: 150px;
+    min-width: 140px;
 
     strong {
       color: $color-text;
 
-      font-size: 0.69rem;
+      font-size: 0.59rem;
       line-height: 1.4;
     }
 
     span {
       color: $color-text-muted;
 
-      font-size: 0.63rem;
+      font-size: 0.53rem;
+    }
+  }
+
+  &__pickup {
+    strong {
+      color: #9fd7ff;
     }
   }
 
@@ -650,108 +1055,162 @@
     align-items: center;
     justify-content: center;
 
-    min-height: 29px;
-    padding-inline: 9px;
+    min-height: 27px;
+    padding-inline: 8px;
 
     color: #c5a7ff;
 
-    font-size: 0.63rem;
+    font-size: 0.55rem;
     font-weight: $font-weight-bold;
 
     background: rgba(92, 55, 155, 0.13);
+
     border: 1px solid rgba(164, 123, 235, 0.19);
+
     border-radius: $radius-pill;
   }
 
   &__empty-value {
     color: $color-text-muted;
 
-    font-size: 0.63rem;
+    font-size: 0.54rem;
     font-style: italic;
   }
 
   &__price {
     color: $color-accent;
 
-    font-size: 0.72rem;
+    font-size: 0.63rem;
     white-space: nowrap;
   }
 }
 
+// ======================================================
+// Status
+// ======================================================
+
 .admin-history-status {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
 
-  min-height: 29px;
-  padding-inline: 9px;
+  min-height: 27px;
+  padding-inline: 8px;
 
-  font-size: 0.61rem;
+  font-size: 0.52rem;
   font-weight: $font-weight-extra-bold;
 
   border: 1px solid transparent;
   border-radius: $radius-pill;
 
   &__dot {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
 
     background: currentColor;
     border-radius: 50%;
-
-    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.03);
   }
 
   &--delivered {
     color: #9be3ae;
 
-    background: rgba(38, 139, 68, 0.14);
-    border-color: rgba(84, 210, 121, 0.2);
+    background: rgba($color-success, 0.075);
+
+    border-color: rgba($color-success, 0.15);
   }
 
-  &--rejected,
-  &--cancelled {
+  &--rejected {
     color: #ffaaaa;
 
-    background: rgba(137, 29, 29, 0.14);
-    border-color: rgba(255, 91, 91, 0.2);
+    background: rgba($color-danger, 0.075);
+
+    border-color: rgba($color-danger, 0.15);
+  }
+
+  &--cancelled {
+    color: #ffd09f;
+
+    background: rgba($color-warning, 0.065);
+
+    border-color: rgba($color-warning, 0.14);
   }
 
   &--default {
     color: $color-text-soft;
 
     background: rgba(255, 255, 255, 0.035);
+
     border-color: $color-border;
   }
 }
 
+// ======================================================
+// Fulfillment
+// ======================================================
+
+.admin-history-fulfillment {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 27px;
+  padding-inline: 8px;
+
+  font-size: 0.51rem;
+  font-weight: $font-weight-extra-bold;
+
+  border: 1px solid transparent;
+  border-radius: $radius-pill;
+
+  &--delivery {
+    color: #c5a7ff;
+
+    background: rgba(92, 55, 155, 0.1);
+
+    border-color: rgba(164, 123, 235, 0.17);
+  }
+
+  &--pickup {
+    color: #9fd7ff;
+
+    background: rgba($color-info, 0.065);
+
+    border-color: rgba($color-info, 0.13);
+  }
+}
+
+// ======================================================
+// Items
+// ======================================================
+
 .admin-history-items {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 
-  min-width: 230px;
+  min-width: 220px;
 
   &__item {
     display: inline-flex;
     align-items: center;
     gap: 5px;
 
-    padding: 6px 8px;
+    padding: 5px 7px;
 
     color: $color-text-muted;
 
-    font-size: 0.6rem;
+    font-size: 0.53rem;
     line-height: 1.35;
 
-    background: rgba(255, 255, 255, 0.028);
-    border: 1px solid rgba(255, 255, 255, 0.055);
+    background: rgba(255, 255, 255, 0.025);
+
+    border: 1px solid rgba(255, 255, 255, 0.05);
+
     border-radius: $radius-md;
 
     strong {
       color: $color-accent;
 
-      font-size: 0.6rem;
+      font-size: 0.53rem;
     }
   }
 }
@@ -766,18 +1225,19 @@
   justify-content: space-between;
   gap: $space-5;
 
-  padding: 18px clamp(22px, 4vw, 29px);
+  padding: 16px clamp(20px, 3vw, 26px);
 
   background: rgba(0, 0, 0, 0.13);
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+
+  border-top: 1px solid rgba(255, 255, 255, 0.065);
 
   &__info {
     display: grid;
-    gap: 4px;
+    gap: 3px;
 
     color: $color-text-muted;
 
-    font-size: 0.64rem;
+    font-size: 0.55rem;
 
     strong {
       color: $color-text;
@@ -787,24 +1247,25 @@
   &__actions {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 7px;
 
     button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 7px;
 
-      min-height: 41px;
-      padding-inline: 13px;
+      min-height: 38px;
+      padding-inline: 11px;
 
       color: $color-text-soft;
 
       font: inherit;
-      font-size: 0.68rem;
+      font-size: 0.55rem;
       font-weight: $font-weight-bold;
 
       background: rgba(255, 255, 255, 0.035);
+
       border: 1px solid $color-border;
       border-radius: $radius-md;
 
@@ -819,20 +1280,17 @@
       &:hover:not(:disabled) {
         color: $color-text;
 
-        background: rgba(255, 255, 255, 0.065);
-        border-color: rgba($color-accent, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+
+        border-color: rgba($color-accent, 0.16);
 
         transform: translateY(-1px);
       }
 
       &:disabled {
-        opacity: 0.38;
-        cursor: not-allowed;
-      }
+        opacity: 0.35;
 
-      &:focus-visible {
-        outline: 3px solid rgba($color-accent, 0.27);
-        outline-offset: 3px;
+        cursor: not-allowed;
       }
     }
   }
@@ -841,25 +1299,26 @@
     display: grid;
     place-items: center;
 
-    width: 41px;
-    height: 41px;
+    width: 38px;
+    height: 38px;
 
-    color: #11140f;
+    color: #15170f;
 
     font-family: $font-family-display;
-    font-size: 0.85rem;
+
+    font-size: 0.8rem;
     font-weight: $font-weight-black;
 
-    background: linear-gradient(135deg, $color-accent, #f0b628);
+    background: linear-gradient(135deg, $color-accent, $color-accent-soft);
 
     border-radius: $radius-md;
 
-    box-shadow: 0 9px 21px rgba($color-accent, 0.14);
+    box-shadow: 0 8px 19px rgba($color-accent, 0.12);
   }
 }
 
 // ======================================================
-// Loading and empty states
+// Loading / empty
 // ======================================================
 
 .admin-history-loading,
@@ -868,32 +1327,31 @@
   align-items: center;
   justify-content: center;
 
-  min-height: 390px;
-  margin-top: $space-6;
-  padding: 45px;
+  min-height: 330px;
+  padding: $space-7;
 
   background:
     radial-gradient(
       circle at center,
-      rgba($color-primary, 0.08),
-      transparent 21rem
+      rgba($color-primary, 0.055),
+      transparent 20rem
     ),
-    rgba(255, 255, 255, 0.025);
-
-  border: 1px solid $color-border;
-  border-radius: $radius-xl;
+    rgba(0, 0, 0, 0.08);
 }
 
 .admin-history-loading {
-  gap: 15px;
+  gap: 14px;
 
   &__spinner {
-    width: 36px;
-    height: 36px;
-    flex: 0 0 36px;
+    flex: 0 0 34px;
 
-    border: 3px solid rgba($color-accent, 0.13);
+    width: 34px;
+    height: 34px;
+
+    border: 3px solid rgba($color-accent, 0.12);
+
     border-top-color: $color-accent;
+
     border-radius: 50%;
 
     animation: admin-history-spin 700ms linear infinite;
@@ -902,57 +1360,55 @@
   strong {
     display: block;
 
-    margin-bottom: 4px;
-
     color: $color-text;
 
-    font-size: 0.88rem;
+    font-size: 0.77rem;
   }
 
   p {
-    margin: 0;
+    margin: 4px 0 0;
 
     color: $color-text-muted;
 
-    font-size: 0.71rem;
+    font-size: 0.61rem;
   }
 }
 
 .admin-history-empty {
-  align-items: center;
   flex-direction: column;
 
   text-align: center;
-
-  border-style: dashed;
 
   &__icon {
     display: grid;
     place-items: center;
 
-    width: 72px;
-    height: 72px;
+    width: 65px;
+    height: 65px;
 
     margin-bottom: $space-4;
 
     color: $color-accent;
 
     background: rgba($color-accent, 0.055);
+
     border: 1px solid rgba($color-accent, 0.12);
+
     border-radius: 50%;
 
     svg {
-      width: 32px;
-      height: 32px;
+      width: 29px;
+      height: 29px;
     }
   }
 
   &__eyebrow {
     color: $color-accent;
 
-    font-size: 0.63rem;
+    font-size: 0.58rem;
     font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.14em;
+
+    letter-spacing: 0.13em;
   }
 
   &__title {
@@ -960,18 +1416,21 @@
 
     color: $color-text;
 
-    font-size: 1.7rem;
+    font-family: $font-family-display;
+
+    font-size: 1.55rem;
+    text-transform: uppercase;
   }
 
   &__description {
-    max-width: 440px;
+    max-width: 420px;
 
     margin: $space-3 0 0;
 
     color: $color-text-muted;
 
-    font-size: 0.74rem;
-    line-height: 1.55;
+    font-size: 0.62rem;
+    line-height: 1.5;
   }
 }
 
@@ -988,11 +1447,13 @@
 @keyframes admin-history-live-pulse {
   from {
     opacity: 0.85;
+
     transform: scale(0.5);
   }
 
   to {
     opacity: 0;
+
     transform: scale(1.35);
   }
 }
@@ -1002,26 +1463,58 @@
 // ======================================================
 
 @media (max-width: $breakpoint-laptop) {
-  .admin-history-filter__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .admin-history-hero {
+    grid-template-columns: minmax(0, 1fr) 290px;
+  }
+
+  .admin-history-filter {
+    &__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 }
 
 @media (max-width: $breakpoint-tablet) {
   .admin-orders-history-page {
-    padding-block: $space-8;
+    padding-block: $space-7;
+  }
 
+  .admin-history-hero {
+    grid-template-columns: 1fr;
+
+    &__title {
+      font-size: clamp(2.7rem, 10vw, 4rem);
+    }
+  }
+
+  .admin-history-filter {
     &__header {
       align-items: flex-start;
       flex-direction: column;
     }
 
-    &__header-actions {
+    &__applied {
       width: 100%;
+
+      text-align: left;
+    }
+
+    &__footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    &__actions {
+      width: 100%;
+    }
+
+    &__reset-button,
+    &__apply-button {
+      flex: 1;
     }
   }
 
-  .admin-history-filter {
+  .admin-history-results {
     &__header {
       align-items: flex-start;
       flex-direction: column;
@@ -1040,45 +1533,68 @@
   }
 }
 
-@media (max-width: $breakpoint-mobile) {
-  .admin-orders-history-page {
-    padding-block: $space-7;
-
-    &__title {
-      font-size: 3.25rem;
-    }
-
-    &__header-actions {
-      display: grid;
+@media (max-width: 620px) {
+  .admin-history-filter {
+    &__grid {
       grid-template-columns: 1fr;
     }
 
-    &__realtime,
-    &__refresh-button {
-      width: 100%;
+    &__presets {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
-      justify-content: center;
+    &__clear-additional {
+      margin-left: 0;
     }
   }
+}
 
-  .admin-history-filter {
+@media (max-width: $breakpoint-mobile) {
+  .admin-orders-history-page {
+    gap: $space-4;
+    padding-block: $space-6;
+  }
+
+  .admin-history-hero {
     padding: $space-5;
 
     border-radius: $radius-lg;
 
+    &__title {
+      font-size: 2.7rem;
+    }
+
+    &__description {
+      font-size: 0.84rem;
+    }
+  }
+
+  .admin-history-summary {
+    padding: $space-4;
+  }
+
+  .admin-history-filter {
+    padding: $space-4;
+
+    border-radius: $radius-lg;
+
     &__presets {
+      grid-template-columns: 1fr;
+    }
+
+    &__footer {
+      gap: $space-4;
+    }
+
+    &__actions {
       display: grid;
       grid-template-columns: 1fr;
     }
 
-    &__preset,
-    &__reset-button {
+    &__reset-button,
+    &__apply-button {
       width: 100%;
-      margin-left: 0;
-    }
-
-    &__grid {
-      grid-template-columns: 1fr;
     }
   }
 
@@ -1086,13 +1602,20 @@
     border-radius: $radius-lg;
 
     &__header {
-      align-items: flex-start;
-      flex-direction: column;
+      padding: $space-4;
+    }
+
+    &__header-right {
+      width: 100%;
+    }
+
+    &__summary {
+      flex: 1;
     }
   }
 
   .admin-history-pagination {
-    padding: $space-5;
+    padding: $space-4;
 
     &__actions {
       display: grid;
@@ -1108,16 +1631,23 @@
   }
 }
 
+// ======================================================
+// Reduced motion
+// ======================================================
+
 @media (prefers-reduced-motion: reduce) {
-  .admin-orders-history-page__spinner,
+  .admin-history-summary__spinner,
+  .admin-history-results__spinner,
   .admin-history-loading__spinner,
-  .admin-orders-history-page__realtime-dot::after {
+  .admin-history-hero__live-dot::after {
     animation-duration: 0.01ms;
   }
 
-  .admin-orders-history-page__refresh-button,
+  .admin-history-summary__refresh,
   .admin-history-filter__preset,
+  .admin-history-filter__clear-additional,
   .admin-history-filter__reset-button,
+  .admin-history-filter__apply-button,
   .admin-history-table tbody tr,
   .admin-history-pagination__actions button {
     transition-duration: 0.01ms;

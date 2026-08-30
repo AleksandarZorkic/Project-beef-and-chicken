@@ -29,6 +29,7 @@ type StatCardProps = {
   description?: string;
   variant: StatCardVariant;
   icon: ReactNode;
+  compact?: boolean;
 };
 
 function getErrorMessage(error: any, fallback: string) {
@@ -59,6 +60,7 @@ function dateInputToStartIso(value: string) {
 
 function dateInputToEndExclusiveIso(value: string) {
   const date = new Date(`${value}T00:00:00`);
+
   date.setDate(date.getDate() + 1);
 
   return date.toISOString();
@@ -75,7 +77,7 @@ function getStartOfWeek(date: Date) {
 
 function formatDateLabel(value: string) {
   if (!value) {
-    return "-";
+    return "—";
   }
 
   return new Date(`${value}T00:00:00`).toLocaleDateString("sr-RS", {
@@ -85,15 +87,30 @@ function formatDateLabel(value: string) {
   });
 }
 
-function StatCard({ title, value, description, variant, icon }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  description,
+  variant,
+  icon,
+  compact = false,
+}: StatCardProps) {
   return (
-    <article className={`admin-stat-card admin-stat-card--${variant}`}>
+    <article
+      className={[
+        "admin-stat-card",
+        `admin-stat-card--${variant}`,
+        compact ? "admin-stat-card--compact" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <div className="admin-stat-card__top">
         <span className="admin-stat-card__icon" aria-hidden="true">
           {icon}
         </span>
 
-        <span className="admin-stat-card__indicator" />
+        <span className="admin-stat-card__indicator" aria-hidden="true" />
       </div>
 
       <div className="admin-stat-card__content">
@@ -114,18 +131,13 @@ export default function AdminDashboardPage() {
 
   const datePresets = useMemo(() => {
     const now = new Date();
-    const today = toLocalDateInputValue(now);
-
-    const startOfWeek = toLocalDateInputValue(getStartOfWeek(now));
-
-    const startOfMonth = toLocalDateInputValue(
-      new Date(now.getFullYear(), now.getMonth(), 1),
-    );
 
     return {
-      today,
-      startOfWeek,
-      startOfMonth,
+      today: toLocalDateInputValue(now),
+      startOfWeek: toLocalDateInputValue(getStartOfWeek(now)),
+      startOfMonth: toLocalDateInputValue(
+        new Date(now.getFullYear(), now.getMonth(), 1),
+      ),
     };
   }, []);
 
@@ -135,7 +147,6 @@ export default function AdminDashboardPage() {
   const [dashboard, setDashboard] = useState<OrderDashboardDto | null>(null);
 
   const [loading, setLoading] = useState(true);
-
   const [refreshing, setRefreshing] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
@@ -149,12 +160,28 @@ export default function AdminDashboardPage() {
   const isMonthSelected =
     fromDate === datePresets.startOfMonth && toDate === datePresets.today;
 
+  const selectedPeriodLabel = useMemo(() => {
+    if (isTodaySelected) {
+      return "Danas";
+    }
+
+    if (isWeekSelected) {
+      return "Ova nedelja";
+    }
+
+    if (isMonthSelected) {
+      return "Ovaj mesec";
+    }
+
+    return "Prilagođeni period";
+  }, [isTodaySelected, isWeekSelected, isMonthSelected]);
+
   const loadDashboard = useCallback(
-    async (showLoading = true) => {
+    async (showInitialLoading = true) => {
       try {
         setError(null);
 
-        if (showLoading) {
+        if (showInitialLoading) {
           setLoading(true);
         } else {
           setRefreshing(true);
@@ -177,11 +204,11 @@ export default function AdminDashboardPage() {
   );
 
   useEffect(() => {
-    loadDashboard();
+    void loadDashboard();
   }, [loadDashboard]);
 
   const handleOrderChanged = useCallback(() => {
-    loadDashboard(false);
+    void loadDashboard(false);
   }, [loadDashboard]);
 
   useOrderRealtime({
@@ -206,67 +233,111 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="admin-dashboard-page">
-      <header className="admin-dashboard-page__header">
-        <div className="admin-dashboard-page__heading">
-          <span className="admin-dashboard-page__eyebrow">
-            ADMINISTRATIVNI PREGLED
+      <section className="admin-dashboard-hero">
+        <div className="admin-dashboard-hero__content">
+          <span className="admin-dashboard-hero__eyebrow">
+            BEEF N&apos; CHICKEN • ADMIN
           </span>
 
-          <h1 className="admin-dashboard-page__title">Dashboard</h1>
+          <h1 className="admin-dashboard-hero__title">Kontrolni centar</h1>
 
-          <p className="admin-dashboard-page__description">
-            Pregled prodaje, aktivnih porudžbina, operativnog stanja i
-            najprodavanijih jela.
+          <p className="admin-dashboard-hero__description">
+            Pratite prodaju, promet i trenutno stanje porudžbina iz jednog
+            centralnog pregleda.
           </p>
-        </div>
 
-        <div className="admin-dashboard-page__header-actions">
-          <div className="admin-dashboard-page__realtime">
-            <span
-              className="admin-dashboard-page__realtime-dot"
-              aria-hidden="true"
-            />
-
-            <span>Podaci uživo</span>
-          </div>
-
-          <button
-            type="button"
-            className="admin-dashboard-page__refresh-button"
-            disabled={loading || refreshing}
-            onClick={() => loadDashboard(false)}
-          >
-            {refreshing ? (
+          <div className="admin-dashboard-hero__meta">
+            <span className="admin-dashboard-hero__meta-item">
               <span
-                className="admin-dashboard-page__spinner"
+                className="admin-dashboard-hero__meta-dot"
                 aria-hidden="true"
               />
-            ) : (
-              <svg viewBox="0 0 24 24" aria-hidden="true">
+              Sistem prati porudžbine uživo
+            </span>
+
+            <span className="admin-dashboard-hero__period">
+              {selectedPeriodLabel}
+            </span>
+          </div>
+        </div>
+
+        <aside className="admin-dashboard-live-panel">
+          <div className="admin-dashboard-live-panel__header">
+            <span
+              className="admin-dashboard-live-panel__icon"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24">
                 <path
-                  d="M20 7v5h-5M4 17v-5h5"
+                  d="M6 4h12l1 16H5L6 4Z"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
+                  strokeWidth="1.7"
                   strokeLinejoin="round"
                 />
 
                 <path
-                  d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
+                  d="M9 8a3 3 0 0 0 6 0"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.8"
+                  strokeWidth="1.7"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
                 />
               </svg>
-            )}
+            </span>
 
-            <span>{refreshing ? "Osvežavam..." : "Osveži podatke"}</span>
-          </button>
-        </div>
-      </header>
+            <span className="admin-dashboard-live-panel__status">
+              <span aria-hidden="true" />
+              LIVE
+            </span>
+          </div>
+
+          <div className="admin-dashboard-live-panel__value">
+            <strong>{loading ? "—" : (dashboard?.activeOrders ?? 0)}</strong>
+
+            <span>aktivnih porudžbina</span>
+          </div>
+
+          <div className="admin-dashboard-live-panel__footer">
+            <div>
+              <span>Status sistema</span>
+              <strong>{refreshing ? "Sinhronizacija..." : "Povezano"}</strong>
+            </div>
+
+            <button
+              type="button"
+              className="admin-dashboard-live-panel__refresh"
+              disabled={loading || refreshing}
+              onClick={() => void loadDashboard(false)}
+              aria-label="Osveži dashboard"
+            >
+              {refreshing ? (
+                <span className="admin-dashboard-spinner" />
+              ) : (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M20 7v5h-5M4 17v-5h5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+
+                  <path
+                    d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
+        </aside>
+      </section>
 
       <section className="admin-dashboard-filter">
         <header className="admin-dashboard-filter__header">
@@ -275,17 +346,21 @@ export default function AdminDashboardPage() {
               PERIOD IZVEŠTAJA
             </span>
 
-            <h2 className="admin-dashboard-filter__title">
-              Izaberite vremenski period
-            </h2>
+            <h2>Analizirajte prodaju</h2>
+
+            <p>Izaberite brzi period ili unesite sopstveni raspon datuma.</p>
           </div>
 
-          <span className="admin-dashboard-filter__current-period">
-            {formatDateLabel(fromDate)} – {formatDateLabel(toDate)}
-          </span>
+          <div className="admin-dashboard-filter__period">
+            <span>{selectedPeriodLabel}</span>
+
+            <strong>
+              {formatDateLabel(fromDate)} – {formatDateLabel(toDate)}
+            </strong>
+          </div>
         </header>
 
-        <div className="admin-dashboard-filter__content">
+        <div className="admin-dashboard-filter__body">
           <div className="admin-dashboard-filter__presets">
             <button
               type="button"
@@ -329,9 +404,9 @@ export default function AdminDashboardPage() {
 
           <div className="admin-dashboard-filter__dates">
             <label className="admin-dashboard-filter__field">
-              <span className="admin-dashboard-filter__label">Datum od</span>
+              <span>Datum od</span>
 
-              <div className="admin-dashboard-filter__input-wrapper">
+              <div className="admin-dashboard-filter__input">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <rect
                     x="3"
@@ -356,23 +431,20 @@ export default function AdminDashboardPage() {
                 <input
                   type="date"
                   value={fromDate}
-                  max={toDate || undefined}
+                  max={toDate || datePresets.today}
                   onChange={(event) => setFromDate(event.target.value)}
                 />
               </div>
             </label>
 
-            <span
-              className="admin-dashboard-filter__separator"
-              aria-hidden="true"
-            >
+            <span className="admin-dashboard-filter__arrow" aria-hidden="true">
               →
             </span>
 
             <label className="admin-dashboard-filter__field">
-              <span className="admin-dashboard-filter__label">Datum do</span>
+              <span>Datum do</span>
 
-              <div className="admin-dashboard-filter__input-wrapper">
+              <div className="admin-dashboard-filter__input">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <rect
                     x="3"
@@ -398,6 +470,7 @@ export default function AdminDashboardPage() {
                   type="date"
                   value={toDate}
                   min={fromDate || undefined}
+                  max={datePresets.today}
                   onChange={(event) => setToDate(event.target.value)}
                 />
               </div>
@@ -405,9 +478,18 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        <p className="admin-dashboard-filter__hint">
-          Podaci se automatski osvežavaju nakon promene perioda.
-        </p>
+        <div className="admin-dashboard-filter__footer">
+          <span className="admin-dashboard-filter__auto">
+            <span aria-hidden="true" />
+            Izveštaj se automatski osvežava nakon promene datuma.
+          </span>
+
+          {refreshing && (
+            <span className="admin-dashboard-filter__refreshing">
+              Sinhronizujem podatke...
+            </span>
+          )}
+        </div>
       </section>
 
       {error && (
@@ -418,7 +500,6 @@ export default function AdminDashboardPage() {
 
           <div>
             <strong>Dashboard nije mogao da se učita</strong>
-
             <p>{error}</p>
           </div>
         </div>
@@ -426,15 +507,12 @@ export default function AdminDashboardPage() {
 
       {loading ? (
         <section className="admin-dashboard-loading" aria-live="polite">
-          <span
-            className="admin-dashboard-loading__spinner"
-            aria-hidden="true"
-          />
+          <span className="admin-dashboard-loading__spinner" />
 
           <div>
-            <strong>Učitavamo dashboard</strong>
+            <strong>Pripremamo dashboard</strong>
 
-            <p>Sačekajte trenutak dok pripremimo izveštaj.</p>
+            <p>Učitavamo prodajne i operativne podatke za izabrani period.</p>
           </div>
         </section>
       ) : !dashboard ? (
@@ -452,14 +530,13 @@ export default function AdminDashboardPage() {
             </svg>
           </div>
 
-          <span className="admin-dashboard-empty__eyebrow">NEMA PODATAKA</span>
+          <span>NEMA PODATAKA</span>
 
-          <h2 className="admin-dashboard-empty__title">
-            Izveštaj nije dostupan
-          </h2>
+          <h2>Izveštaj nije dostupan</h2>
 
-          <p className="admin-dashboard-empty__description">
-            Promenite izabrani period ili osvežite podatke.
+          <p>
+            Promenite izabrani period ili pokušajte ponovo da osvežite
+            dashboard.
           </p>
         </section>
       ) : (
@@ -468,12 +545,12 @@ export default function AdminDashboardPage() {
             <header className="admin-dashboard-section__header">
               <div>
                 <span className="admin-dashboard-section__eyebrow">
-                  REZULTATI PRODAJE
+                  POSLOVNI REZULTATI
                 </span>
 
-                <h2 className="admin-dashboard-section__title">
-                  Pregled izabranog perioda
-                </h2>
+                <h2>Prodaja u izabranom periodu</h2>
+
+                <p>Ključni pokazatelji prodaje i uspešnosti porudžbina.</p>
               </div>
 
               <span className="admin-dashboard-section__period">
@@ -485,34 +562,36 @@ export default function AdminDashboardPage() {
               <StatCard
                 title="Ukupan prihod"
                 value={formatPrice(dashboard.revenue)}
-                description="Računaju se samo dostavljene porudžbine."
+                description="Prihod samo od uspešno dostavljenih porudžbina."
                 variant="revenue"
                 icon={
                   <svg viewBox="0 0 24 24">
+                    <rect
+                      x="3"
+                      y="5"
+                      width="18"
+                      height="14"
+                      rx="2"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    />
+
                     <path
-                      d="M4 7h16v11H4V7Zm3-3h10v3H7V4Z"
+                      d="M7 12h10M12 9v6"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.7"
                       strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-
-                    <circle
-                      cx="12"
-                      cy="12.5"
-                      r="2.5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
                     />
                   </svg>
                 }
               />
 
               <StatCard
-                title="Porudžbine u periodu"
+                title="Ukupno porudžbina"
                 value={dashboard.periodTotalOrders}
+                description="Sve kreirane porudžbine u izabranom periodu."
                 variant="orders"
                 icon={
                   <svg viewBox="0 0 24 24">
@@ -521,7 +600,6 @@ export default function AdminDashboardPage() {
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.7"
-                      strokeLinecap="round"
                       strokeLinejoin="round"
                     />
 
@@ -539,11 +617,21 @@ export default function AdminDashboardPage() {
               <StatCard
                 title="Dostavljene"
                 value={dashboard.periodDeliveredOrders}
+                description="Uspešno završene porudžbine."
                 variant="delivered"
                 icon={
                   <svg viewBox="0 0 24 24">
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="8"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    />
+
                     <path
-                      d="m5 12 4 4L19 6"
+                      d="m8.5 12 2.2 2.2 4.8-5"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.8"
@@ -557,11 +645,21 @@ export default function AdminDashboardPage() {
               <StatCard
                 title="Odbijene"
                 value={dashboard.periodRejectedOrders}
+                description="Porudžbine koje nisu realizovane."
                 variant="rejected"
                 icon={
                   <svg viewBox="0 0 24 24">
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="8"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    />
+
                     <path
-                      d="m7 7 10 10M17 7 7 17"
+                      d="m9 9 6 6m0-6-6 6"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.8"
@@ -574,7 +672,7 @@ export default function AdminDashboardPage() {
               <StatCard
                 title="Prosečna vrednost"
                 value={formatPrice(dashboard.averageDeliveredOrderValue)}
-                description="Prosek dostavljenih porudžbina."
+                description="Prosečna vrednost uspešno dostavljene porudžbine."
                 variant="average"
                 icon={
                   <svg viewBox="0 0 24 24">
@@ -600,9 +698,9 @@ export default function AdminDashboardPage() {
               />
 
               <StatCard
-                title="Aktivne trenutno"
+                title="Aktivne sada"
                 value={dashboard.activeOrders}
-                description="Sve porudžbine koje još nisu završene."
+                description="Porudžbine koje trenutno zahtevaju operativnu pažnju."
                 variant="active"
                 icon={
                   <svg viewBox="0 0 24 24">
@@ -621,7 +719,6 @@ export default function AdminDashboardPage() {
                       stroke="currentColor"
                       strokeWidth="1.7"
                       strokeLinecap="round"
-                      strokeLinejoin="round"
                     />
                   </svg>
                 }
@@ -629,21 +726,21 @@ export default function AdminDashboardPage() {
             </div>
           </section>
 
-          <section className="admin-dashboard-section">
+          <section className="admin-dashboard-section admin-dashboard-section--operations">
             <header className="admin-dashboard-section__header">
               <div>
                 <span className="admin-dashboard-section__eyebrow">
                   OPERATIVA UŽIVO
                 </span>
 
-                <h2 className="admin-dashboard-section__title">
-                  Trenutno stanje porudžbina
-                </h2>
+                <h2>Tok aktivnih porudžbina</h2>
+
+                <p>Trenutno opterećenje restorana i dostave.</p>
               </div>
 
               <div className="admin-dashboard-section__live">
                 <span aria-hidden="true" />
-                Automatski se ažurira
+                SignalR povezivanje aktivno
               </div>
             </header>
 
@@ -652,6 +749,7 @@ export default function AdminDashboardPage() {
                 title="Na čekanju"
                 value={dashboard.pendingOrders}
                 variant="pending"
+                compact
                 icon={
                   <svg viewBox="0 0 24 24">
                     <circle
@@ -669,7 +767,6 @@ export default function AdminDashboardPage() {
                       stroke="currentColor"
                       strokeWidth="1.7"
                       strokeLinecap="round"
-                      strokeLinejoin="round"
                     />
                   </svg>
                 }
@@ -679,6 +776,7 @@ export default function AdminDashboardPage() {
                 title="U pripremi"
                 value={dashboard.acceptedOrders}
                 variant="preparing"
+                compact
                 icon={
                   <svg viewBox="0 0 24 24">
                     <path
@@ -687,7 +785,6 @@ export default function AdminDashboardPage() {
                       stroke="currentColor"
                       strokeWidth="1.7"
                       strokeLinecap="round"
-                      strokeLinejoin="round"
                     />
 
                     <path
@@ -702,9 +799,10 @@ export default function AdminDashboardPage() {
               />
 
               <StatCard
-                title="Spremne za preuzimanje"
+                title="Spremne"
                 value={dashboard.readyForPickupOrders}
                 variant="ready"
+                compact
                 icon={
                   <svg viewBox="0 0 24 24">
                     <path
@@ -712,7 +810,6 @@ export default function AdminDashboardPage() {
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.7"
-                      strokeLinecap="round"
                       strokeLinejoin="round"
                     />
 
@@ -732,6 +829,7 @@ export default function AdminDashboardPage() {
                 title="Dostava u toku"
                 value={dashboard.deliveryInProgressOrders}
                 variant="delivery"
+                compact
                 icon={
                   <svg viewBox="0 0 24 24">
                     <path
@@ -739,7 +837,6 @@ export default function AdminDashboardPage() {
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.7"
-                      strokeLinecap="round"
                       strokeLinejoin="round"
                     />
 
@@ -773,17 +870,21 @@ export default function AdminDashboardPage() {
                   ANALITIKA MENIJA
                 </span>
 
-                <h2 className="admin-top-dishes__title">Top 5 jela</h2>
+                <h2>Najprodavanija jela</h2>
 
-                <p className="admin-top-dishes__description">
-                  Najprodavanija jela prema dostavljenim porudžbinama u
-                  izabranom periodu.
+                <p>
+                  Top 5 jela prema količini prodatih proizvoda u dostavljenim
+                  porudžbinama.
                 </p>
               </div>
 
-              <span className="admin-top-dishes__count">
-                {dashboard.topDishes.length}
-              </span>
+              <div className="admin-top-dishes__summary">
+                <span>Prikazano</span>
+
+                <strong>{dashboard.topDishes.length}</strong>
+
+                <small>od maksimalno 5</small>
+              </div>
             </header>
 
             {dashboard.topDishes.length === 0 ? (
@@ -812,9 +913,9 @@ export default function AdminDashboardPage() {
                 <table className="admin-top-dishes__table">
                   <thead>
                     <tr>
-                      <th>Rang</th>
+                      <th>Pozicija</th>
                       <th>Jelo</th>
-                      <th>Količina</th>
+                      <th>Prodato</th>
                       <th>Prihod</th>
                     </tr>
                   </thead>
@@ -823,7 +924,16 @@ export default function AdminDashboardPage() {
                     {dashboard.topDishes.map((dish, index) => (
                       <tr key={dish.dishName}>
                         <td>
-                          <span className="admin-top-dishes__rank">
+                          <span
+                            className={[
+                              "admin-top-dishes__rank",
+                              index === 0
+                                ? "admin-top-dishes__rank--first"
+                                : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                          >
                             {String(index + 1).padStart(2, "0")}
                           </span>
                         </td>

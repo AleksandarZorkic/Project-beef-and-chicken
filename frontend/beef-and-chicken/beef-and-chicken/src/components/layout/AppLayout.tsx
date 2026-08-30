@@ -5,6 +5,7 @@ import { cartSubtotal } from "../../state/cart/cart.selectors";
 import { useAuth } from "../../auth/AuthContext";
 import { AppRoles } from "../../auth/roles";
 import { useOrderNotifications } from "../notifications/OrderNotificationsContext";
+import SiteFooter from "./SiteFooter";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -64,12 +65,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const shouldShowSiteFooter =
+    location.pathname === "/menu" ||
+    location.pathname === "/my-allergens" ||
+    location.pathname === "/my-profile";
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isCustomer = hasRole(AppRoles.Customer);
   const isAdmin = hasRole(AppRoles.Admin);
   const isEmployee = hasRole(AppRoles.Employee);
   const isCourier = hasRole(AppRoles.Courier);
+
+  const showSiteFooter = !isAdmin && !isEmployee && !isCourier;
 
   const canUseCart = isCustomer;
 
@@ -220,7 +228,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </span>
 
                 <span className="app-header__brand-description">
-                  American Grill
+                  Burgeri • piletina • giros
                 </span>
               </span>
             </NavLink>
@@ -462,6 +470,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <main className="app-layout__main">
         <div className="container">{children}</div>
       </main>
+
+      {showSiteFooter && <SiteFooter />}
     </div>
   );
 }

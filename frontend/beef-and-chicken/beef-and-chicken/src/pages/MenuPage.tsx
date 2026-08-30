@@ -37,6 +37,25 @@ function formatPrice(value: number) {
   return `${value.toLocaleString("sr-RS")} RSD`;
 }
 
+function getItemCountLabel(count: number) {
+  if (count === 1) {
+    return "stavka";
+  }
+
+  const lastTwoDigits = count % 100;
+  const lastDigit = count % 10;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return "stavki";
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return "stavke";
+  }
+
+  return "stavki";
+}
+
 function isDishOnSale(dish: DishMenuDto) {
   return (
     dish.isOnSale &&
@@ -79,6 +98,11 @@ export default function MenuPage() {
 
   const subtotal = cartSubtotal(state);
 
+  const totalItemQuantity = state.items.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  );
+
   const missingForMinimum =
     restaurantSettings && subtotal < restaurantSettings.minimumOrderAmount
       ? restaurantSettings.minimumOrderAmount - subtotal
@@ -90,7 +114,8 @@ export default function MenuPage() {
       ? restaurantSettings.freeDeliveryThreshold - subtotal
       : 0;
 
-  const canAddToCart = canOrder && !loadingSettings;
+  const canAddToCart =
+    canOrder && !loadingSettings && Boolean(restaurantSettings);
 
   const minimumOrderProgress =
     restaurantSettings?.minimumOrderAmount &&
@@ -360,7 +385,6 @@ export default function MenuPage() {
           </div>
         </div>
       </section>
-
       <div className="menu-content">
         <div className="menu-content__inner">
           {restaurantSettings && (
@@ -369,7 +393,7 @@ export default function MenuPage() {
                 "delivery-card",
                 restaurantSettings.isDeliveryEnabled
                   ? ""
-                  : "delivery-card--closed",
+                  : "delivery-card--pickup-only",
               ]
                 .filter(Boolean)
                 .join(" ")}
@@ -382,7 +406,7 @@ export default function MenuPage() {
                   </span>
 
                   <h2 id="delivery-card-title" className="delivery-card__title">
-                    Dostava i uslovi porudžbine
+                    Dostava i lično preuzimanje
                   </h2>
                 </div>
 
@@ -391,7 +415,7 @@ export default function MenuPage() {
                     "delivery-card__status",
                     restaurantSettings.isDeliveryEnabled
                       ? "delivery-card__status--open"
-                      : "delivery-card__status--closed",
+                      : "delivery-card__status--pickup",
                   ].join(" ")}
                 >
                   <span
@@ -401,7 +425,7 @@ export default function MenuPage() {
 
                   {restaurantSettings.isDeliveryEnabled
                     ? "Dostava je dostupna"
-                    : "Dostava nije dostupna"}
+                    : "Samo lično preuzimanje"}
                 </div>
               </div>
 
@@ -454,7 +478,7 @@ export default function MenuPage() {
                             <span>
                               Još{" "}
                               <strong>{formatPrice(missingForMinimum)}</strong>{" "}
-                              do minimalne porudžbine
+                              do minimalnog iznosa za dostavu
                             </span>
 
                             <span>{formatPrice(subtotal)}</span>
@@ -509,10 +533,39 @@ export default function MenuPage() {
                   )}
                 </>
               ) : (
-                <p className="delivery-card__closed-message">
-                  Poručivanje je trenutno privremeno onemogućeno. Meni možeš
-                  slobodno da pregledaš.
-                </p>
+                <div className="delivery-card__pickup-message">
+                  <span
+                    className="delivery-card__pickup-icon"
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path
+                        d="M4 10h16v10H4V10Zm2-6h12l2 6H4l2-6Z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinejoin="round"
+                      />
+
+                      <path
+                        d="M8 14h8"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </span>
+
+                  <div>
+                    <strong>Dostava je trenutno isključena</strong>
+
+                    <p>
+                      Porudžbinu i dalje možeš da napraviš i na checkout-u
+                      izabereš lično preuzimanje u restoranu.
+                    </p>
+                  </div>
+                </div>
               )}
             </aside>
           )}
@@ -535,9 +588,52 @@ export default function MenuPage() {
                 </p>
               </div>
 
-              <div className="menu-catalog__count">
-                <strong>{data.length}</strong>
-                <span>{data.length === 1 ? "jelo" : "jela"}</span>
+              <div className="menu-catalog__header-side">
+                <div className="menu-catalog__count">
+                  <strong>{data.length}</strong>
+                  <span>{data.length === 1 ? "jelo" : "jela"}</span>
+                </div>
+
+                {canOrder && totalItemQuantity > 0 && (
+                  <Link to="/cart" className="menu-catalog__cart">
+                    <span
+                      className="menu-catalog__cart-icon"
+                      aria-hidden="true"
+                    >
+                      <svg viewBox="0 0 24 24">
+                        <path
+                          d="M4 5h2l1.5 9.5h9.8L20 8H7"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+
+                        <circle cx="10" cy="18" r="1.4" fill="currentColor" />
+                        <circle cx="17" cy="18" r="1.4" fill="currentColor" />
+                      </svg>
+                    </span>
+
+                    <span className="menu-catalog__cart-copy">
+                      <small>Korpa</small>
+
+                      <strong>
+                        {totalItemQuantity}{" "}
+                        {getItemCountLabel(totalItemQuantity)}
+                        {" • "}
+                        {formatPrice(subtotal)}
+                      </strong>
+                    </span>
+
+                    <span
+                      className="menu-catalog__cart-arrow"
+                      aria-hidden="true"
+                    >
+                      →
+                    </span>
+                  </Link>
+                )}
               </div>
             </header>
 
@@ -807,12 +903,6 @@ export default function MenuPage() {
                                         →
                                       </span>
                                     </button>
-                                  ) : canOrder &&
-                                    restaurantSettings &&
-                                    !restaurantSettings.isDeliveryEnabled ? (
-                                    <div className="dish-card__notice dish-card__notice--error">
-                                      Dostava trenutno nije dostupna.
-                                    </div>
                                   ) : isAuthenticated ? (
                                     <div className="dish-card__notice">
                                       Samo kupci mogu da dodaju jela u korpu.
@@ -846,7 +936,6 @@ export default function MenuPage() {
           </section>
         </div>
       </div>
-
       {canAddToCart && selectedDish && (
         <DishOptionsModal
           dish={selectedDish}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "../api/authApi";
 import { getApiErrorMessage } from "../utils/apiErrors";
@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
     return null;
   }
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const validationError = validateEmail(email);
@@ -54,10 +54,13 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="auth-page">
+    <main className="auth-page auth-page--recovery">
       <div className="auth-page__overlay" aria-hidden="true" />
 
-      <section className="auth-card" aria-labelledby="forgot-password-title">
+      <section
+        className="auth-card auth-card--recovery"
+        aria-labelledby="forgot-password-title"
+      >
         <div className="auth-card__brand">
           <img
             src="/logo.png"
@@ -69,12 +72,43 @@ export default function ForgotPasswordPage() {
             <span className="auth-card__brand-name">Beef n&apos; Chicken</span>
 
             <span className="auth-card__brand-description">
-              Burgeri • piletina • grill
+              Burgeri • piletina • roštilj
             </span>
           </div>
         </div>
 
-        <header className="auth-card__header">
+        <div className="auth-recovery-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M5 10V8a7 7 0 0 1 14 0v2"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+            />
+
+            <rect
+              x="4"
+              y="10"
+              width="16"
+              height="10"
+              rx="2.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+            />
+
+            <path
+              d="M12 14v2.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+
+        <header className="auth-card__header auth-card__header--recovery">
           <span className="auth-card__eyebrow">RESET LOZINKE</span>
 
           <h1 id="forgot-password-title" className="auth-card__title">
@@ -82,10 +116,21 @@ export default function ForgotPasswordPage() {
           </h1>
 
           <p className="auth-card__description">
-            Unesi email adresu svog naloga. Ako nalog postoji, poslaćemo ti link
-            za postavljanje nove lozinke.
+            Unesi email adresu svog naloga. Ako nalog postoji, poslaćemo ti
+            bezbedan link za postavljanje nove lozinke.
           </p>
         </header>
+
+        <div className="auth-recovery-context">
+          <span className="auth-recovery-context__icon" aria-hidden="true">
+            i
+          </span>
+
+          <p>
+            Iz bezbednosnih razloga nećemo potvrditi da li nalog sa unetom
+            adresom postoji.
+          </p>
+        </div>
 
         <form className="auth-form" onSubmit={onSubmit} noValidate>
           <div className="auth-form__field">
@@ -103,9 +148,10 @@ export default function ForgotPasswordPage() {
                 .filter(Boolean)
                 .join(" ")}
               type="email"
-              placeholder="Unesi email adresu"
+              placeholder="ime@primer.com"
               value={email}
               autoComplete="email"
+              disabled={loading}
               aria-invalid={Boolean(emailError)}
               aria-describedby={emailError ? "forgot-email-error" : undefined}
               onChange={(event) => {
@@ -141,7 +187,11 @@ export default function ForgotPasswordPage() {
           )}
 
           {successMessage && (
-            <div className="auth-form__general-success" role="status">
+            <div
+              className="auth-form__general-success auth-form__general-success--recovery"
+              role="status"
+              aria-live="polite"
+            >
               <span
                 className="auth-form__general-success-icon"
                 aria-hidden="true"
@@ -149,7 +199,10 @@ export default function ForgotPasswordPage() {
                 ✓
               </span>
 
-              <p>{successMessage}</p>
+              <div>
+                <strong>Proveri svoj inbox</strong>
+                <p>{successMessage}</p>
+              </div>
             </div>
           )}
 
@@ -163,6 +216,8 @@ export default function ForgotPasswordPage() {
             )}
 
             <span>{loading ? "Šaljem..." : "Pošalji link za reset"}</span>
+
+            {!loading && <span aria-hidden="true">→</span>}
           </button>
         </form>
 
@@ -173,7 +228,7 @@ export default function ForgotPasswordPage() {
           </p>
 
           <Link to="/" className="auth-card__back-link">
-            Nazad na početnu
+            ← Nazad na početnu
           </Link>
         </footer>
       </section>

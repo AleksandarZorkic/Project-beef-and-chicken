@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import AddressForm from "../components/address/AddressForm";
 import {
   getAllAddresses,
@@ -9,17 +10,20 @@ import {
   type AddressUpsertDto,
 } from "../api/addressApi";
 import { useAuth } from "../auth/AuthContext";
+import { useAppDialog } from "../components/dialogs/AppDialogContext";
 import "../styles/AddressesPage.scss";
 
-const emptyAddress: AddressUpsertDto = {
-  street: "",
-  houseNumber: "",
-  postalCode: "",
-  city: "",
-  label: "",
-  note: "",
-  isDefault: false,
-};
+function createEmptyAddress(): AddressUpsertDto {
+  return {
+    street: "",
+    houseNumber: "",
+    postalCode: "",
+    city: "",
+    label: "",
+    note: "",
+    isDefault: false,
+  };
+}
 
 function getErrorMessage(error: any, fallback: string) {
   return (
@@ -31,8 +35,28 @@ function getErrorMessage(error: any, fallback: string) {
   );
 }
 
+function getAddressCountLabel(count: number) {
+  if (count === 1) {
+    return "sačuvana adresa";
+  }
+
+  const lastTwoDigits = count % 100;
+  const lastDigit = count % 10;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return "sačuvanih adresa";
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return "sačuvane adrese";
+  }
+
+  return "sačuvanih adresa";
+}
+
 export default function AddressesPage() {
   const { user } = useAuth();
+  const { confirm } = useAppDialog();
 
   const [addresses, setAddresses] = useState<AddressDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +68,11 @@ export default function AddressesPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
-  const [formValue, setFormValue] = useState<AddressUpsertDto>(emptyAddress);
+
+  const [formValue, setFormValue] =
+    useState<AddressUpsertDto>(createEmptyAddress());
+
+  const defaultAddress = addresses.find((address) => address.isDefault) ?? null;
 
   useEffect(() => {
     if (!user) {
@@ -52,34 +80,20 @@ export default function AddressesPage() {
       return;
     }
 
-    loadAddresses();
+    void loadAddresses();
   }, [user]);
 
   useEffect(() => {
-    if (!successMessage) return;
+    if (!successMessage) {
+      return;
+    }
 
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setSuccessMessage(null);
-    }, 2500);
+    }, 2600);
 
-    return () => clearTimeout(timer);
+    return () => window.clearTimeout(timer);
   }, [successMessage]);
-
-  if (!user) {
-    return (
-      <main className="addresses-state">
-        <section className="addresses-state__card">
-          <span className="addresses-state__eyebrow">PRIJAVA JE POTREBNA</span>
-
-          <h1 className="addresses-state__title">Niste prijavljeni</h1>
-
-          <p className="addresses-state__description">
-            Prijavite se kako biste upravljali svojim adresama.
-          </p>
-        </section>
-      </main>
-    );
-  }
 
   async function loadAddresses() {
     try {
@@ -87,6 +101,7 @@ export default function AddressesPage() {
       setLoading(true);
 
       const data = await getAllAddresses();
+
       setAddresses(data);
     } catch (error: any) {
       setError(getErrorMessage(error, "Greška pri učitavanju adresa."));
@@ -98,21 +113,23 @@ export default function AddressesPage() {
   function openCreateForm() {
     setError(null);
     setSuccessMessage(null);
+
     setEditingAddressId(null);
-    setFormValue(emptyAddress);
+    setFormValue(createEmptyAddress());
     setShowForm(true);
   }
 
   function closeAddressForm() {
     setShowForm(false);
     setEditingAddressId(null);
-    setFormValue(emptyAddress);
+    setFormValue(createEmptyAddress());
     setError(null);
   }
 
   function openEditForm(address: AddressDto) {
     setError(null);
     setSuccessMessage(null);
+
     setEditingAddressId(address.id);
 
     setFormValue({
@@ -148,9 +165,17 @@ export default function AddressesPage() {
     const label = value.label?.trim() ?? "";
     const note = value.note?.trim() ?? "";
 
-    if (!street) return "Ulica je obavezna.";
-    if (!houseNumber) return "Broj je obavezan.";
-    if (!city) return "Grad je obavezan.";
+    if (!street) {
+      return "Ulica je obavezna.";
+    }
+
+    if (!houseNumber) {
+      return "Broj je obavezan.";
+    }
+
+    if (!city) {
+      return "Grad je obavezan.";
+    }
 
     if (street.length > 100) {
       return "Naziv ulice može imati najviše 100 karaktera.";
@@ -195,17 +220,19 @@ export default function AddressesPage() {
 
       if (editingAddressId === null) {
         await createAddress(normalizeAddress(formValue));
-        setSuccessMessage("Adresa je uspešno dodata.");
+
+        setSuccessMessage("Nova adresa je uspešno sačuvana.");
       } else {
         await updateAddress(editingAddressId, normalizeAddress(formValue));
-        setSuccessMessage("Adresa je uspešno izmenjena.");
+
+        setSuccessMessage("Podaci adrese su uspešno izmenjeni.");
       }
 
       await loadAddresses();
 
       setShowForm(false);
       setEditingAddressId(null);
-      setFormValue(emptyAddress);
+      setFormValue(createEmptyAddress());
     } catch (error: any) {
       setError(getErrorMessage(error, "Greška pri čuvanju adrese."));
     } finally {
@@ -213,27 +240,42 @@ export default function AddressesPage() {
     }
   }
 
-  async function handleDelete(addressId: number) {
-    const confirmed = window.confirm(
-      "Da li sigurno želite da obrišete ovu adresu?",
-    );
+  async function handleDelete(address: AddressDto) {
+    const addressName =
+      address.label?.trim() ||
+      `${address.street} ${address.houseNumber}`.trim();
 
-    if (!confirmed) return;
+    const confirmed = await confirm({
+      title: "Brisanje adrese",
+      message: (
+        <p>
+          Da li sigurno želite da obrišete adresu <strong>{addressName}</strong>
+          ? Ovu radnju nije moguće poništiti.
+        </p>
+      ),
+      confirmText: "Obriši adresu",
+      cancelText: "Odustani",
+      tone: "danger",
+    });
+
+    if (!confirmed) {
+      return;
+    }
 
     try {
       setError(null);
       setSuccessMessage(null);
-      setDeletingId(addressId);
+      setDeletingId(address.id);
 
-      await deleteAddress(addressId);
+      await deleteAddress(address.id);
       await loadAddresses();
 
       setSuccessMessage("Adresa je uspešno obrisana.");
 
-      if (editingAddressId === addressId) {
+      if (editingAddressId === address.id) {
         setEditingAddressId(null);
         setShowForm(false);
-        setFormValue(emptyAddress);
+        setFormValue(createEmptyAddress());
       }
     } catch (error: any) {
       setError(getErrorMessage(error, "Greška pri brisanju adrese."));
@@ -242,42 +284,159 @@ export default function AddressesPage() {
     }
   }
 
+  if (!user) {
+    return (
+      <main className="addresses-guest">
+        <section className="addresses-guest__card">
+          <div className="addresses-guest__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              <circle
+                cx="12"
+                cy="9"
+                r="2.3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+              />
+            </svg>
+          </div>
+
+          <span className="addresses-guest__eyebrow">PRIJAVA JE POTREBNA</span>
+
+          <h1>Niste prijavljeni</h1>
+
+          <p>
+            Prijavite se kako biste sačuvali adrese i ubrzali sledeću
+            porudžbinu.
+          </p>
+
+          <Link to="/login" className="btn btn--primary">
+            Prijavi se
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="addresses-page">
-      <header className="addresses-page__header">
-        <div className="addresses-page__heading">
-          <span className="addresses-page__eyebrow">ADRESE ZA DOSTAVU</span>
+      <section className="addresses-hero">
+        <div className="addresses-hero__content">
+          <span className="addresses-hero__eyebrow">DOSTAVA PO VAŠOJ MERI</span>
 
-          <h1 className="addresses-page__title">Moje adrese</h1>
+          <h1 className="addresses-hero__title">Moje adrese</h1>
 
-          <p className="addresses-page__description">
-            Sačuvajte adrese koje najčešće koristite kako biste brže završili
-            sledeću porudžbinu.
+          <p className="addresses-hero__description">
+            Sačuvajte lokacije na koje najčešće poručujete i završite sledeću
+            porudžbinu bez ponovnog unošenja podataka.
           </p>
-        </div>
 
-        <div className="addresses-page__header-actions">
-          <div className="addresses-page__count">
-            <strong>{addresses.length}</strong>
+          <div className="addresses-hero__note">
+            <span className="addresses-hero__note-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                <circle
+                  cx="12"
+                  cy="9"
+                  r="2.3"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                />
+              </svg>
+            </span>
 
             <span>
-              {addresses.length === 1 ? "sačuvana adresa" : "sačuvane adrese"}
+              Podrazumevana adresa će biti automatski ponuđena prilikom
+              poručivanja.
+            </span>
+          </div>
+        </div>
+
+        <aside className="addresses-summary">
+          <div className="addresses-summary__top">
+            <span className="addresses-summary__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                <circle
+                  cx="12"
+                  cy="9"
+                  r="2.3"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                />
+              </svg>
+            </span>
+
+            <span
+              className={[
+                "addresses-summary__status",
+                defaultAddress ? "addresses-summary__status--active" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <span />
+
+              {defaultAddress ? "Dostava spremna" : "Nema glavne adrese"}
             </span>
           </div>
 
-          <button
-            type="button"
-            className="addresses-page__add-button"
-            onClick={openCreateForm}
-          >
-            <span className="addresses-page__add-icon" aria-hidden="true">
-              +
-            </span>
+          <div className="addresses-summary__count">
+            <strong>{loading ? "—" : addresses.length}</strong>
 
-            <span>Dodaj novu adresu</span>
-          </button>
-        </div>
-      </header>
+            <span>
+              {loading ? "učitavanje" : getAddressCountLabel(addresses.length)}
+            </span>
+          </div>
+
+          <div className="addresses-summary__default">
+            <span>Podrazumevana adresa</span>
+
+            <strong>
+              {loading
+                ? "Učitavanje..."
+                : defaultAddress
+                  ? defaultAddress.label?.trim() ||
+                    `${defaultAddress.street} ${defaultAddress.houseNumber}`
+                  : "Nije izabrana"}
+            </strong>
+
+            {defaultAddress && (
+              <small>
+                {defaultAddress.street} {defaultAddress.houseNumber},{" "}
+                {defaultAddress.city}
+              </small>
+            )}
+          </div>
+        </aside>
+      </section>
 
       {successMessage && (
         <div
@@ -290,7 +449,7 @@ export default function AddressesPage() {
           </span>
 
           <div>
-            <strong>Uspešno</strong>
+            <strong>Promena je sačuvana</strong>
             <p>{successMessage}</p>
           </div>
         </div>
@@ -315,28 +474,24 @@ export default function AddressesPage() {
           aria-labelledby="address-form-panel-title"
         >
           <header className="addresses-form-panel__header">
-            <div className="addresses-form-panel__icon" aria-hidden="true">
+            <span className="addresses-form-panel__icon" aria-hidden="true">
               {editingAddressId === null ? "+" : "✎"}
-            </div>
+            </span>
 
             <div>
               <span className="addresses-form-panel__eyebrow">
-                {editingAddressId === null
-                  ? "NOVA LOKACIJA"
-                  : "IZMENA PODATAKA"}
+                {editingAddressId === null ? "NOVA LOKACIJA" : "IZMENA ADRESE"}
               </span>
 
-              <h2
-                id="address-form-panel-title"
-                className="addresses-form-panel__title"
-              >
+              <h2 id="address-form-panel-title">
                 {editingAddressId === null
-                  ? "Dodajte adresu"
+                  ? "Dodajte novu adresu"
                   : "Izmenite adresu"}
               </h2>
 
-              <p className="addresses-form-panel__description">
-                Unesite tačne podatke kako bi dostava stigla bez zadržavanja.
+              <p>
+                Unesite tačne podatke kako bi vaša dostava stigla brzo i bez
+                nepotrebnog zadržavanja.
               </p>
             </div>
           </header>
@@ -352,185 +507,211 @@ export default function AddressesPage() {
                 editingAddressId === null ? "Nova adresa" : "Izmeni adresu"
               }
               submitLabel={
-                editingAddressId === null ? "Dodaj adresu" : "Sačuvaj izmene"
+                editingAddressId === null ? "Sačuvaj adresu" : "Sačuvaj izmene"
               }
             />
           </div>
         </section>
       )}
 
-      {loading ? (
-        <section className="addresses-loading" aria-live="polite">
-          <span className="addresses-loading__spinner" aria-hidden="true" />
-
+      <section className="addresses-collection">
+        <header className="addresses-collection__header">
           <div>
-            <strong>Učitavamo adrese</strong>
+            <span className="addresses-collection__eyebrow">VAŠE LOKACIJE</span>
 
-            <p>Sačekajte trenutak dok preuzmemo vaše podatke.</p>
+            <h2>Sačuvane adrese</h2>
+
+            <p>Izaberite lokaciju koju želite da izmenite ili dodajte novu.</p>
           </div>
-        </section>
-      ) : addresses.length === 0 ? (
-        <section className="addresses-empty">
-          <div className="addresses-empty__logo-shell" aria-hidden="true">
-            <img src="/logo.png" alt="" className="addresses-empty__logo" />
-          </div>
-
-          <span className="addresses-empty__eyebrow">
-            NEMA SAČUVANIH ADRESA
-          </span>
-
-          <h2 className="addresses-empty__title">Dodajte prvu adresu</h2>
-
-          <p className="addresses-empty__description">
-            Sačuvana adresa olakšava poručivanje i omogućava vam da checkout
-            završite mnogo brže.
-          </p>
 
           <button
             type="button"
-            className="addresses-empty__button"
+            className="addresses-collection__add-button"
+            disabled={saving}
             onClick={openCreateForm}
           >
-            <span>Dodaj adresu</span>
-            <span aria-hidden="true">→</span>
+            <span aria-hidden="true">+</span>
+            Dodaj novu adresu
           </button>
-        </section>
-      ) : (
-        <section className="addresses-grid" aria-label="Sačuvane adrese">
-          {addresses.map((address) => (
-            <article
-              key={address.id}
-              className={[
-                "address-card",
-                address.isDefault ? "address-card--default" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+        </header>
+
+        {loading ? (
+          <div className="addresses-loading" aria-live="polite">
+            <span className="addresses-loading__spinner" aria-hidden="true" />
+
+            <div>
+              <strong>Učitavamo vaše adrese</strong>
+
+              <p>Još samo trenutak dok pripremimo sačuvane lokacije.</p>
+            </div>
+          </div>
+        ) : addresses.length === 0 ? (
+          <div className="addresses-empty">
+            <div className="addresses-empty__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                <circle
+                  cx="12"
+                  cy="9"
+                  r="2.3"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                />
+              </svg>
+            </div>
+
+            <span className="addresses-empty__eyebrow">
+              JOŠ NEMA SAČUVANIH LOKACIJA
+            </span>
+
+            <h3>Dodajte prvu adresu</h3>
+
+            <p>Sledeći put ćete moći da završite porudžbinu mnogo brže.</p>
+
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={openCreateForm}
             >
-              <header className="address-card__header">
-                <div className="address-card__identity">
-                  <div
-                    className="address-card__location-icon"
-                    aria-hidden="true"
+              Dodaj adresu
+            </button>
+          </div>
+        ) : (
+          <div className="addresses-grid" aria-label="Sačuvane adrese">
+            {addresses.map((address) => (
+              <article
+                key={address.id}
+                className={[
+                  "address-card",
+                  address.isDefault ? "address-card--default" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                <header className="address-card__header">
+                  <div className="address-card__identity">
+                    <span
+                      className="address-card__location-icon"
+                      aria-hidden="true"
+                    >
+                      <svg viewBox="0 0 24 24">
+                        <path
+                          d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+
+                        <circle
+                          cx="12"
+                          cy="9"
+                          r="2.3"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                        />
+                      </svg>
+                    </span>
+
+                    <div>
+                      <span className="address-card__eyebrow">
+                        ADRESA ZA DOSTAVU
+                      </span>
+
+                      <h3 className="address-card__title">
+                        {address.label?.trim() || "Sačuvana adresa"}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {address.isDefault && (
+                    <span className="address-card__default-badge">
+                      <span aria-hidden="true" />
+                      Podrazumevana
+                    </span>
+                  )}
+                </header>
+
+                <div className="address-card__body">
+                  <div className="address-card__primary-address">
+                    <strong>
+                      {address.street} {address.houseNumber}
+                    </strong>
+
+                    <span>
+                      {address.postalCode ? `${address.postalCode} ` : ""}
+                      {address.city}
+                    </span>
+                  </div>
+
+                  {address.note?.trim() && (
+                    <div className="address-card__note">
+                      <span>NAPOMENA ZA DOSTAVU</span>
+                      <p>{address.note}</p>
+                    </div>
+                  )}
+                </div>
+
+                <footer className="address-card__actions">
+                  <button
+                    type="button"
+                    className="address-card__edit"
+                    disabled={deletingId === address.id}
+                    onClick={() => openEditForm(address)}
                   >
-                    <svg viewBox="0 0 24 24">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path
-                        d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"
+                        d="m14.5 5.5 4 4M4 20l4.2-1 10.3-10.3a1.4 1.4 0 0 0 0-2l-1.2-1.2a1.4 1.4 0 0 0-2 0L5 15.8 4 20Z"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="1.7"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
-
-                      <circle
-                        cx="12"
-                        cy="9"
-                        r="2.3"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.7"
-                      />
                     </svg>
-                  </div>
+                    Izmeni
+                  </button>
 
-                  <div>
-                    <span className="address-card__eyebrow">
-                      ADRESA ZA DOSTAVU
-                    </span>
-
-                    <h2 className="address-card__title">
-                      {address.label?.trim() ? address.label : "Adresa"}
-                    </h2>
-                  </div>
-                </div>
-
-                {address.isDefault && (
-                  <span className="address-card__default-badge">
-                    <span
-                      className="address-card__default-dot"
-                      aria-hidden="true"
-                    />
-                    Podrazumevana
-                  </span>
-                )}
-              </header>
-
-              <div className="address-card__body">
-                <div className="address-card__address">
-                  <strong>
-                    {address.street} {address.houseNumber}
-                  </strong>
-
-                  <span>
-                    {address.postalCode ? `${address.postalCode} ` : ""}
-                    {address.city}
-                  </span>
-                </div>
-
-                {address.note && (
-                  <div className="address-card__note">
-                    <span className="address-card__note-label">Napomena</span>
-
-                    <p>{address.note}</p>
-                  </div>
-                )}
-              </div>
-
-              <footer className="address-card__actions">
-                <button
-                  type="button"
-                  className="address-card__edit-button"
-                  onClick={() => openEditForm(address)}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="address-card__action-icon"
-                    aria-hidden="true"
+                  <button
+                    type="button"
+                    className="address-card__delete"
+                    disabled={deletingId === address.id}
+                    onClick={() => void handleDelete(address)}
                   >
-                    <path
-                      d="m14.5 5.5 4 4M4 20l4.2-1 10.3-10.3a1.4 1.4 0 0 0 0-2l-1.2-1.2a1.4 1.4 0 0 0-2 0L5 15.8 4 20Z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                    {deletingId === address.id ? (
+                      <span className="address-card__spinner" />
+                    ) : (
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
 
-                  <span>Izmeni</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="address-card__delete-button"
-                  disabled={deletingId === address.id}
-                  onClick={() => handleDelete(address.id)}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="address-card__action-icon"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-
-                  <span>
                     {deletingId === address.id ? "Brišem..." : "Obriši"}
-                  </span>
-                </button>
-              </footer>
-            </article>
-          ))}
-        </section>
-      )}
+                  </button>
+                </footer>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </main>
   );
 }

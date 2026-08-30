@@ -1,156 +1,317 @@
 @use "./abstracts/variables" as *;
 
 // ======================================================
-// Addresses page
+// Page
 // ======================================================
 
 .addresses-page {
+  position: relative;
+
+  display: grid;
+  gap: $space-5;
+
   width: 100%;
-  padding-block: clamp(46px, 6vw, 82px);
+  padding-block: clamp(34px, 5vw, 64px);
 
   color: $color-text;
 
-  &__header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: $space-7;
+  &::before {
+    position: absolute;
+    top: -90px;
+    right: -150px;
+    z-index: -1;
 
-    margin-bottom: clamp(34px, 5vw, 56px);
+    width: 430px;
+    height: 430px;
+
+    content: "";
+    pointer-events: none;
+
+    background: rgba($color-primary, 0.055);
+    border-radius: 50%;
+
+    filter: blur(105px);
   }
+}
 
-  &__heading {
-    max-width: 680px;
+// ======================================================
+// Hero
+// ======================================================
+
+.addresses-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(290px, 360px);
+  align-items: stretch;
+  gap: clamp(26px, 4vw, 58px);
+
+  padding: clamp(28px, 4.5vw, 54px);
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 88% 10%,
+      rgba($color-accent, 0.08),
+      transparent 24rem
+    ),
+    radial-gradient(
+      circle at 4% 100%,
+      rgba($color-primary, 0.1),
+      transparent 28rem
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.012)
+    ),
+    $color-surface-deep;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  box-shadow:
+    $shadow-surface,
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+  &__content {
+    align-self: center;
+
+    max-width: 700px;
   }
 
   &__eyebrow {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
 
-    margin-bottom: $space-2;
+    margin-bottom: $space-3;
 
     color: $color-accent;
 
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.17em;
+    line-height: 1;
+    letter-spacing: 0.15em;
+
+    &::before {
+      width: 7px;
+      height: 7px;
+
+      content: "";
+
+      background: $color-primary;
+      border-radius: 50%;
+
+      box-shadow: 0 0 13px rgba($color-primary, 0.75);
+    }
   }
 
   &__title {
     margin: 0;
 
+    color: $color-text;
+
     font-family: $font-family-display;
-    font-size: clamp(3.4rem, 7vw, 5.8rem);
+    font-size: clamp(2.9rem, 5vw, 4.8rem);
     font-weight: $font-weight-black;
-    line-height: 0.9;
+    line-height: 0.92;
     letter-spacing: 0.01em;
     text-transform: uppercase;
   }
 
   &__description {
-    max-width: 620px;
+    max-width: 630px;
 
     margin: $space-4 0 0;
 
     color: $color-text-soft;
 
-    font-size: 0.96rem;
-    line-height: 1.7;
+    font-size: 0.95rem;
+    line-height: 1.75;
   }
 
-  &__header-actions {
+  &__note {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-top: $space-5;
+
+    color: $color-text-muted;
+
+    font-size: 0.74rem;
+    line-height: 1.5;
+  }
+
+  &__note-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 32px;
+
+    width: 32px;
+    height: 32px;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.06);
+    border: 1px solid rgba($color-accent, 0.14);
+    border-radius: $radius-md;
+
+    svg {
+      width: 17px;
+      height: 17px;
+    }
+  }
+}
+
+// ======================================================
+// Summary
+// ======================================================
+
+.addresses-summary {
+  display: flex;
+  flex-direction: column;
+
+  min-height: 250px;
+  padding: $space-5;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba($color-accent, 0.055),
+      rgba(255, 255, 255, 0.018)
+    ),
+    rgba(0, 0, 0, 0.14);
+
+  border: 1px solid rgba($color-accent, 0.15);
+  border-radius: $radius-lg;
+
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+  &__top {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: $space-3;
+  }
+
+  &__icon {
+    display: grid;
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.07);
+    border: 1px solid rgba($color-accent, 0.15);
+    border-radius: $radius-md;
+
+    svg {
+      width: 21px;
+      height: 21px;
+    }
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    min-height: 30px;
+    padding-inline: 10px;
+
+    color: $color-text-muted;
+
+    font-size: 0.62rem;
+    font-weight: $font-weight-bold;
+
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid $color-border;
+    border-radius: $radius-pill;
+
+    > span {
+      width: 7px;
+      height: 7px;
+
+      background: currentColor;
+      border-radius: 50%;
+    }
+
+    &--active {
+      color: #b8f3c9;
+
+      background: rgba($color-success, 0.1);
+      border-color: rgba($color-success, 0.2);
+
+      > span {
+        box-shadow: 0 0 9px rgba($color-success, 0.55);
+      }
+    }
   }
 
   &__count {
     display: flex;
-    align-items: baseline;
-    gap: 7px;
+    align-items: flex-end;
+    gap: 10px;
 
-    padding: 13px 16px;
-
-    color: $color-text-muted;
-
-    background: rgba(255, 255, 255, 0.035);
-    border: 1px solid $color-border;
-    border-radius: $radius-lg;
+    margin-top: auto;
 
     strong {
       color: $color-accent;
 
       font-family: $font-family-display;
-      font-size: 1.75rem;
+      font-size: 4.2rem;
       font-weight: $font-weight-black;
-      line-height: 1;
+      line-height: 0.8;
     }
 
     span {
-      font-size: 0.7rem;
-      font-weight: $font-weight-semibold;
-      white-space: nowrap;
+      max-width: 110px;
+
+      padding-bottom: 3px;
+
+      color: $color-text-muted;
+
+      font-size: 0.68rem;
+      line-height: 1.3;
     }
   }
 
-  &__add-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
+  &__default {
+    display: grid;
+    gap: 4px;
 
-    min-height: 50px;
-    padding-inline: 17px;
+    margin-top: $space-4;
+    padding-top: $space-4;
 
-    color: #11140f;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
 
-    font: inherit;
-    font-size: 0.78rem;
-    font-weight: $font-weight-extra-bold;
+    > span {
+      color: $color-text-muted;
 
-    background: linear-gradient(135deg, $color-accent, #f0b628);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: $radius-md;
-
-    cursor: pointer;
-
-    box-shadow:
-      0 13px 30px rgba($color-accent, 0.17),
-      inset 0 1px 0 rgba(255, 255, 255, 0.25);
-
-    transition:
-      filter $transition-fast,
-      box-shadow $transition-base,
-      transform $transition-base;
-
-    &:hover {
-      filter: brightness(1.055);
-
-      box-shadow:
-        0 17px 36px rgba($color-accent, 0.23),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-
-      transform: translateY(-2px);
+      font-size: 0.58rem;
+      font-weight: $font-weight-extra-bold;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
 
-    &:focus-visible {
-      outline: 3px solid rgba($color-accent, 0.34);
-      outline-offset: 4px;
+    strong {
+      overflow-wrap: anywhere;
+
+      color: $color-text;
+
+      font-size: 0.78rem;
     }
-  }
 
-  &__add-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    small {
+      color: $color-text-muted;
 
-    width: 22px;
-    height: 22px;
-
-    font-size: 1.1rem;
-    line-height: 1;
-
-    background: rgba(17, 20, 15, 0.1);
-    border-radius: 50%;
+      font-size: 0.63rem;
+    }
   }
 }
 
@@ -163,22 +324,20 @@
   align-items: flex-start;
   gap: 12px;
 
-  margin-bottom: $space-5;
   padding: 14px 16px;
 
   border: 1px solid transparent;
   border-radius: $radius-lg;
 
   &__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 24px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 25px;
 
-    width: 24px;
-    height: 24px;
+    width: 25px;
+    height: 25px;
 
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: $font-weight-black;
 
     border: 1px solid currentColor;
@@ -190,150 +349,150 @@
 
     margin-bottom: 3px;
 
-    font-size: 0.8rem;
+    font-size: 0.78rem;
   }
 
   p {
     margin: 0;
 
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     line-height: 1.55;
   }
 
   &--success {
     color: #b8f3c9;
 
-    background: rgba(46, 134, 70, 0.14);
-    border-color: rgba(84, 210, 121, 0.2);
+    background: rgba($color-success, 0.11);
+    border-color: rgba($color-success, 0.2);
   }
 
   &--error {
     color: #ffb3b3;
 
-    background: rgba(137, 29, 29, 0.16);
-    border-color: rgba(255, 91, 91, 0.23);
+    background: rgba($color-danger, 0.11);
+    border-color: rgba($color-danger, 0.22);
   }
 }
 
 // ======================================================
-// Address form panel
+// Form panel
 // ======================================================
 
 .addresses-form-panel {
-  margin-bottom: $space-6;
   padding: clamp(24px, 4vw, 36px);
 
   background:
     radial-gradient(
-      circle at top left,
-      rgba($color-primary, 0.085),
-      transparent 24rem
+      circle at top right,
+      rgba($color-primary, 0.08),
+      transparent 25rem
     ),
     linear-gradient(
       145deg,
-      rgba(255, 255, 255, 0.052),
-      rgba(255, 255, 255, 0.018)
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.014)
     ),
-    $color-bg-soft;
+    $color-surface-deep;
 
-  border: 1px solid rgba($color-accent, 0.15);
+  border: 1px solid rgba($color-accent, 0.16);
   border-radius: $radius-xl;
 
-  box-shadow:
-    0 20px 52px rgba(0, 0, 0, 0.26),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: $shadow-surface;
 
   &__header {
     display: flex;
     align-items: flex-start;
     gap: $space-4;
 
-    margin-bottom: $space-6;
+    margin-bottom: $space-5;
+    padding-bottom: $space-5;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+    h2 {
+      margin: 5px 0 0;
+
+      color: $color-text;
+
+      font-family: $font-family-display;
+      font-size: clamp(1.9rem, 3vw, 2.6rem);
+      font-weight: $font-weight-extra-bold;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    p {
+      max-width: 620px;
+
+      margin: 8px 0 0;
+
+      color: $color-text-muted;
+
+      font-size: 0.72rem;
+      line-height: 1.55;
+    }
   }
 
   &__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
+    flex: 0 0 42px;
 
     width: 42px;
     height: 42px;
-    flex: 0 0 42px;
 
-    color: #11140f;
+    color: #15170f;
 
     font-family: $font-family-display;
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     font-weight: $font-weight-black;
 
-    background: linear-gradient(135deg, $color-accent, #f0b628);
+    background: linear-gradient(135deg, $color-accent, $color-accent-soft);
+
     border-radius: $radius-md;
 
     box-shadow: 0 10px 24px rgba($color-accent, 0.14);
   }
 
   &__eyebrow {
-    display: block;
-
-    margin-bottom: 5px;
-
     color: $color-accent;
 
-    font-size: 0.65rem;
+    font-size: 0.63rem;
     font-weight: $font-weight-extra-bold;
     letter-spacing: 0.14em;
-  }
-
-  &__title {
-    margin: 0;
-
-    font-size: clamp(1.5rem, 3vw, 2rem);
-    line-height: 1.1;
-  }
-
-  &__description {
-    margin: 8px 0 0;
-
-    color: $color-text-muted;
-
-    font-size: 0.76rem;
-    line-height: 1.55;
   }
 
   &__content {
     padding: $space-5;
 
-    background: rgba(0, 0, 0, 0.14);
-    border: 1px solid $color-border;
+    background: rgba(0, 0, 0, 0.13);
+    border: 1px solid rgba(255, 255, 255, 0.065);
     border-radius: $radius-lg;
 
     > form {
-      margin-top: 0 !important;
+      margin: 0 !important;
       padding: 0 !important;
 
+      background: transparent !important;
       border: 0 !important;
-      border-radius: 0 !important;
+      box-shadow: none !important;
     }
 
     form h3 {
-      margin: 0 0 $space-4;
-
-      color: $color-text;
-
-      font-size: 1.15rem;
+      display: none;
     }
 
     form input:not([type="checkbox"]):not([type="radio"]),
     form textarea,
     form select {
       width: 100%;
-      min-height: 46px;
+      min-height: 47px;
       padding: 11px 13px;
 
       color: $color-text;
 
       font: inherit;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
 
       color-scheme: dark;
 
@@ -344,27 +503,27 @@
       outline: none;
 
       transition:
+        background-color $transition-fast,
         border-color $transition-fast,
-        box-shadow $transition-fast,
-        background-color $transition-fast;
+        box-shadow $transition-fast;
 
       &::placeholder {
-        color: rgba($color-text, 0.36);
+        color: rgba($color-text, 0.33);
       }
 
-      &:hover {
-        border-color: rgba($color-accent, 0.18);
+      &:hover:not(:disabled) {
+        border-color: rgba($color-accent, 0.2);
       }
 
       &:focus {
-        background: rgba(0, 0, 0, 0.29);
+        background: rgba(0, 0, 0, 0.28);
         border-color: $color-accent;
 
-        box-shadow: 0 0 0 3px rgba($color-accent, 0.11);
+        box-shadow: 0 0 0 3px rgba($color-accent, 0.1);
       }
 
       &:disabled {
-        opacity: 0.55;
+        opacity: 0.5;
         cursor: not-allowed;
       }
     }
@@ -378,7 +537,7 @@
     form label {
       color: $color-text-soft;
 
-      font-size: 0.82rem;
+      font-size: 0.76rem;
       font-weight: $font-weight-semibold;
     }
 
@@ -411,10 +570,11 @@
 
         content: "";
 
-        border-bottom: 2px solid #11140f;
-        border-left: 2px solid #11140f;
+        border-bottom: 2px solid #15170f;
+        border-left: 2px solid #15170f;
 
         opacity: 0;
+
         transform: rotate(-45deg) scale(0.7);
 
         transition:
@@ -423,48 +583,45 @@
       }
 
       &:checked {
-        background: linear-gradient(135deg, $color-accent, #f0b628);
+        background: linear-gradient(135deg, $color-accent, $color-accent-soft);
+
         border-color: $color-accent;
 
-        box-shadow: 0 0 0 3px rgba($color-accent, 0.12);
+        box-shadow: 0 0 0 3px rgba($color-accent, 0.11);
 
         &::before {
           opacity: 1;
+
           transform: rotate(-45deg) scale(1);
         }
-      }
-
-      &:focus-visible {
-        outline: 3px solid rgba($color-accent, 0.28);
-        outline-offset: 3px;
       }
     }
 
     form button[type="submit"] {
-      min-height: 48px;
+      min-height: 46px;
       padding-inline: 17px;
 
-      color: #11140f;
+      color: #fff;
 
       font: inherit;
-      font-size: 0.8rem;
+      font-size: 0.74rem;
       font-weight: $font-weight-extra-bold;
 
-      background: linear-gradient(135deg, $color-accent, #f0b628);
-      border: 1px solid rgba(255, 255, 255, 0.17);
+      background: linear-gradient(135deg, $color-primary, $color-primary-hover);
+
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: $radius-md;
 
       cursor: pointer;
 
+      box-shadow: $shadow-primary;
+
       transition:
         filter $transition-fast,
-        box-shadow $transition-base,
         transform $transition-base;
 
       &:hover:not(:disabled) {
-        filter: brightness(1.055);
-
-        box-shadow: 0 12px 28px rgba($color-accent, 0.2);
+        filter: brightness(1.07);
 
         transform: translateY(-1px);
       }
@@ -478,14 +635,125 @@
 }
 
 // ======================================================
-// Address cards
+// Address collection
+// ======================================================
+
+.addresses-collection {
+  padding: clamp(24px, 4vw, 36px);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.012)
+    ),
+    $color-surface-deep;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+
+  box-shadow: $shadow-surface;
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $space-5;
+
+    margin-bottom: $space-5;
+    padding-bottom: $space-5;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+    h2 {
+      margin: 5px 0 0;
+
+      color: $color-text;
+
+      font-family: $font-family-display;
+      font-size: clamp(1.9rem, 3vw, 2.7rem);
+      font-weight: $font-weight-extra-bold;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    p {
+      margin: 8px 0 0;
+
+      color: $color-text-muted;
+
+      font-size: 0.72rem;
+    }
+  }
+
+  &__eyebrow {
+    color: $color-accent;
+
+    font-size: 0.64rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.14em;
+  }
+
+  &__add-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 44px;
+    padding-inline: 15px;
+
+    color: #fff;
+
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: $font-weight-extra-bold;
+
+    background: linear-gradient(135deg, $color-primary, $color-primary-hover);
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: $radius-md;
+
+    cursor: pointer;
+
+    box-shadow: $shadow-primary;
+
+    transition:
+      filter $transition-fast,
+      transform $transition-base,
+      box-shadow $transition-base;
+
+    > span {
+      font-size: 1rem;
+    }
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.08);
+
+      transform: translateY(-2px);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// ======================================================
+// Grid
 // ======================================================
 
 .addresses-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: $space-5;
+
+  gap: $space-4;
 }
+
+// ======================================================
+// Address card
+// ======================================================
 
 .address-card {
   position: relative;
@@ -494,48 +762,61 @@
   flex-direction: column;
 
   min-width: 0;
-  min-height: 310px;
-  padding: clamp(22px, 3vw, 28px);
+  min-height: 270px;
+  padding: clamp(20px, 3vw, 25px);
 
   overflow: hidden;
 
   background:
     radial-gradient(
       circle at top right,
-      rgba($color-primary, 0.07),
-      transparent 18rem
+      rgba($color-primary, 0.065),
+      transparent 17rem
     ),
     linear-gradient(
       145deg,
-      rgba(255, 255, 255, 0.05),
-      rgba(255, 255, 255, 0.018)
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.012)
     ),
-    $color-bg-soft;
+    rgba(0, 0, 0, 0.12);
 
-  border: 1px solid $color-border;
-  border-radius: $radius-xl;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: $radius-lg;
 
   box-shadow:
-    0 18px 46px rgba(0, 0, 0, 0.23),
+    0 13px 31px rgba(0, 0, 0, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.025);
 
   transition:
+    transform $transition-base,
     border-color $transition-base,
-    box-shadow $transition-base,
-    transform $transition-base;
+    box-shadow $transition-base;
 
   &:hover {
-    border-color: rgba($color-accent, 0.18);
+    border-color: rgba($color-accent, 0.2);
 
     box-shadow:
-      0 24px 56px rgba(0, 0, 0, 0.31),
+      0 20px 42px rgba(0, 0, 0, 0.24),
       inset 0 1px 0 rgba(255, 255, 255, 0.035);
 
     transform: translateY(-3px);
   }
 
   &--default {
-    border-color: rgba($color-accent, 0.28);
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba($color-accent, 0.1),
+        transparent 18rem
+      ),
+      linear-gradient(
+        145deg,
+        rgba($color-accent, 0.045),
+        rgba($color-primary, 0.025)
+      ),
+      rgba(0, 0, 0, 0.12);
+
+    border-color: rgba($color-accent, 0.3);
 
     &::before {
       position: absolute;
@@ -550,7 +831,7 @@
       background: linear-gradient(
         90deg,
         transparent,
-        rgba($color-accent, 0.65),
+        rgba($color-accent, 0.7),
         transparent
       );
     }
@@ -562,7 +843,7 @@
     justify-content: space-between;
     gap: $space-4;
 
-    padding-bottom: $space-5;
+    padding-bottom: $space-4;
 
     border-bottom: 1px solid rgba(255, 255, 255, 0.065);
   }
@@ -585,13 +866,13 @@
 
     color: $color-accent;
 
-    background: rgba($color-accent, 0.065);
-    border: 1px solid rgba($color-accent, 0.12);
+    background: rgba($color-accent, 0.06);
+    border: 1px solid rgba($color-accent, 0.13);
     border-radius: $radius-md;
 
     svg {
-      width: 21px;
-      height: 21px;
+      width: 20px;
+      height: 20px;
     }
   }
 
@@ -602,7 +883,7 @@
 
     color: $color-text-muted;
 
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     font-weight: $font-weight-extra-bold;
     letter-spacing: 0.11em;
   }
@@ -614,8 +895,11 @@
 
     color: $color-text;
 
-    font-size: 1.3rem;
+    font-family: $font-family-display;
+    font-size: 1.35rem;
+    font-weight: $font-weight-extra-bold;
     line-height: 1.1;
+
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -630,74 +914,73 @@
 
     color: #b8f3c9;
 
-    font-size: 0.63rem;
+    font-size: 0.61rem;
     font-weight: $font-weight-extra-bold;
+    white-space: nowrap;
 
-    background: rgba(46, 134, 70, 0.13);
-    border: 1px solid rgba(84, 210, 121, 0.19);
+    background: rgba($color-success, 0.1);
+    border: 1px solid rgba($color-success, 0.2);
     border-radius: $radius-pill;
-  }
 
-  &__default-dot {
-    width: 7px;
-    height: 7px;
+    > span {
+      width: 7px;
+      height: 7px;
 
-    background: #66d586;
-    border-radius: 50%;
+      background: $color-success;
+      border-radius: 50%;
 
-    box-shadow: 0 0 0 4px rgba(102, 213, 134, 0.1);
+      box-shadow: 0 0 9px rgba($color-success, 0.55);
+    }
   }
 
   &__body {
     flex: 1;
 
-    padding-block: $space-5;
+    padding-block: $space-4;
   }
 
-  &__address {
+  &__primary-address {
     display: grid;
     gap: 5px;
 
     strong {
       color: $color-text;
 
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       line-height: 1.45;
     }
 
     span {
       color: $color-text-soft;
 
-      font-size: 0.78rem;
+      font-size: 0.74rem;
     }
   }
 
   &__note {
-    margin-top: $space-5;
-    padding: 12px 13px;
+    margin-top: $space-4;
+    padding: 11px 12px;
 
     background: rgba(0, 0, 0, 0.14);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.055);
     border-radius: $radius-md;
+
+    > span {
+      color: $color-text-muted;
+
+      font-size: 0.56rem;
+      font-weight: $font-weight-extra-bold;
+      letter-spacing: 0.09em;
+    }
 
     p {
       margin: 5px 0 0;
 
       color: $color-text-soft;
 
-      font-size: 0.72rem;
-      font-style: italic;
-      line-height: 1.55;
+      font-size: 0.68rem;
+      line-height: 1.5;
     }
-  }
-
-  &__note-label {
-    color: $color-text-muted;
-
-    font-size: 0.61rem;
-    font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
   }
 
   &__actions {
@@ -705,23 +988,23 @@
     align-items: center;
     gap: 9px;
 
-    padding-top: $space-5;
+    padding-top: $space-4;
 
     border-top: 1px solid rgba(255, 255, 255, 0.065);
   }
 
-  &__edit-button,
-  &__delete-button {
+  &__edit,
+  &__delete {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 7px;
 
-    min-height: 42px;
-    padding-inline: 14px;
+    min-height: 40px;
+    padding-inline: 13px;
 
     font: inherit;
-    font-size: 0.72rem;
+    font-size: 0.69rem;
     font-weight: $font-weight-bold;
 
     border-radius: $radius-md;
@@ -733,15 +1016,25 @@
       background-color $transition-fast,
       border-color $transition-fast,
       transform $transition-base;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    &:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+    }
   }
 
-  &__edit-button {
+  &__edit {
     color: $color-text-soft;
 
     background: rgba(255, 255, 255, 0.035);
     border: 1px solid $color-border;
 
-    &:hover {
+    &:hover:not(:disabled) {
       color: $color-text;
 
       background: rgba(255, 255, 255, 0.065);
@@ -751,60 +1044,57 @@
     }
   }
 
-  &__delete-button {
+  &__delete {
     color: #ffaaaa;
 
-    background: rgba(145, 32, 32, 0.1);
-    border: 1px solid rgba(255, 91, 91, 0.16);
+    background: rgba($color-danger, 0.075);
+    border: 1px solid rgba($color-danger, 0.16);
 
     &:hover:not(:disabled) {
       color: #ffd0d0;
 
-      background: rgba(175, 41, 41, 0.17);
-      border-color: rgba(255, 91, 91, 0.27);
+      background: rgba($color-danger, 0.13);
+      border-color: rgba($color-danger, 0.26);
 
       transform: translateY(-1px);
     }
-
-    &:disabled {
-      opacity: 0.48;
-      cursor: not-allowed;
-    }
   }
 
-  &__action-icon {
-    width: 16px;
-    height: 16px;
+  &__spinner {
+    width: 14px;
+    height: 14px;
+
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-top-color: currentColor;
+    border-radius: 50%;
+
+    animation: addresses-spin 700ms linear infinite;
   }
 }
 
 // ======================================================
-// Loading and empty states
+// Loading
 // ======================================================
 
 .addresses-loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 15px;
+  gap: 14px;
 
-  min-height: 320px;
-  padding: 40px;
-
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid $color-border;
-  border-radius: $radius-xl;
+  min-height: 260px;
+  padding: $space-7;
 
   &__spinner {
-    width: 34px;
-    height: 34px;
-    flex: 0 0 34px;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
 
-    border: 3px solid rgba($color-accent, 0.13);
+    border: 3px solid rgba($color-accent, 0.12);
     border-top-color: $color-accent;
     border-radius: 50%;
 
-    animation: addresses-loading-spin 700ms linear infinite;
+    animation: addresses-spin 700ms linear infinite;
   }
 
   strong {
@@ -814,7 +1104,7 @@
 
     color: $color-text;
 
-    font-size: 0.9rem;
+    font-size: 0.82rem;
   }
 
   p {
@@ -822,158 +1112,214 @@
 
     color: $color-text-muted;
 
-    font-size: 0.74rem;
+    font-size: 0.69rem;
   }
 }
 
-.addresses-empty {
-  display: grid;
-  justify-items: center;
+// ======================================================
+// Empty
+// ======================================================
 
-  min-height: 430px;
-  padding: clamp(48px, 8vw, 78px) 24px;
+.addresses-empty {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+
+  min-height: 330px;
+  padding: $space-7;
 
   text-align: center;
 
-  background:
-    radial-gradient(
-      circle at center,
-      rgba($color-primary, 0.09),
-      transparent 21rem
-    ),
-    rgba(255, 255, 255, 0.025);
-
   border: 1px dashed $color-border-strong;
-  border-radius: $radius-xl;
+  border-radius: $radius-lg;
 
-  &__logo-shell {
+  &__icon {
     display: grid;
     place-items: center;
 
-    width: 112px;
-    height: 112px;
+    width: 66px;
+    height: 66px;
 
-    margin-bottom: $space-5;
+    margin-bottom: $space-4;
 
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba($color-accent, 0.11);
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.055);
+    border: 1px solid rgba($color-accent, 0.13);
     border-radius: 50%;
-  }
 
-  &__logo {
-    width: 82px;
-    height: 82px;
-
-    object-fit: contain;
-
-    opacity: 0.82;
+    svg {
+      width: 30px;
+      height: 30px;
+    }
   }
 
   &__eyebrow {
     color: $color-accent;
 
-    font-size: 0.67rem;
+    font-size: 0.62rem;
     font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.13em;
   }
 
-  &__title {
+  h3 {
     margin: $space-3 0 0;
 
-    font-size: clamp(2rem, 5vw, 3.2rem);
-    line-height: 1;
+    color: $color-text;
+
+    font-family: $font-family-display;
+    font-size: 1.9rem;
+    text-transform: uppercase;
   }
 
-  &__description {
-    max-width: 470px;
+  p {
+    max-width: 440px;
 
-    margin: $space-4 0 0;
+    margin: $space-3 0 0;
 
     color: $color-text-muted;
 
-    font-size: 0.86rem;
-    line-height: 1.65;
+    font-size: 0.73rem;
+    line-height: 1.6;
   }
 
-  &__button {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $space-5;
-
-    min-width: 190px;
-    min-height: 50px;
-
-    margin-top: $space-6;
-    padding-inline: 18px;
-
-    color: #11140f;
-
-    font: inherit;
-    font-size: 0.8rem;
-    font-weight: $font-weight-extra-bold;
-
-    background: linear-gradient(135deg, $color-accent, #f0b628);
-    border: 1px solid rgba(255, 255, 255, 0.17);
-    border-radius: $radius-md;
-
-    cursor: pointer;
+  .btn {
+    margin-top: $space-5;
   }
 }
 
-.addresses-state {
+// ======================================================
+// Guest
+// ======================================================
+
+.addresses-guest {
   display: grid;
   place-items: center;
 
   min-height: calc(100vh - #{$header-height});
-  padding: 40px 24px;
+  padding: $space-7;
 
   &__card {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+
     width: min(100%, 520px);
-    padding: clamp(38px, 7vw, 60px);
+    padding: clamp(38px, 7vw, 58px);
 
     text-align: center;
 
-    background: $color-bg-soft;
+    background:
+      radial-gradient(
+        circle at center,
+        rgba($color-primary, 0.07),
+        transparent 22rem
+      ),
+      $color-surface-deep;
+
     border: 1px solid $color-border;
     border-radius: $radius-xl;
+
+    box-shadow: $shadow-surface;
+
+    h1 {
+      margin: $space-3 0 0;
+
+      color: $color-text;
+
+      font-family: $font-family-display;
+      font-size: clamp(2rem, 5vw, 3rem);
+      text-transform: uppercase;
+    }
+
+    p {
+      max-width: 390px;
+
+      margin: $space-4 0 0;
+
+      color: $color-text-muted;
+
+      font-size: 0.78rem;
+      line-height: 1.6;
+    }
+
+    .btn {
+      margin-top: $space-6;
+    }
+  }
+
+  &__icon {
+    display: grid;
+    place-items: center;
+
+    width: 66px;
+    height: 66px;
+
+    margin-bottom: $space-4;
+
+    color: $color-accent;
+
+    background: rgba($color-accent, 0.06);
+    border: 1px solid rgba($color-accent, 0.14);
+    border-radius: 50%;
+
+    svg {
+      width: 30px;
+      height: 30px;
+    }
   }
 
   &__eyebrow {
     color: $color-accent;
 
-    font-size: 0.67rem;
+    font-size: 0.63rem;
     font-weight: $font-weight-extra-bold;
-    letter-spacing: 0.15em;
-  }
-
-  &__title {
-    margin: $space-3 0 0;
-
-    font-size: clamp(2rem, 5vw, 3rem);
-  }
-
-  &__description {
-    margin: $space-4 0 0;
-
-    color: $color-text-muted;
+    letter-spacing: 0.14em;
   }
 }
 
-@keyframes addresses-loading-spin {
+// ======================================================
+// Animations
+// ======================================================
+
+@keyframes addresses-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
 // ======================================================
-// Responsive
+// Laptop
+// ======================================================
+
+@media (max-width: $breakpoint-laptop) {
+  .addresses-hero {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+}
+
+// ======================================================
+// Tablet
 // ======================================================
 
 @media (max-width: $breakpoint-tablet) {
   .addresses-page {
-    padding-block: $space-8;
+    padding-block: $space-7;
+  }
 
+  .addresses-hero {
+    grid-template-columns: 1fr;
+
+    &__title {
+      font-size: clamp(2.8rem, 10vw, 4rem);
+    }
+  }
+
+  .addresses-summary {
+    min-height: 210px;
+  }
+
+  .addresses-collection {
     &__header {
       align-items: flex-start;
       flex-direction: column;
@@ -985,46 +1331,66 @@
   }
 }
 
+// ======================================================
+// Mobile
+// ======================================================
+
 @media (max-width: $breakpoint-mobile) {
   .addresses-page {
-    padding-block: $space-7;
-
-    &__title {
-      font-size: 3.25rem;
-    }
-
-    &__header-actions {
-      align-items: stretch;
-      flex-direction: column;
-
-      width: 100%;
-    }
-
-    &__count,
-    &__add-button {
-      width: 100%;
-      justify-content: center;
-    }
+    gap: $space-4;
+    padding-block: $space-6;
   }
 
-  .addresses-form-panel {
+  .addresses-hero {
     padding: $space-5;
 
     border-radius: $radius-lg;
+
+    &__title {
+      font-size: 2.8rem;
+    }
+
+    &__description {
+      font-size: 0.88rem;
+    }
+
+    &__note {
+      align-items: flex-start;
+    }
+  }
+
+  .addresses-summary {
+    padding: $space-4;
+  }
+
+  .addresses-form-panel,
+  .addresses-collection {
+    padding: $space-4;
+
+    border-radius: $radius-lg;
+  }
+
+  .addresses-form-panel {
+    &__header {
+      flex-direction: column;
+    }
 
     &__content {
       padding: $space-4;
     }
   }
 
+  .addresses-collection {
+    &__add-button {
+      width: 100%;
+    }
+  }
+
   .address-card {
     min-height: 0;
-    padding: $space-5;
-
-    border-radius: $radius-lg;
+    padding: $space-4;
 
     &__header {
-      align-items: flex-start;
       flex-direction: column;
     }
 
@@ -1037,22 +1403,35 @@
       flex-direction: column;
     }
 
-    &__edit-button,
-    &__delete-button {
+    &__edit,
+    &__delete {
       width: 100%;
+    }
+  }
+
+  .addresses-guest {
+    padding: $space-4;
+
+    &__card {
+      padding: $space-6;
     }
   }
 }
 
+// ======================================================
+// Reduced motion
+// ======================================================
+
 @media (prefers-reduced-motion: reduce) {
-  .addresses-loading__spinner {
+  .addresses-loading__spinner,
+  .address-card__spinner {
     animation-duration: 0.01ms;
   }
 
-  .addresses-page__add-button,
   .address-card,
-  .address-card__edit-button,
-  .address-card__delete-button {
+  .address-card__edit,
+  .address-card__delete,
+  .addresses-collection__add-button {
     transition-duration: 0.01ms;
   }
 }

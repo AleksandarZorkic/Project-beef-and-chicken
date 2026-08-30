@@ -105,9 +105,7 @@ export default function CustomerProfilePage() {
 
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
-
   const [uploadingProfilePicture, setUploadingProfilePicture] = useState(false);
-
   const [refreshingProfile, setRefreshingProfile] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
@@ -126,11 +124,11 @@ export default function CustomerProfilePage() {
       return;
     }
 
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setSuccessMessage(null);
-    }, 2500);
+    }, 2600);
 
-    return () => clearTimeout(timer);
+    return () => window.clearTimeout(timer);
   }, [successMessage]);
 
   async function onRefreshProfile() {
@@ -141,7 +139,7 @@ export default function CustomerProfilePage() {
 
       await refreshProfile();
 
-      setSuccessMessage("Profil je osvežen.");
+      setSuccessMessage("Podaci profila su osveženi.");
     } catch (error: any) {
       setError(getErrorMessage(error, "Greška pri osvežavanju profila."));
     } finally {
@@ -210,7 +208,6 @@ export default function CustomerProfilePage() {
     if (!hasChanges) {
       setEditingProfile(false);
       setError(null);
-      setSuccessMessage(null);
       return;
     }
 
@@ -227,7 +224,8 @@ export default function CustomerProfilePage() {
 
       setUserProfile(updatedProfile);
       setEditingProfile(false);
-      setSuccessMessage("Profil je uspešno izmenjen.");
+
+      setSuccessMessage("Lični podaci su uspešno sačuvani.");
     } catch (error: any) {
       setError(getErrorMessage(error, "Greška pri izmeni profila."));
     } finally {
@@ -256,6 +254,7 @@ export default function CustomerProfilePage() {
       const updatedProfile = await uploadProfilePicture(file);
 
       setUserProfile(updatedProfile);
+
       setSuccessMessage("Profilna slika je uspešno promenjena.");
     } catch (error: any) {
       setError(getErrorMessage(error, "Greška pri promeni profilne slike."));
@@ -266,19 +265,41 @@ export default function CustomerProfilePage() {
 
   if (!user) {
     return (
-      <main className="profile-guest-state">
-        <section className="profile-guest-state__card">
-          <span className="profile-guest-state__eyebrow">
+      <main className="customer-profile-guest">
+        <section className="customer-profile-guest__card">
+          <div className="customer-profile-guest__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <circle
+                cx="12"
+                cy="8"
+                r="4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+              />
+
+              <path
+                d="M5 20c.8-4 3-6 7-6s6.2 2 7 6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+
+          <span className="customer-profile-guest__eyebrow">
             PRIJAVA JE POTREBNA
           </span>
 
-          <h1 className="profile-guest-state__title">Niste prijavljeni</h1>
+          <h1>Niste prijavljeni</h1>
 
-          <p className="profile-guest-state__text">
-            Prijavite se kako biste pristupili podacima svog naloga.
+          <p>
+            Prijavite se kako biste pristupili svom profilu, adresama,
+            alergenima i porudžbinama.
           </p>
 
-          <Link to="/login" className="profile-guest-state__link">
+          <Link to="/login" className="btn btn--primary">
             Prijavi se
           </Link>
         </section>
@@ -288,68 +309,151 @@ export default function CustomerProfilePage() {
 
   const profilePictureUrl = resolveProfilePictureUrl(user.profilePicture);
 
+  const displayName = `${user.firstName} ${user.lastName}`.trim();
+
   return (
     <main className="customer-profile-page">
-      <header className="customer-profile-page__header">
-        <div className="customer-profile-page__heading">
-          <span className="customer-profile-page__eyebrow">
-            KORISNIČKI NALOG
+      <section className="customer-profile-hero">
+        <div className="customer-profile-hero__content">
+          <span className="customer-profile-hero__eyebrow">
+            VAŠ BEEF N&apos; CHICKEN NALOG
           </span>
 
-          <h1 className="customer-profile-page__title">Moj profil</h1>
+          <h1 className="customer-profile-hero__title">Moj profil</h1>
 
-          <p className="customer-profile-page__description">
-            Pregledajte podatke svog naloga, uredite lične podatke i brzo
-            pristupite adresama, alergenima i porudžbinama.
+          <p className="customer-profile-hero__description">
+            Uredite svoje podatke i držite sve što vam je potrebno za
+            poručivanje na jednom mestu.
           </p>
-        </div>
 
-        <button
-          type="button"
-          className="customer-profile-page__refresh-button"
-          disabled={
-            refreshingProfile || savingProfile || uploadingProfilePicture
-          }
-          onClick={onRefreshProfile}
-        >
-          {refreshingProfile ? (
+          <div className="customer-profile-hero__note">
             <span
-              className="customer-profile-page__refresh-spinner"
-              aria-hidden="true"
-            />
-          ) : (
-            <svg
-              className="customer-profile-page__refresh-icon"
-              viewBox="0 0 24 24"
+              className="customer-profile-hero__note-icon"
               aria-hidden="true"
             >
-              <path
-                d="M20 7v5h-5M4 17v-5h5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 3 4.5 6.4v5.2c0 4.5 3.1 7.7 7.5 9.4 4.4-1.7 7.5-4.9 7.5-9.4V6.4L12 3Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinejoin="round"
+                />
+
+                <path
+                  d="m9 12 2 2 4-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+
+            <span>Vaši podaci koriste se za lakše i brže poručivanje.</span>
+          </div>
+        </div>
+
+        <aside className="customer-profile-summary">
+          <div className="customer-profile-summary__avatar-wrapper">
+            <div
+              className="customer-profile-summary__avatar"
+              aria-hidden="true"
+            >
+              {profilePictureUrl ? (
+                <img
+                  src={profilePictureUrl}
+                  alt=""
+                  className="customer-profile-summary__avatar-image"
+                />
+              ) : (
+                getInitials(user.firstName, user.lastName)
+              )}
+            </div>
+
+            <label className="customer-profile-summary__upload">
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                disabled={uploadingProfilePicture || savingProfile}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+
+                  void onProfilePictureChange(file);
+
+                  event.target.value = "";
+                }}
               />
 
-              <path
-                d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
+              {uploadingProfilePicture ? (
+                <span className="customer-profile-summary__upload-spinner" />
+              ) : (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M4 8h3l1.5-2h7L17 8h3v11H4V8Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinejoin="round"
+                  />
 
-          <span>{refreshingProfile ? "Osvežavam..." : "Osveži profil"}</span>
-        </button>
-      </header>
+                  <circle
+                    cx="12"
+                    cy="13"
+                    r="3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+                </svg>
+              )}
+
+              <span>
+                {uploadingProfilePicture ? "Šaljem..." : "Promeni sliku"}
+              </span>
+            </label>
+          </div>
+
+          <div className="customer-profile-summary__identity">
+            <span className="customer-profile-summary__label">
+              KORISNIČKI PROFIL
+            </span>
+
+            <strong>{displayName}</strong>
+
+            <span className="customer-profile-summary__email">
+              {user.email}
+            </span>
+          </div>
+
+          <div className="customer-profile-summary__status">
+            <span
+              className={[
+                "customer-profile-summary__status-dot",
+                user.phoneNumber
+                  ? "customer-profile-summary__status-dot--active"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            />
+
+            <span>
+              {user.phoneNumber
+                ? "Kontakt telefon je dodat"
+                : "Kontakt telefon nije dodat"}
+            </span>
+          </div>
+        </aside>
+      </section>
 
       {error && (
-        <div className="profile-alert profile-alert--error" role="alert">
-          <span className="profile-alert__icon" aria-hidden="true">
+        <div
+          className="customer-profile-alert customer-profile-alert--error"
+          role="alert"
+        >
+          <span className="customer-profile-alert__icon" aria-hidden="true">
             !
           </span>
 
@@ -362,275 +466,244 @@ export default function CustomerProfilePage() {
 
       {successMessage && (
         <div
-          className="profile-alert profile-alert--success"
+          className="customer-profile-alert customer-profile-alert--success"
           role="status"
           aria-live="polite"
         >
-          <span className="profile-alert__icon" aria-hidden="true">
+          <span className="customer-profile-alert__icon" aria-hidden="true">
             ✓
           </span>
 
           <div>
-            <strong>Uspešno</strong>
+            <strong>Profil je ažuriran</strong>
             <p>{successMessage}</p>
           </div>
         </div>
       )}
 
-      <div className="customer-profile-page__grid">
-        <section className="profile-card profile-card--wide">
-          <header className="profile-card__header">
-            <div className="profile-card__avatar-block">
-              <div className="profile-card__avatar" aria-hidden="true">
-                {profilePictureUrl ? (
-                  <img
-                    src={profilePictureUrl}
-                    alt=""
-                    className="profile-card__avatar-image"
+      <section className="customer-profile-details">
+        <header className="customer-profile-details__header">
+          <div>
+            <span className="customer-profile-details__eyebrow">
+              LIČNI PODACI
+            </span>
+
+            <h2>Podaci naloga</h2>
+
+            <p>Ove informacije možete promeniti kada god želite.</p>
+          </div>
+
+          <div className="customer-profile-details__actions">
+            <button
+              type="button"
+              className="customer-profile-details__refresh"
+              disabled={
+                refreshingProfile ||
+                savingProfile ||
+                uploadingProfilePicture ||
+                editingProfile
+              }
+              onClick={onRefreshProfile}
+              aria-label="Osveži podatke profila"
+            >
+              {refreshingProfile ? (
+                <span className="customer-profile-details__spinner" />
+              ) : (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M20 7v5h-5M4 17v-5h5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
-                ) : (
-                  getInitials(
-                    editingProfile ? profileForm.firstName : user.firstName,
-                    editingProfile ? profileForm.lastName : user.lastName,
-                  )
-                )}
-              </div>
 
-              <label className="profile-card__picture-button">
+                  <path
+                    d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+
+              <span>{refreshingProfile ? "Osvežavam..." : "Osveži"}</span>
+            </button>
+
+            {!editingProfile && (
+              <button
+                type="button"
+                className="btn btn--primary"
+                disabled={
+                  savingProfile || uploadingProfilePicture || refreshingProfile
+                }
+                onClick={startProfileEdit}
+              >
+                Izmeni podatke
+              </button>
+            )}
+          </div>
+        </header>
+
+        {editingProfile ? (
+          <div className="customer-profile-form">
+            <div className="customer-profile-form__grid">
+              <label className="customer-profile-form__field">
+                <span>Ime</span>
+
                 <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  disabled={uploadingProfilePicture || savingProfile}
+                  type="text"
+                  value={profileForm.firstName}
+                  disabled={savingProfile}
+                  maxLength={50}
+                  autoComplete="given-name"
+                  placeholder="Unesite ime"
                   onChange={(event) => {
-                    const file = event.target.files?.[0];
+                    setProfileForm((current) => ({
+                      ...current,
+                      firstName: event.target.value,
+                    }));
 
-                    void onProfilePictureChange(file);
+                    setError(null);
+                    setSuccessMessage(null);
+                  }}
+                />
+              </label>
 
-                    event.target.value = "";
+              <label className="customer-profile-form__field">
+                <span>Prezime</span>
+
+                <input
+                  type="text"
+                  value={profileForm.lastName}
+                  disabled={savingProfile}
+                  maxLength={50}
+                  autoComplete="family-name"
+                  placeholder="Unesite prezime"
+                  onChange={(event) => {
+                    setProfileForm((current) => ({
+                      ...current,
+                      lastName: event.target.value,
+                    }));
+
+                    setError(null);
+                    setSuccessMessage(null);
+                  }}
+                />
+              </label>
+
+              <label className="customer-profile-form__field customer-profile-form__field--wide">
+                <span>Broj telefona</span>
+
+                <input
+                  type="tel"
+                  value={profileForm.phoneNumber}
+                  disabled={savingProfile}
+                  autoComplete="tel"
+                  placeholder="060 123 4567"
+                  onChange={(event) => {
+                    setProfileForm((current) => ({
+                      ...current,
+                      phoneNumber: event.target.value,
+                    }));
+
+                    setError(null);
+                    setSuccessMessage(null);
                   }}
                 />
 
-                <span>
-                  {uploadingProfilePicture ? "Šaljem..." : "Promeni sliku"}
-                </span>
+                <small>
+                  Telefon je opcionalan. Dozvoljeni su brojevi, razmaci i
+                  znakovi + - / ( ).
+                </small>
               </label>
             </div>
 
-            <div className="profile-card__identity">
-              <span className="profile-card__eyebrow">LIČNI PODACI</span>
+            <div className="customer-profile-form__actions">
+              <button
+                type="button"
+                className="customer-profile-form__cancel"
+                disabled={savingProfile}
+                onClick={cancelProfileEdit}
+              >
+                Otkaži
+              </button>
 
-              <h2 className="profile-card__name">
-                {editingProfile
-                  ? `${profileForm.firstName || user.firstName} ${
-                      profileForm.lastName || user.lastName
-                    }`
-                  : `${user.firstName} ${user.lastName}`}
-              </h2>
-
-              <span className="profile-card__email">{user.email}</span>
-            </div>
-
-            <button
-              type="button"
-              className="profile-phone-card__edit-button"
-              disabled={savingProfile || uploadingProfilePicture}
-              onClick={editingProfile ? cancelProfileEdit : startProfileEdit}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="m14.5 5.5 4 4M4 20l4.2-1 10.3-10.3a1.4 1.4 0 0 0 0-2l-1.2-1.2a1.4 1.4 0 0 0-2 0L5 15.8 4 20Z"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-              <span>{editingProfile ? "Otkaži izmenu" : "Izmeni profil"}</span>
-            </button>
-          </header>
-
-          <div className="profile-card__details">
-            {editingProfile ? (
-              <>
-                <label className="profile-detail profile-detail--wide">
-                  <span className="profile-detail__label">Ime</span>
-
-                  <input
-                    className="profile-phone-form__input"
-                    type="text"
-                    value={profileForm.firstName}
-                    disabled={savingProfile}
-                    maxLength={50}
-                    autoComplete="given-name"
-                    placeholder="Unesite ime"
-                    onChange={(event) => {
-                      setProfileForm((current) => ({
-                        ...current,
-                        firstName: event.target.value,
-                      }));
-                      setError(null);
-                      setSuccessMessage(null);
-                    }}
+              <button
+                type="button"
+                className="customer-profile-form__save"
+                disabled={savingProfile}
+                onClick={onSaveProfile}
+              >
+                {savingProfile && (
+                  <span
+                    className="customer-profile-form__spinner"
+                    aria-hidden="true"
                   />
-                </label>
-
-                <label className="profile-detail profile-detail--wide">
-                  <span className="profile-detail__label">Prezime</span>
-
-                  <input
-                    className="profile-phone-form__input"
-                    type="text"
-                    value={profileForm.lastName}
-                    disabled={savingProfile}
-                    maxLength={50}
-                    autoComplete="family-name"
-                    placeholder="Unesite prezime"
-                    onChange={(event) => {
-                      setProfileForm((current) => ({
-                        ...current,
-                        lastName: event.target.value,
-                      }));
-                      setError(null);
-                      setSuccessMessage(null);
-                    }}
-                  />
-                </label>
-
-                <label className="profile-detail profile-detail--wide">
-                  <span className="profile-detail__label">Broj telefona</span>
-
-                  <input
-                    className="profile-phone-form__input"
-                    type="tel"
-                    value={profileForm.phoneNumber}
-                    disabled={savingProfile}
-                    autoComplete="tel"
-                    placeholder="060 123 4567"
-                    onChange={(event) => {
-                      setProfileForm((current) => ({
-                        ...current,
-                        phoneNumber: event.target.value,
-                      }));
-                      setError(null);
-                      setSuccessMessage(null);
-                    }}
-                  />
-
-                  <small className="profile-phone-form__hint">
-                    Telefon je opcionalan na profilu. Dozvoljeni su brojevi,
-                    razmaci i znakovi + - / ( ).
-                  </small>
-                </label>
-
-                <div className="profile-phone-form__actions">
-                  <button
-                    type="button"
-                    className="profile-phone-form__cancel-button"
-                    disabled={savingProfile}
-                    onClick={cancelProfileEdit}
-                  >
-                    Otkaži
-                  </button>
-
-                  <button
-                    type="button"
-                    className="profile-phone-form__save-button"
-                    disabled={savingProfile}
-                    onClick={onSaveProfile}
-                  >
-                    {savingProfile && (
-                      <span
-                        className="profile-phone-form__spinner"
-                        aria-hidden="true"
-                      />
-                    )}
-
-                    <span>{savingProfile ? "Čuvam..." : "Sačuvaj profil"}</span>
-
-                    {!savingProfile && <span aria-hidden="true">→</span>}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="profile-detail">
-                  <span className="profile-detail__label">Ime</span>
-
-                  <strong className="profile-detail__value">
-                    {user.firstName}
-                  </strong>
-                </div>
-
-                <div className="profile-detail">
-                  <span className="profile-detail__label">Prezime</span>
-
-                  <strong className="profile-detail__value">
-                    {user.lastName}
-                  </strong>
-                </div>
-
-                <div className="profile-detail">
-                  <span className="profile-detail__label">Broj telefona</span>
-
-                  <strong className="profile-detail__value">
-                    {user.phoneNumber || "Nije unet"}
-                  </strong>
-                </div>
-              </>
-            )}
-
-            <div className="profile-detail profile-detail--wide">
-              <span className="profile-detail__label">Email adresa</span>
-
-              <strong className="profile-detail__value">{user.email}</strong>
-            </div>
-
-            <div className="profile-detail">
-              <span className="profile-detail__label">Korisničko ime</span>
-
-              <strong className="profile-detail__value">{user.userName}</strong>
-            </div>
-
-            <div className="profile-detail">
-              <span className="profile-detail__label">Uloga</span>
-
-              <div className="profile-detail__roles">
-                {user.roles.length > 0 ? (
-                  user.roles.map((role) => (
-                    <span key={role} className="profile-role-badge">
-                      {role}
-                    </span>
-                  ))
-                ) : (
-                  <span className="profile-role-badge profile-role-badge--empty">
-                    Nema uloge
-                  </span>
                 )}
-              </div>
+
+                <span>{savingProfile ? "Čuvam..." : "Sačuvaj promene"}</span>
+              </button>
             </div>
           </div>
-        </section>
-      </div>
+        ) : (
+          <div className="customer-profile-data">
+            <div className="customer-profile-data__item">
+              <span>Ime</span>
+              <strong>{user.firstName}</strong>
+            </div>
 
-      <section className="profile-quick-links">
-        <header className="profile-quick-links__header">
+            <div className="customer-profile-data__item">
+              <span>Prezime</span>
+              <strong>{user.lastName}</strong>
+            </div>
+
+            <div className="customer-profile-data__item">
+              <span>Broj telefona</span>
+
+              <strong
+                className={
+                  user.phoneNumber ? "" : "customer-profile-data__missing"
+                }
+              >
+                {user.phoneNumber || "Nije unet"}
+              </strong>
+            </div>
+
+            <div className="customer-profile-data__item">
+              <span>Email adresa</span>
+              <strong>{user.email}</strong>
+            </div>
+
+            <div className="customer-profile-data__item customer-profile-data__item--wide">
+              <span>Korisničko ime</span>
+              <strong>{user.userName}</strong>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section className="customer-profile-links">
+        <header className="customer-profile-links__header">
           <div>
-            <span className="profile-quick-links__eyebrow">BRZI PRISTUP</span>
+            <span className="customer-profile-links__eyebrow">
+              BRZI PRISTUP
+            </span>
 
-            <h2 className="profile-quick-links__title">Upravljanje nalogom</h2>
+            <h2>Vaš nalog na jednom mestu</h2>
           </div>
 
-          <p className="profile-quick-links__description">
-            Najvažnije opcije vašeg korisničkog naloga nalaze se na jednom
-            mestu.
+          <p>
+            Upravljajte dostavom, upozorenjima i pregledajte svoje porudžbine.
           </p>
         </header>
 
-        <div className="profile-quick-links__grid">
-          <Link to="/addresses" className="profile-quick-link">
-            <span className="profile-quick-link__icon" aria-hidden="true">
+        <div className="customer-profile-links__grid">
+          <Link to="/addresses" className="customer-profile-link">
+            <span className="customer-profile-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path
                   d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"
@@ -652,19 +725,21 @@ export default function CustomerProfilePage() {
               </svg>
             </span>
 
-            <span className="profile-quick-link__content">
+            <span className="customer-profile-link__content">
+              <span className="customer-profile-link__eyebrow">DOSTAVA</span>
+
               <strong>Moje adrese</strong>
 
-              <small>Dodajte ili izmenite adresu za dostavu.</small>
+              <small>
+                Dodajte, izmenite ili izaberite podrazumevanu adresu.
+              </small>
             </span>
 
-            <span className="profile-quick-link__arrow" aria-hidden="true">
-              →
-            </span>
+            <span className="customer-profile-link__arrow">→</span>
           </Link>
 
-          <Link to="/my-allergens" className="profile-quick-link">
-            <span className="profile-quick-link__icon" aria-hidden="true">
+          <Link to="/my-allergens" className="customer-profile-link">
+            <span className="customer-profile-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path
                   d="M12 3c3.4 3.4 5.5 6.1 5.5 9A5.5 5.5 0 0 1 6.5 12C6.5 9.1 8.6 6.4 12 3Z"
@@ -685,19 +760,21 @@ export default function CustomerProfilePage() {
               </svg>
             </span>
 
-            <span className="profile-quick-link__content">
+            <span className="customer-profile-link__content">
+              <span className="customer-profile-link__eyebrow">UPOZORENJA</span>
+
               <strong>Moji alergeni</strong>
 
-              <small>Označite alergene radi upozorenja u meniju.</small>
+              <small>
+                Podesite alergene koji treba da budu označeni u meniju.
+              </small>
             </span>
 
-            <span className="profile-quick-link__arrow" aria-hidden="true">
-              →
-            </span>
+            <span className="customer-profile-link__arrow">→</span>
           </Link>
 
-          <Link to="/my-orders" className="profile-quick-link">
-            <span className="profile-quick-link__icon" aria-hidden="true">
+          <Link to="/my-orders" className="customer-profile-link">
+            <span className="customer-profile-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path
                   d="M6 4h12l1 16H5L6 4Z"
@@ -718,15 +795,15 @@ export default function CustomerProfilePage() {
               </svg>
             </span>
 
-            <span className="profile-quick-link__content">
+            <span className="customer-profile-link__content">
+              <span className="customer-profile-link__eyebrow">PORUDŽBINE</span>
+
               <strong>Moje porudžbine</strong>
 
-              <small>Pratite status aktivnih porudžbina.</small>
+              <small>Pratite aktivne i pregledajte prethodne porudžbine.</small>
             </span>
 
-            <span className="profile-quick-link__arrow" aria-hidden="true">
-              →
-            </span>
+            <span className="customer-profile-link__arrow">→</span>
           </Link>
         </div>
       </section>

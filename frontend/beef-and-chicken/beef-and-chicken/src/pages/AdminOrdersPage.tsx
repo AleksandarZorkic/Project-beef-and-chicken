@@ -9,9 +9,9 @@ import {
 } from "../api/orderApi";
 import { AppRoles } from "../auth/roles";
 import { useAuth } from "../auth/AuthContext";
-import { useOrderRealtime } from "../realtime/useOrderRealtime";
 import OrderCard from "../components/orders/OrderCard";
 import { useAppDialog } from "../components/dialogs/AppDialogContext";
+import { useOrderRealtime } from "../realtime/useOrderRealtime";
 import "../styles/AdminOrdersPage.scss";
 
 type AdminOrderTab =
@@ -21,6 +21,10 @@ type AdminOrderTab =
   | "Spremna_za_preuzimanje"
   | "Dostava_u_toku";
 
+type FulfillmentFilter = "All" | "Delivery" | "Pickup";
+
+type LoadMode = "initial" | "manual" | "silent";
+
 const tabs: AdminOrderTab[] = [
   "Sve",
   "Na_Cekanju",
@@ -28,6 +32,16 @@ const tabs: AdminOrderTab[] = [
   "Spremna_za_preuzimanje",
   "Dostava_u_toku",
 ];
+
+const statusPriority: Record<OrderDetailsDto["status"], number> = {
+  Na_Cekanju: 1,
+  Prihvacena: 2,
+  Spremna_za_preuzimanje: 3,
+  Dostava_u_toku: 4,
+  Dostavljena: 5,
+  Odbijena: 6,
+  Otkazana: 7,
+};
 
 function getErrorMessage(error: any, fallback: string) {
   return (
@@ -65,6 +79,28 @@ function getTabLabel(tab: AdminOrderTab) {
   }
 }
 
+function getTabDescription(tab: AdminOrderTab) {
+  switch (tab) {
+    case "Sve":
+      return "Kompletan pregled aktivnih porudžbina.";
+
+    case "Na_Cekanju":
+      return "Nove porudžbine koje čekaju odluku.";
+
+    case "Prihvacena":
+      return "Prihvaćene porudžbine koje se trenutno pripremaju.";
+
+    case "Spremna_za_preuzimanje":
+      return "Porudžbine koje su završene i čekaju kupca ili kurira.";
+
+    case "Dostava_u_toku":
+      return "Porudžbine koje su trenutno kod kurira.";
+
+    default:
+      return "";
+  }
+}
+
 function getTabModifier(tab: AdminOrderTab) {
   switch (tab) {
     case "Sve":
@@ -90,9 +126,14 @@ function getTabModifier(tab: AdminOrderTab) {
 export default function AdminOrdersPage() {
   const { isAuthenticated, hasAnyRole } = useAuth();
 
+  const { confirm, alert } = useAppDialog();
+
   const [orders, setOrders] = useState<OrderDetailsDto[]>([]);
 
   const [activeTab, setActiveTab] = useState<AdminOrderTab>("Sve");
+
+  const [fulfillmentFilter, setFulfillmentFilter] =
+    useState<FulfillmentFilter>("All");
 
   const [loading, setLoading] = useState(true);
 
@@ -104,15 +145,18 @@ export default function AdminOrdersPage() {
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const { confirm, alert } = useAppDialog();
+  const realtimeEnabled =
+    isAuthenticated && hasAnyRole([AppRoles.Admin, AppRoles.Employee]);
 
-  const loadOrders = useCallback(async (showLoading = true) => {
+  const loadOrders = useCallback(async (mode: LoadMode = "initial") => {
     try {
       setError(null);
 
-      if (showLoading) {
+      if (mode === "initial") {
         setLoading(true);
-      } else {
+      }
+
+      if (mode === "manual") {
         setRefreshing(true);
       }
 
@@ -128,15 +172,20 @@ export default function AdminOrdersPage() {
   }, []);
 
   useEffect(() => {
-    loadOrders();
+    void loadOrders("initial");
   }, [loadOrders]);
 
   const handleOrderChanged = useCallback(() => {
-    loadOrders(false);
+    /*
+     * SignalR updates are intentionally
+     * silent so the UI does not flash
+     * every time an order changes.
+     */
+    void loadOrders("silent");
   }, [loadOrders]);
 
   useOrderRealtime({
-    enabled: isAuthenticated && hasAnyRole([AppRoles.Admin, AppRoles.Employee]),
+    enabled: realtimeEnabled,
     onOrderChanged: handleOrderChanged,
   });
 
@@ -152,19 +201,10 @@ export default function AdminOrdersPage() {
     return () => window.clearTimeout(timer);
   }, [successMessage]);
 
-  const statusPriority: Record<OrderDetailsDto["status"], number> = {
-    Na_Cekanju: 1,
-    Prihvacena: 2,
-    Spremna_za_preuzimanje: 3,
-    Dostava_u_toku: 4,
-    Dostavljena: 5,
-    Odbijena: 6,
-    Otkazana: 7,
-  };
-
   const sortedOrders = useMemo(() => {
     return [...orders].sort((first, second) => {
       const firstPriority = statusPriority[first.status] ?? 99;
+
       const secondPriority = statusPriority[second.status] ?? 99;
 
       if (firstPriority !== secondPriority) {
@@ -179,6 +219,11 @@ export default function AdminOrdersPage() {
         ? new Date(second.createdAt).getTime()
         : 0;
 
+      /*
+       * For orders with the same status,
+       * older ones remain first so the
+       * restaurant processes them first.
+       */
       return firstTime - secondTime;
     });
   }, [orders]);
@@ -203,21 +248,126 @@ export default function AdminOrdersPage() {
     };
   }, [sortedOrders]);
 
+  const fulfillmentCounts = useMemo(() => {
+    return {
+      delivery: sortedOrders.filter(
+        (order) => order.fulfillmentType === "Delivery",
+      ).length,
+
+      pickup: sortedOrders.filter((order) => order.fulfillmentType === "Pickup")
+        .length,
+    };
+  }, [sortedOrders]);
+
   const visibleOrders = useMemo(() => {
-    if (activeTab === "Sve") {
-      return sortedOrders;
+    return sortedOrders.filter((order) => {
+      if (activeTab !== "Sve" && order.status !== activeTab) {
+        return false;
+      }
+
+      if (
+        fulfillmentFilter !== "All" &&
+        order.fulfillmentType !== fulfillmentFilter
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [activeTab, fulfillmentFilter, sortedOrders]);
+
+  async function showActionError(error: unknown, fallback: string) {
+    const message = getErrorMessage(error, fallback);
+
+    setError(message);
+
+    await alert({
+      title: "Greška",
+      message: <p>{message}</p>,
+      confirmText: "Razumem",
+      tone: "danger",
+    });
+  }
+
+  async function handleAccept(order: OrderDetailsDto) {
+    const ok = await confirm({
+      title: "Prihvatanje porudžbine",
+      message: (
+        <p>
+          Da li želite da prihvatite porudžbinu{" "}
+          <strong>#{getOrderLabel(order)}</strong>?
+        </p>
+      ),
+      confirmText: "Prihvati",
+      cancelText: "Odustani",
+      tone: "success",
+    });
+
+    if (!ok) {
+      return;
     }
 
-    return sortedOrders.filter((order) => order.status === activeTab);
-  }, [activeTab, sortedOrders]);
+    try {
+      setError(null);
+      setSuccessMessage(null);
+      setActionLoadingId(order.id);
+
+      await acceptOrder(order.id);
+
+      await loadOrders("silent");
+
+      setSuccessMessage(`Porudžbina #${getOrderLabel(order)} je prihvaćena.`);
+    } catch (error) {
+      await showActionError(error, "Greška pri prihvatanju porudžbine.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleReject(order: OrderDetailsDto) {
+    const ok = await confirm({
+      title: "Odbijanje porudžbine",
+      message: (
+        <p>
+          Da li želite da odbijete porudžbinu{" "}
+          <strong>#{getOrderLabel(order)}</strong>? Ona će biti uklonjena iz
+          aktivne operative.
+        </p>
+      ),
+      confirmText: "Odbij",
+      cancelText: "Odustani",
+      tone: "danger",
+    });
+
+    if (!ok) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setSuccessMessage(null);
+      setActionLoadingId(order.id);
+
+      await rejectOrder(order.id);
+
+      await loadOrders("silent");
+
+      setSuccessMessage(`Porudžbina #${getOrderLabel(order)} je odbijena.`);
+    } catch (error) {
+      await showActionError(error, "Greška pri odbijanju porudžbine.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
 
   async function handleReadyForPickup(order: OrderDetailsDto) {
     const ok = await confirm({
       title: "Porudžbina je spremna",
       message: (
         <p>
-          Da li je porudžbina <strong>#{getOrderLabel(order)}</strong> spremna
-          za preuzimanje?
+          Potvrdite da je porudžbina <strong>#{getOrderLabel(order)}</strong>{" "}
+          završena i spremna za{" "}
+          {order.fulfillmentType === "Pickup" ? "kupca" : "kurira"}.
         </p>
       ),
       confirmText: "Spremna je",
@@ -235,25 +385,17 @@ export default function AdminOrdersPage() {
       setActionLoadingId(order.id);
 
       await markReadyForPickup(order.id);
-      await loadOrders(false);
+
+      await loadOrders("silent");
 
       setSuccessMessage(
         `Porudžbina #${getOrderLabel(order)} je spremna za preuzimanje.`,
       );
-    } catch (error: any) {
-      const message = getErrorMessage(
+    } catch (error) {
+      await showActionError(
         error,
         "Greška pri označavanju porudžbine kao spremne.",
       );
-
-      setError(message);
-
-      await alert({
-        title: "Greška",
-        message: <p>{message}</p>,
-        confirmText: "Razumem",
-        tone: "danger",
-      });
     } finally {
       setActionLoadingId(null);
     }
@@ -283,117 +425,17 @@ export default function AdminOrdersPage() {
       setActionLoadingId(order.id);
 
       await completePickupOrder(order.id);
-      await loadOrders(false);
+
+      await loadOrders("silent");
 
       setSuccessMessage(
         `Porudžbina #${getOrderLabel(order)} je označena kao preuzeta.`,
       );
-    } catch (error: any) {
-      const message = getErrorMessage(
+    } catch (error) {
+      await showActionError(
         error,
         "Greška pri označavanju porudžbine kao preuzete.",
       );
-
-      setError(message);
-
-      await alert({
-        title: "Greška",
-        message: <p>{message}</p>,
-        confirmText: "Razumem",
-        tone: "danger",
-      });
-    } finally {
-      setActionLoadingId(null);
-    }
-  }
-
-  async function handleAccept(order: OrderDetailsDto) {
-    const ok = await confirm({
-      title: "Prihvatanje porudžbine",
-      message: (
-        <p>
-          Da li želiš da prihvatiš porudžbinu{" "}
-          <strong>#{getOrderLabel(order)}</strong>?
-        </p>
-      ),
-      confirmText: "Prihvati",
-      cancelText: "Odustani",
-      tone: "success",
-    });
-
-    if (!ok) {
-      return;
-    }
-
-    try {
-      setError(null);
-      setSuccessMessage(null);
-      setActionLoadingId(order.id);
-
-      await acceptOrder(order.id);
-      await loadOrders(false);
-
-      setSuccessMessage(`Porudžbina #${getOrderLabel(order)} je prihvaćena.`);
-    } catch (error: any) {
-      const message = getErrorMessage(
-        error,
-        "Greška pri prihvatanju porudžbine.",
-      );
-
-      setError(message);
-
-      await alert({
-        title: "Greška",
-        message: <p>{message}</p>,
-        confirmText: "Razumem",
-        tone: "danger",
-      });
-    } finally {
-      setActionLoadingId(null);
-    }
-  }
-
-  async function handleReject(order: OrderDetailsDto) {
-    const ok = await confirm({
-      title: "Odbijanje porudžbine",
-      message: (
-        <p>
-          Da li želiš da odbiješ porudžbinu{" "}
-          <strong>#{getOrderLabel(order)}</strong>?
-        </p>
-      ),
-      confirmText: "Odbij",
-      cancelText: "Odustani",
-      tone: "danger",
-    });
-
-    if (!ok) {
-      return;
-    }
-
-    try {
-      setError(null);
-      setSuccessMessage(null);
-      setActionLoadingId(order.id);
-
-      await rejectOrder(order.id);
-      await loadOrders(false);
-
-      setSuccessMessage(`Porudžbina #${getOrderLabel(order)} je odbijena.`);
-    } catch (error: any) {
-      const message = getErrorMessage(
-        error,
-        "Greška pri odbijanju porudžbine.",
-      );
-
-      setError(message);
-
-      await alert({
-        title: "Greška",
-        message: <p>{message}</p>,
-        confirmText: "Razumem",
-        tone: "danger",
-      });
     } finally {
       setActionLoadingId(null);
     }
@@ -401,232 +443,376 @@ export default function AdminOrdersPage() {
 
   return (
     <main className="admin-orders-page">
-      <header className="admin-orders-page__header">
-        <div className="admin-orders-page__heading">
-          <span className="admin-orders-page__eyebrow">OPERATIVNI PANEL</span>
+      <section className="admin-orders-hero">
+        <div className="admin-orders-hero__content">
+          <span className="admin-orders-hero__eyebrow">
+            BEEF N&apos; CHICKEN • OPERATIVA
+          </span>
 
-          <h1 className="admin-orders-page__title">Porudžbine</h1>
+          <h1 className="admin-orders-hero__title">Porudžbine</h1>
 
-          <p className="admin-orders-page__description">
-            Prihvatite nove porudžbine, pratite pripremu i prosledite spremne
-            porudžbine kurirskoj službi.
+          <p className="admin-orders-hero__description">
+            Prihvatite nove porudžbine, pratite pripremu i upravljajte aktivnim
+            tokom dostave i ličnog preuzimanja.
           </p>
+
+          <div className="admin-orders-hero__meta">
+            <span className="admin-orders-hero__live">
+              <span
+                className="admin-orders-hero__live-dot"
+                aria-hidden="true"
+              />
+              Porudžbine uživo
+            </span>
+
+            <span className="admin-orders-hero__total">
+              {counts.Sve} aktivnih
+            </span>
+          </div>
         </div>
 
-        <div className="admin-orders-page__header-actions">
-          <div className="admin-orders-page__realtime">
-            <span
-              className="admin-orders-page__realtime-dot"
-              aria-hidden="true"
-            />
-
-            <span>Porudžbine uživo</span>
-          </div>
-
-          <button
-            type="button"
-            className="admin-orders-page__refresh-button"
-            disabled={loading || refreshing}
-            onClick={() => loadOrders(false)}
-          >
-            {refreshing ? (
-              <span className="admin-orders-page__spinner" aria-hidden="true" />
-            ) : (
-              <svg viewBox="0 0 24 24" aria-hidden="true">
+        <aside className="admin-orders-summary">
+          <header className="admin-orders-summary__header">
+            <span className="admin-orders-summary__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
                 <path
-                  d="M20 7v5h-5M4 17v-5h5"
+                  d="M6 4h12l1 16H5L6 4Z"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
+                  strokeWidth="1.7"
                   strokeLinejoin="round"
                 />
 
                 <path
-                  d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
+                  d="M9 8a3 3 0 0 0 6 0"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.8"
+                  strokeWidth="1.7"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
                 />
               </svg>
-            )}
+            </span>
 
-            <span>{refreshing ? "Osvežavam..." : "Osveži"}</span>
-          </button>
-        </div>
-      </header>
+            <span className="admin-orders-summary__label">UŽIVO</span>
+          </header>
 
-      <section className="admin-orders-overview">
+          <div className="admin-orders-summary__value">
+            <strong>{counts.Na_Cekanju}</strong>
+
+            <span>novih porudžbina čeka odgovor</span>
+          </div>
+
+          <footer className="admin-orders-summary__footer">
+            <div>
+              <span>Dostava</span>
+
+              <strong>{fulfillmentCounts.delivery}</strong>
+            </div>
+
+            <div>
+              <span>Preuzimanje</span>
+
+              <strong>{fulfillmentCounts.pickup}</strong>
+            </div>
+
+            <button
+              type="button"
+              className="admin-orders-summary__refresh"
+              disabled={loading || refreshing}
+              onClick={() => void loadOrders("manual")}
+              aria-label="Osveži porudžbine"
+            >
+              {refreshing ? (
+                <span className="admin-orders-summary__spinner" />
+              ) : (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M20 7v5h-5M4 17v-5h5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+
+                  <path
+                    d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
+          </footer>
+        </aside>
+      </section>
+
+      <section
+        className="admin-orders-overview"
+        aria-label="Trenutno stanje porudžbina"
+      >
         <article className="admin-orders-overview__card admin-orders-overview__card--waiting">
-          <span className="admin-orders-overview__label">Na čekanju</span>
+          <div>
+            <span className="admin-orders-overview__label">Na čekanju</span>
+
+            <small>Potrebna reakcija</small>
+          </div>
 
           <strong>{counts.Na_Cekanju}</strong>
         </article>
 
         <article className="admin-orders-overview__card admin-orders-overview__card--preparing">
-          <span className="admin-orders-overview__label">U pripremi</span>
+          <div>
+            <span className="admin-orders-overview__label">U pripremi</span>
+
+            <small>Kuhinja priprema</small>
+          </div>
 
           <strong>{counts.Prihvacena}</strong>
         </article>
 
         <article className="admin-orders-overview__card admin-orders-overview__card--ready">
-          <span className="admin-orders-overview__label">Spremne</span>
+          <div>
+            <span className="admin-orders-overview__label">Spremne</span>
+
+            <small>Čekaju preuzimanje</small>
+          </div>
 
           <strong>{counts.Spremna_za_preuzimanje}</strong>
         </article>
 
         <article className="admin-orders-overview__card admin-orders-overview__card--delivery">
-          <span className="admin-orders-overview__label">Dostava u toku</span>
+          <div>
+            <span className="admin-orders-overview__label">Dostava u toku</span>
+
+            <small>Kod kurira</small>
+          </div>
 
           <strong>{counts.Dostava_u_toku}</strong>
         </article>
       </section>
 
-      <section className="admin-orders-filter">
-        <header className="admin-orders-filter__header">
-          <div>
-            <span className="admin-orders-filter__eyebrow">FILTRIRANJE</span>
+      <div className="admin-orders-page__messages" aria-live="polite">
+        {successMessage && (
+          <div className="admin-orders-alert admin-orders-alert--success">
+            <span className="admin-orders-alert__icon" aria-hidden="true">
+              ✓
+            </span>
 
-            <h2 className="admin-orders-filter__title">Aktivne porudžbine</h2>
+            <div>
+              <strong>Promena je sačuvana</strong>
+
+              <p>{successMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div
+            className="admin-orders-alert admin-orders-alert--error"
+            role="alert"
+          >
+            <span className="admin-orders-alert__icon" aria-hidden="true">
+              !
+            </span>
+
+            <div>
+              <strong>Došlo je do greške</strong>
+
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <section className="admin-orders-workspace">
+        <header className="admin-orders-workspace__header">
+          <div>
+            <span className="admin-orders-workspace__eyebrow">
+              OPERATIVNI TOK
+            </span>
+
+            <h2 className="admin-orders-workspace__title">
+              Aktivne porudžbine
+            </h2>
+
+            <p>Porudžbine su sortirane prema prioritetu i vremenu kreiranja.</p>
           </div>
 
-          <span className="admin-orders-filter__total">
-            Ukupno aktivnih: <strong>{counts.Sve}</strong>
-          </span>
+          <div className="admin-orders-workspace__result">
+            <strong>{visibleOrders.length}</strong>
+
+            <span>prikazano</span>
+          </div>
         </header>
 
-        <div
-          className="admin-orders-tabs"
-          role="tablist"
-          aria-label="Filtriranje aktivnih porudžbina"
-        >
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab;
+        <div className="admin-orders-controls">
+          <div
+            className="admin-orders-tabs"
+            role="tablist"
+            aria-label="Status porudžbine"
+          >
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab;
 
-            const modifier = getTabModifier(tab);
+              const modifier = getTabModifier(tab);
 
-            return (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                className={[
-                  "admin-orders-tabs__button",
-                  `admin-orders-tabs__button--${modifier}`,
-                  isActive ? "admin-orders-tabs__button--active" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() => setActiveTab(tab)}
-              >
-                <span className="admin-orders-tabs__dot" aria-hidden="true" />
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={[
+                    "admin-orders-tabs__button",
+                    `admin-orders-tabs__button--${modifier}`,
+                    isActive ? "admin-orders-tabs__button--active" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  <span className="admin-orders-tabs__dot" aria-hidden="true" />
 
-                <span>{getTabLabel(tab)}</span>
+                  <span>{getTabLabel(tab)}</span>
 
-                <strong className="admin-orders-tabs__count">
-                  {counts[tab]}
-                </strong>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+                  <strong className="admin-orders-tabs__count">
+                    {counts[tab]}
+                  </strong>
+                </button>
+              );
+            })}
+          </div>
 
-      {successMessage && (
-        <div
-          className="admin-orders-alert admin-orders-alert--success"
-          role="status"
-          aria-live="polite"
-        >
-          <span className="admin-orders-alert__icon" aria-hidden="true">
-            ✓
-          </span>
+          <div
+            className="admin-orders-fulfillment"
+            role="group"
+            aria-label="Tip porudžbine"
+          >
+            <button
+              type="button"
+              className={[
+                "admin-orders-fulfillment__button",
+                fulfillmentFilter === "All"
+                  ? "admin-orders-fulfillment__button--active"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => setFulfillmentFilter("All")}
+            >
+              Sve
+            </button>
 
-          <div>
-            <strong>Uspešno</strong>
-            <p>{successMessage}</p>
+            <button
+              type="button"
+              className={[
+                "admin-orders-fulfillment__button",
+                fulfillmentFilter === "Delivery"
+                  ? "admin-orders-fulfillment__button--active"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => setFulfillmentFilter("Delivery")}
+            >
+              Dostava
+              <span>{fulfillmentCounts.delivery}</span>
+            </button>
+
+            <button
+              type="button"
+              className={[
+                "admin-orders-fulfillment__button",
+                fulfillmentFilter === "Pickup"
+                  ? "admin-orders-fulfillment__button--active"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => setFulfillmentFilter("Pickup")}
+            >
+              Preuzimanje
+              <span>{fulfillmentCounts.pickup}</span>
+            </button>
           </div>
         </div>
-      )}
 
-      {error && (
-        <div
-          className="admin-orders-alert admin-orders-alert--error"
-          role="alert"
-        >
-          <span className="admin-orders-alert__icon" aria-hidden="true">
-            !
-          </span>
-
+        <div className="admin-orders-current-filter">
           <div>
-            <strong>Došlo je do greške</strong>
-            <p>{error}</p>
+            <span>Trenutni prikaz</span>
+
+            <strong>{getTabLabel(activeTab)}</strong>
           </div>
+
+          <p>{getTabDescription(activeTab)}</p>
         </div>
-      )}
 
-      {loading ? (
-        <section className="admin-orders-loading" aria-live="polite">
-          <span className="admin-orders-loading__spinner" aria-hidden="true" />
+        {loading ? (
+          <section className="admin-orders-loading" aria-live="polite">
+            <span
+              className="admin-orders-loading__spinner"
+              aria-hidden="true"
+            />
 
-          <div>
-            <strong>Učitavamo porudžbine</strong>
-
-            <p>Sačekajte trenutak dok preuzmemo trenutno stanje operative.</p>
-          </div>
-        </section>
-      ) : visibleOrders.length === 0 ? (
-        <section className="admin-orders-empty">
-          <div className="admin-orders-empty__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M6 4h12l1 16H5L6 4Z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-
-              <path
-                d="M9 8a3 3 0 0 0 6 0"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-
-          <span className="admin-orders-empty__eyebrow">NEMA PORUDŽBINA</span>
-
-          <h2 className="admin-orders-empty__title">
-            Nema porudžbina za ovaj prikaz
-          </h2>
-
-          <p className="admin-orders-empty__description">
-            Izaberite drugi status ili sačekajte da stigne nova porudžbina.
-          </p>
-        </section>
-      ) : (
-        <section className="admin-orders-results">
-          <header className="admin-orders-results__header">
             <div>
-              <span className="admin-orders-results__eyebrow">REZULTATI</span>
+              <strong>Učitavamo porudžbine</strong>
 
-              <h2 className="admin-orders-results__title">
-                {getTabLabel(activeTab)}
-              </h2>
+              <p>Preuzimamo trenutno stanje operative.</p>
+            </div>
+          </section>
+        ) : visibleOrders.length === 0 ? (
+          <section className="admin-orders-empty">
+            <div className="admin-orders-empty__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M6 4h12l1 16H5L6 4Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                <path
+                  d="M9 8a3 3 0 0 0 6 0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                />
+              </svg>
             </div>
 
-            <span className="admin-orders-results__count">
-              {visibleOrders.length}
-            </span>
-          </header>
+            <span className="admin-orders-empty__eyebrow">NEMA PORUDŽBINA</span>
 
+            <h3 className="admin-orders-empty__title">
+              Nema porudžbina za ovaj prikaz
+            </h3>
+
+            <p className="admin-orders-empty__description">
+              Izaberite drugi status ili tip porudžbine, ili sačekajte da stigne
+              nova.
+            </p>
+
+            {(activeTab !== "Sve" || fulfillmentFilter !== "All") && (
+              <button
+                type="button"
+                className="admin-orders-empty__reset"
+                onClick={() => {
+                  setActiveTab("Sve");
+
+                  setFulfillmentFilter("All");
+                }}
+              >
+                Prikaži sve aktivne
+              </button>
+            )}
+          </section>
+        ) : (
           <div className="admin-orders-list">
             {visibleOrders.map((order) => {
               const isProcessing = actionLoadingId === order.id;
@@ -644,16 +830,14 @@ export default function AdminOrdersPage() {
                             type="button"
                             className="admin-order-action admin-order-action--accept"
                             disabled={isProcessing}
-                            onClick={() => handleAccept(order)}
+                            onClick={() => void handleAccept(order)}
                           >
-                            {isProcessing && (
+                            {isProcessing ? (
                               <span
                                 className="admin-order-action__spinner"
                                 aria-hidden="true"
                               />
-                            )}
-
-                            {!isProcessing && (
+                            ) : (
                               <span
                                 className="admin-order-action__icon"
                                 aria-hidden="true"
@@ -673,7 +857,7 @@ export default function AdminOrdersPage() {
                             type="button"
                             className="admin-order-action admin-order-action--reject"
                             disabled={isProcessing}
-                            onClick={() => handleReject(order)}
+                            onClick={() => void handleReject(order)}
                           >
                             {!isProcessing && (
                               <span
@@ -696,16 +880,14 @@ export default function AdminOrdersPage() {
                           type="button"
                           className="admin-order-action admin-order-action--ready"
                           disabled={isProcessing}
-                          onClick={() => handleReadyForPickup(order)}
+                          onClick={() => void handleReadyForPickup(order)}
                         >
-                          {isProcessing && (
+                          {isProcessing ? (
                             <span
                               className="admin-order-action__spinner"
                               aria-hidden="true"
                             />
-                          )}
-
-                          {!isProcessing && (
+                          ) : (
                             <span
                               className="admin-order-action__icon"
                               aria-hidden="true"
@@ -730,16 +912,14 @@ export default function AdminOrdersPage() {
                             type="button"
                             className="admin-order-action admin-order-action--ready"
                             disabled={isProcessing}
-                            onClick={() => handleCompletePickup(order)}
+                            onClick={() => void handleCompletePickup(order)}
                           >
-                            {isProcessing && (
+                            {isProcessing ? (
                               <span
                                 className="admin-order-action__spinner"
                                 aria-hidden="true"
                               />
-                            )}
-
-                            {!isProcessing && (
+                            ) : (
                               <span
                                 className="admin-order-action__icon"
                                 aria-hidden="true"
@@ -795,8 +975,8 @@ export default function AdminOrdersPage() {
               );
             })}
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </main>
   );
 }

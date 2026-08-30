@@ -1,0 +1,349 @@
+@use "../abstracts/variables" as *;
+
+.home-footer {
+  position: relative;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 12% 15%,
+      rgba($color-primary, 0.11),
+      transparent 28rem
+    ),
+    linear-gradient(180deg, rgba(14, 20, 16, 0.98), rgba(7, 12, 9, 1));
+
+  border-top: 1px solid rgba($color-accent, 0.16);
+
+  &::before {
+    position: absolute;
+    top: 0;
+    right: 12%;
+    left: 12%;
+
+    height: 1px;
+
+    content: "";
+
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba($color-primary, 0.7),
+      rgba($color-accent, 0.5),
+      transparent
+    );
+  }
+
+  &__inner {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1.45fr)
+      minmax(160px, 0.55fr)
+      minmax(280px, 0.9fr);
+    gap: clamp(36px, 6vw, 84px);
+
+    width: min(
+      #{$container-width},
+      calc(100% - #{2 * $container-padding-desktop})
+    );
+
+    margin-inline: auto;
+    padding-block: clamp(52px, 6vw, 78px);
+  }
+
+  &__about {
+    max-width: 520px;
+  }
+
+  &__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-3;
+
+    color: $color-text;
+
+    border-radius: $radius-md;
+
+    &:focus-visible {
+      outline: 3px solid rgba($color-accent, 0.7);
+      outline-offset: 4px;
+    }
+  }
+
+  &__logo {
+    display: block;
+
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+
+    object-fit: contain;
+
+    border-radius: 50%;
+
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.4));
+  }
+
+  &__brand-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  &__brand-name {
+    color: $color-text;
+
+    font-family: $font-family-display;
+    font-size: 1.3rem;
+    font-weight: $font-weight-extra-bold;
+    line-height: 1;
+    letter-spacing: 0.015em;
+    text-transform: uppercase;
+  }
+
+  &__brand-description {
+    color: $color-accent;
+
+    font-size: 0.67rem;
+    font-weight: $font-weight-bold;
+    line-height: 1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  &__text {
+    max-width: 470px;
+
+    margin: $space-5 0 0;
+
+    color: $color-text-muted;
+
+    font-size: 0.9rem;
+    line-height: 1.75;
+    text-align: left;
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $space-3;
+
+    margin: 0;
+
+    font-style: normal;
+
+    > a:not(.home-footer__contact-link) {
+      position: relative;
+
+      color: $color-text-muted;
+
+      font-size: 0.88rem;
+      font-weight: $font-weight-semibold;
+
+      transition:
+        color $transition-fast,
+        transform $transition-fast;
+
+      &:hover {
+        color: $color-accent;
+        transform: translateX(4px);
+      }
+
+      &:focus-visible {
+        outline: 2px solid rgba($color-accent, 0.7);
+        outline-offset: 3px;
+        border-radius: 3px;
+      }
+    }
+  }
+
+  &__section-title {
+    margin-bottom: $space-2;
+
+    color: $color-text;
+
+    font-size: 0.72rem;
+    font-weight: $font-weight-extra-bold;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  &__contact {
+    gap: $space-3;
+  }
+
+  &__contact-link {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    padding: 11px 13px;
+    align-items: center;
+    gap: 11px;
+
+    color: $color-text-soft;
+
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: $radius-md;
+
+    transition:
+      color $transition-fast,
+      background-color $transition-fast,
+      border-color $transition-fast,
+      transform $transition-fast;
+
+    &:hover {
+      color: $color-text;
+
+      background: rgba($color-primary, 0.08);
+      border-color: rgba($color-primary, 0.28);
+
+      transform: translateY(-2px);
+    }
+
+    &:focus-visible {
+      outline: 3px solid rgba($color-accent, 0.65);
+      outline-offset: 3px;
+    }
+
+    > span:last-child {
+      min-width: 0;
+
+      overflow-wrap: anywhere;
+
+      font-size: 0.8rem;
+      font-weight: $font-weight-semibold;
+      line-height: 1.35;
+    }
+
+    small {
+      display: block;
+
+      margin-bottom: 2px;
+
+      color: $color-text-muted;
+
+      font-size: 0.65rem;
+      font-weight: $font-weight-bold;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+  }
+
+  &__contact-icon {
+    display: inline-grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    place-items: center;
+
+    color: $color-accent;
+
+    font-size: 0.7rem;
+    font-weight: $font-weight-extra-bold;
+
+    background: rgba($color-accent, 0.08);
+    border: 1px solid rgba($color-accent, 0.22);
+    border-radius: 11px;
+  }
+
+  &__bottom {
+    display: flex;
+    width: min(
+      #{$container-width},
+      calc(100% - #{2 * $container-padding-desktop})
+    );
+
+    margin-inline: auto;
+    padding-block: $space-4;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-4;
+
+    color: $color-text-muted;
+
+    font-size: 0.72rem;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.055);
+
+    p {
+      margin: 0;
+    }
+
+    span {
+      color: rgba($color-accent, 0.72);
+      font-weight: $font-weight-semibold;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-laptop) {
+  .home-footer {
+    &__inner {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      justify-items: stretch;
+
+      padding-block: clamp(44px, 6vw, 64px);
+    }
+
+    &__about {
+      max-width: 650px;
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-tablet) {
+  .home-footer {
+    &__inner,
+    &__bottom {
+      width: calc(100% - #{2 * $container-padding-mobile});
+    }
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .home-footer {
+    &__inner {
+      grid-template-columns: 1fr;
+      justify-items: stretch;
+      gap: $space-7;
+
+      padding-block: $space-8;
+    }
+
+    &__about {
+      max-width: none;
+      grid-column: auto;
+    }
+
+    &__logo {
+      width: 52px;
+      height: 52px;
+      flex-basis: 52px;
+    }
+
+    &__brand-name {
+      font-size: 1.1rem;
+    }
+
+    &__brand-description {
+      font-size: 0.58rem;
+      letter-spacing: 0.08em;
+    }
+
+    &__contact-link {
+      max-width: 100%;
+    }
+
+    &__bottom {
+      align-items: flex-start;
+      flex-direction: column;
+
+      span {
+        display: none;
+      }
+    }
+  }
+}

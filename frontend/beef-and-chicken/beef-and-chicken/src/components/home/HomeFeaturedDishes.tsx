@@ -41,6 +41,16 @@ function getDishEffectivePrice(dish: HomepageDishDto) {
   return dish.effectivePrice ?? dish.price;
 }
 
+function getGridClassName(itemCount: number) {
+  return [
+    "home-featured-dishes__grid",
+    itemCount === 1 ? "home-featured-dishes__grid--one" : "",
+    itemCount === 2 ? "home-featured-dishes__grid--two" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 function HomeDishCard({
   dish,
   variant,
@@ -67,13 +77,13 @@ function HomeDishCard({
         <div className="home-featured-dish-card__badges">
           {variant === "recommended" && (
             <span className="home-featured-dish-card__badge home-featured-dish-card__badge--chef">
-              Chef Pick
+              Preporuka kuće
             </span>
           )}
 
           {variant === "best-seller" && (
             <span className="home-featured-dish-card__badge home-featured-dish-card__badge--best">
-              Najtraženije
+              Najprodavanije
             </span>
           )}
 
@@ -266,11 +276,11 @@ export default function HomeFeaturedDishes() {
   return (
     <div className="home-featured-dishes">
       {saleDishes.length > 0 && (
-        <section id="akcija" className="home-featured-dishes__section">
+        <section id="akcije" className="home-featured-dishes__section">
           <div className="home-featured-dishes__section-header">
-            <span>Akcija danas</span>
+            <span>Posebna ponuda</span>
 
-            <h3>Jela na akciji</h3>
+            <h3>Akcije</h3>
           </div>
 
           <div className="home-featured-dishes__grid">
@@ -286,14 +296,14 @@ export default function HomeFeaturedDishes() {
       )}
 
       {uniqueRecommendedDishes.length > 0 && (
-        <section id="chef-pick" className="home-featured-dishes__section">
+        <section id="preporuka-kuce" className="home-featured-dishes__section">
           <div className="home-featured-dishes__section-header">
-            <span>Chef Pick</span>
+            <span>Naš izbor</span>
 
-            <h3>Preporuke kuće</h3>
+            <h3>Preporuka kuće</h3>
           </div>
 
-          <div className="home-featured-dishes__grid">
+          <div className={getGridClassName(uniqueRecommendedDishes.length)}>
             {uniqueRecommendedDishes.map((dish) => (
               <HomeDishCard
                 key={`recommended-${dish.id}`}
@@ -306,11 +316,11 @@ export default function HomeFeaturedDishes() {
       )}
 
       {uniqueBestSellers.length > 0 && (
-        <section id="najtrazenije" className="home-featured-dishes__section">
+        <section id="najprodavanije" className="home-featured-dishes__section">
           <div className="home-featured-dishes__section-header">
-            <span>Best Sellers</span>
+            <span>Favoriti gostiju</span>
 
-            <h3>Najtraženija jela</h3>
+            <h3>Najprodavanije</h3>
           </div>
 
           <div className="home-featured-dishes__grid">

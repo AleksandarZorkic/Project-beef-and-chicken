@@ -1,828 +1,1256 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  getOrderHistory,
-  type OrderDetailsDto,
-  type OrderHistoryStatusFilter,
-  type PagedResultDto,
-} from "../api/orderApi";
-import { AppRoles } from "../auth/roles";
-import { useAuth } from "../auth/AuthContext";
-import { useOrderRealtime } from "../realtime/useOrderRealtime";
-import "../styles/AdminOrdersHistoryPage.scss";
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
+import {
+  activateCategory,
+  createCategory,
+  deactivateCategory,
+  deleteCategory,
+  getAdminCategories,
+  updateCategory,
+  type CategoryDto,
+} from "../api/categoryApi";
+import { useAppDialog } from "../components/dialogs/AppDialogContext";
+import { getApiErrorMessage } from "../utils/apiErrors";
+import "../styles/AdminCategoriesPage.scss";
 
-function getErrorMessage(error: any, fallback: string) {
-  return (
-    error?.response?.data?.error ??
-    error?.response?.data?.message ??
-    error?.response?.data?.title ??
-    error?.message ??
-    fallback
-  );
+type CategoryFilter = "all" | "active" | "inactive";
+
+type CategoryFormState = {
+  name: string;
+  description: string;
+  sortOrder: string;
+  allowsSideDishes: boolean;
+  allowsSpices: boolean;
+  allowsSweetAdditions: boolean;
+  allowsSavoryPancakeAdditions: boolean;
+};
+
+function getEmptyForm(): CategoryFormState {
+  return {
+    name: "",
+    description: "",
+    sortOrder: "0",
+    allowsSideDishes: true,
+    allowsSpices: true,
+    allowsSweetAdditions: false,
+    allowsSavoryPancakeAdditions: false,
+  };
 }
 
-function formatPrice(value: number) {
-  return `${value.toLocaleString("sr-RS")} RSD`;
+function formatSortOrder(value: number) {
+  return String(value).padStart(2, "0");
 }
 
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString("sr-RS", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function getEnabledOptionsCount(category: CategoryDto) {
+  return [
+    category.allowsSideDishes,
+    category.allowsSpices,
+    category.allowsSweetAdditions,
+    category.allowsSavoryPancakeAdditions,
+  ].filter(Boolean).length;
 }
 
-function toLocalDateInputValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+export default function AdminCategoriesPage() {
+  const { confirm } = useAppDialog();
 
-  return `${year}-${month}-${day}`;
-}
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
 
-function dateInputToStartIso(value: string) {
-  return new Date(`${value}T00:00:00`).toISOString();
-}
+  const [form, setForm] = useState<CategoryFormState>(getEmptyForm());
 
-function dateInputToEndExclusiveIso(value: string) {
-  const date = new Date(`${value}T00:00:00`);
-  date.setDate(date.getDate() + 1);
-
-  return date.toISOString();
-}
-
-function getStartOfWeek(date: Date) {
-  const copy = new Date(date);
-  const day = (copy.getDay() + 6) % 7;
-
-  copy.setDate(copy.getDate() - day);
-
-  return copy;
-}
-
-function getOrderLabel(order: OrderDetailsDto) {
-  return order.orderNumber ?? String(order.id);
-}
-
-function formatStatus(status: OrderDetailsDto["status"]) {
-  switch (status) {
-    case "Dostavljena":
-      return "Dostavljena";
-
-    case "Odbijena":
-      return "Odbijena";
-
-    case "Otkazana":
-      return "Otkazana";
-
-    case "Na_Cekanju":
-      return "Na čekanju";
-
-    case "Prihvacena":
-      return "U pripremi";
-
-    case "Spremna_za_preuzimanje":
-      return "Spremna za preuzimanje";
-
-    case "Dostava_u_toku":
-      return "Dostava u toku";
-
-    default:
-      return status;
-  }
-}
-
-function getStatusModifier(status: OrderDetailsDto["status"]) {
-  switch (status) {
-    case "Dostavljena":
-      return "delivered";
-
-    case "Odbijena":
-      return "rejected";
-
-    case "Otkazana":
-      return "cancelled";
-
-    default:
-      return "default";
-  }
-}
-
-function formatDateLabel(value: string) {
-  if (!value) {
-    return "-";
-  }
-
-  return new Date(`${value}T00:00:00`).toLocaleDateString("sr-RS", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-export default function AdminOrdersHistoryPage() {
-  const { isAuthenticated, hasAnyRole } = useAuth();
-
-  const datePresets = useMemo(() => {
-    const now = new Date();
-
-    return {
-      today: toLocalDateInputValue(now),
-
-      weekStart: toLocalDateInputValue(getStartOfWeek(now)),
-
-      monthStart: toLocalDateInputValue(
-        new Date(now.getFullYear(), now.getMonth(), 1),
-      ),
-    };
-  }, []);
-
-  const [fromDate, setFromDate] = useState(datePresets.today);
-
-  const [toDate, setToDate] = useState(datePresets.today);
-
-  const [status, setStatus] = useState<"" | OrderHistoryStatusFilter>("");
-
-  const [orderNumber, setOrderNumber] = useState("");
-
-  const [courierId, setCourierId] = useState("");
-
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-
-  const [result, setResult] = useState<PagedResultDto<OrderDetailsDto> | null>(
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(
     null,
   );
 
-  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<CategoryFilter>("all");
 
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
 
   const [error, setError] = useState<string | null>(null);
 
-  const isTodaySelected =
-    fromDate === datePresets.today && toDate === datePresets.today;
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const isWeekSelected =
-    fromDate === datePresets.weekStart && toDate === datePresets.today;
+  const isEditing = editingCategoryId !== null;
 
-  const isMonthSelected =
-    fromDate === datePresets.monthStart && toDate === datePresets.today;
+  const loadCategories = useCallback(async (showInitialLoading = true) => {
+    try {
+      setError(null);
 
-  const hasAdditionalFilters =
-    Boolean(status) || Boolean(orderNumber.trim()) || Boolean(courierId.trim());
-
-  const loadHistory = useCallback(
-    async (showLoading = true) => {
-      try {
-        setError(null);
-
-        if (showLoading) {
-          setLoading(true);
-        } else {
-          setRefreshing(true);
-        }
-
-        const data = await getOrderHistory({
-          from: fromDate ? dateInputToStartIso(fromDate) : undefined,
-
-          to: toDate ? dateInputToEndExclusiveIso(toDate) : undefined,
-
-          status: status || undefined,
-
-          orderNumber: orderNumber.trim() || undefined,
-
-          courierId: courierId.trim() ? Number(courierId) : undefined,
-
-          page,
-          pageSize,
-        });
-
-        setResult(data);
-      } catch (error: any) {
-        setError(getErrorMessage(error, "Greška pri učitavanju istorije."));
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
+      if (showInitialLoading) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
       }
-    },
-    [fromDate, toDate, status, orderNumber, courierId, page, pageSize],
-  );
+
+      const data = await getAdminCategories();
+
+      setCategories(data);
+    } catch (error) {
+      setError(getApiErrorMessage(error));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    loadHistory();
-  }, [loadHistory]);
+    void loadCategories();
+  }, [loadCategories]);
 
-  const handleOrderChanged = useCallback(() => {
-    loadHistory(false);
-  }, [loadHistory]);
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
 
-  useOrderRealtime({
-    enabled: isAuthenticated && hasAnyRole([AppRoles.Admin, AppRoles.Employee]),
+    const timer = window.setTimeout(() => {
+      setSuccessMessage(null);
+    }, 3000);
 
-    onOrderChanged: handleOrderChanged,
-  });
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [successMessage]);
 
-  function applyToday() {
-    setFromDate(datePresets.today);
-    setToDate(datePresets.today);
-    setPage(1);
+  const categoryCounts = useMemo(() => {
+    const active = categories.filter((category) => category.isActive).length;
+
+    const totalDishes = categories.reduce(
+      (total, category) => total + category.dishCount,
+      0,
+    );
+
+    const activeDishes = categories.reduce(
+      (total, category) => total + category.activeDishCount,
+      0,
+    );
+
+    return {
+      all: categories.length,
+      active,
+      inactive: categories.length - active,
+      totalDishes,
+      activeDishes,
+    };
+  }, [categories]);
+
+  const visibleCategories = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLocaleLowerCase("sr-RS");
+
+    return categories
+      .filter((category) => {
+        if (filter === "active" && !category.isActive) {
+          return false;
+        }
+
+        if (filter === "inactive" && category.isActive) {
+          return false;
+        }
+
+        if (!normalizedSearch) {
+          return true;
+        }
+
+        const searchableText = [category.name, category.description ?? ""]
+          .join(" ")
+          .toLocaleLowerCase("sr-RS");
+
+        return searchableText.includes(normalizedSearch);
+      })
+      .sort((firstCategory, secondCategory) => {
+        if (firstCategory.sortOrder !== secondCategory.sortOrder) {
+          return firstCategory.sortOrder - secondCategory.sortOrder;
+        }
+
+        return firstCategory.name.localeCompare(secondCategory.name, "sr-RS");
+      });
+  }, [categories, filter, searchTerm]);
+
+  const hasFilters = filter !== "all" || searchTerm.trim().length > 0;
+
+  function clearForm() {
+    setForm(getEmptyForm());
+    setEditingCategoryId(null);
   }
 
-  function applyThisWeek() {
-    setFromDate(datePresets.weekStart);
-    setToDate(datePresets.today);
-    setPage(1);
+  function resetForm() {
+    clearForm();
+
+    setError(null);
+    setSuccessMessage(null);
   }
 
-  function applyThisMonth() {
-    setFromDate(datePresets.monthStart);
-    setToDate(datePresets.today);
-    setPage(1);
+  function clearFilters() {
+    setFilter("all");
+    setSearchTerm("");
   }
 
-  function resetAdditionalFilters() {
-    setStatus("");
-    setOrderNumber("");
-    setCourierId("");
-    setPage(1);
+  function scrollToEditor() {
+    const editor = document.getElementById("admin-category-editor");
+
+    if (!editor) {
+      return;
+    }
+
+    editor.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }
 
-  const items = result?.items ?? [];
-  const totalCount = result?.totalCount ?? 0;
-  const currentPage = result?.page ?? page;
-  const totalPages = result?.totalPages ?? 1;
+  function startNewCategory() {
+    resetForm();
+
+    window.setTimeout(scrollToEditor, 0);
+  }
+
+  function startEdit(category: CategoryDto) {
+    setEditingCategoryId(category.id);
+
+    setForm({
+      name: category.name,
+      description: category.description ?? "",
+      sortOrder: String(category.sortOrder),
+      allowsSideDishes: category.allowsSideDishes,
+      allowsSpices: category.allowsSpices,
+      allowsSweetAdditions: category.allowsSweetAdditions,
+      allowsSavoryPancakeAdditions: category.allowsSavoryPancakeAdditions,
+    });
+
+    setError(null);
+    setSuccessMessage(null);
+
+    window.setTimeout(scrollToEditor, 0);
+  }
+
+  function validateForm() {
+    const name = form.name.trim();
+    const sortOrder = Number(form.sortOrder);
+
+    if (!name) {
+      return "Naziv kategorije je obavezan.";
+    }
+
+    if (name.length < 2) {
+      return "Naziv kategorije mora imati najmanje 2 karaktera.";
+    }
+
+    if (
+      !Number.isFinite(sortOrder) ||
+      !Number.isInteger(sortOrder) ||
+      sortOrder < 0
+    ) {
+      return "Redosled mora biti ceo broj 0 ili veći.";
+    }
+
+    return null;
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const validationError = validateForm();
+
+    if (validationError) {
+      setError(validationError);
+      setSuccessMessage(null);
+
+      return;
+    }
+
+    const wasEditing = editingCategoryId !== null;
+
+    const dto = {
+      name: form.name.trim(),
+      description: form.description.trim() || null,
+      sortOrder: Number(form.sortOrder),
+      allowsSideDishes: form.allowsSideDishes,
+      allowsSpices: form.allowsSpices,
+      allowsSweetAdditions: form.allowsSweetAdditions,
+      allowsSavoryPancakeAdditions: form.allowsSavoryPancakeAdditions,
+    };
+
+    try {
+      setSaving(true);
+
+      setError(null);
+      setSuccessMessage(null);
+
+      if (editingCategoryId !== null) {
+        await updateCategory(editingCategoryId, dto);
+      } else {
+        await createCategory(dto);
+      }
+
+      clearForm();
+
+      await loadCategories(false);
+
+      setSuccessMessage(
+        wasEditing
+          ? "Kategorija je uspešno izmenjena."
+          : "Kategorija je uspešno kreirana.",
+      );
+    } catch (error) {
+      setError(getApiErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleActivate(category: CategoryDto) {
+    try {
+      setError(null);
+      setSuccessMessage(null);
+
+      setActionLoadingId(category.id);
+
+      await activateCategory(category.id);
+
+      await loadCategories(false);
+
+      setSuccessMessage(`Kategorija „${category.name}“ je aktivirana.`);
+    } catch (error) {
+      setError(getApiErrorMessage(error));
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleDeactivate(category: CategoryDto) {
+    const confirmed = await confirm({
+      title: "Deaktivacija kategorije",
+      message: (
+        <p>
+          Da li želite da deaktivirate kategoriju{" "}
+          <strong>„{category.name}“</strong>? Jela iz ove kategorije više neće
+          biti prikazana kupcima.
+        </p>
+      ),
+      confirmText: "Deaktiviraj",
+      cancelText: "Odustani",
+      tone: "danger",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setSuccessMessage(null);
+
+      setActionLoadingId(category.id);
+
+      await deactivateCategory(category.id);
+
+      if (editingCategoryId === category.id) {
+        clearForm();
+      }
+
+      await loadCategories(false);
+
+      setSuccessMessage(`Kategorija „${category.name}“ je deaktivirana.`);
+    } catch (error) {
+      setError(getApiErrorMessage(error));
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleDelete(category: CategoryDto) {
+    if (category.dishCount > 0) {
+      return;
+    }
+
+    const confirmed = await confirm({
+      title: "Brisanje kategorije",
+      message: (
+        <p>
+          Da li želite trajno da obrišete kategoriju{" "}
+          <strong>„{category.name}“</strong>? Ovu radnju nije moguće poništiti.
+        </p>
+      ),
+      confirmText: "Obriši",
+      cancelText: "Odustani",
+      tone: "danger",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setSuccessMessage(null);
+
+      setActionLoadingId(category.id);
+
+      await deleteCategory(category.id);
+
+      if (editingCategoryId === category.id) {
+        clearForm();
+      }
+
+      await loadCategories(false);
+
+      setSuccessMessage(`Kategorija „${category.name}“ je obrisana.`);
+    } catch (error) {
+      setError(getApiErrorMessage(error));
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="admin-categories-page">
+        <section className="admin-category-state" aria-live="polite">
+          <span className="admin-category-state__spinner" aria-hidden="true" />
+
+          <div>
+            <strong>Učitavamo kategorije</strong>
+
+            <p>Pripremamo organizaciju menija.</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
-    <main className="admin-orders-history-page">
-      <header className="admin-orders-history-page__header">
-        <div className="admin-orders-history-page__heading">
-          <span className="admin-orders-history-page__eyebrow">
-            ARHIVA PORUDŽBINA
+    <main className="admin-categories-page">
+      <section className="admin-categories-hero">
+        <div className="admin-categories-hero__content">
+          <span className="admin-categories-hero__eyebrow">
+            BEEF N&apos; CHICKEN • ADMIN
           </span>
 
-          <h1 className="admin-orders-history-page__title">Istorija</h1>
+          <h1 className="admin-categories-hero__title">Kategorije</h1>
 
-          <p className="admin-orders-history-page__description">
-            Pretražite završene i odbijene porudžbine prema periodu, statusu,
-            broju porudžbine ili kuriru.
+          <p className="admin-categories-hero__description">
+            Organizujte meni, odredite redosled kategorija i definišite koje
+            dodatke kupci mogu da biraju za jela iz svake kategorije.
           </p>
+
+          <div className="admin-categories-hero__meta">
+            <span className="admin-categories-hero__active">
+              <span aria-hidden="true" />
+              {categoryCounts.active} aktivnih kategorija
+            </span>
+
+            <span className="admin-categories-hero__dishes">
+              {categoryCounts.activeDishes} aktivnih jela
+            </span>
+          </div>
         </div>
 
-        <div className="admin-orders-history-page__header-actions">
-          <div className="admin-orders-history-page__realtime">
-            <span
-              className="admin-orders-history-page__realtime-dot"
-              aria-hidden="true"
-            />
-
-            <span>Podaci uživo</span>
-          </div>
-
-          <button
-            type="button"
-            className="admin-orders-history-page__refresh-button"
-            disabled={loading || refreshing}
-            onClick={() => loadHistory(false)}
-          >
-            {refreshing ? (
-              <span
-                className="admin-orders-history-page__spinner"
-                aria-hidden="true"
-              />
-            ) : (
-              <svg viewBox="0 0 24 24" aria-hidden="true">
+        <aside className="admin-categories-summary">
+          <header className="admin-categories-summary__header">
+            <span className="admin-categories-summary__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
                 <path
-                  d="M20 7v5h-5M4 17v-5h5"
+                  d="M4 5h7v6H4V5Zm9 0h7v6h-7V5ZM4 13h7v6H4v-6Zm9 0h7v6h-7v-6Z"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-
-                <path
-                  d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
+                  strokeWidth="1.7"
                   strokeLinejoin="round"
                 />
               </svg>
-            )}
-
-            <span>{refreshing ? "Osvežavam..." : "Osveži"}</span>
-          </button>
-        </div>
-      </header>
-
-      <section className="admin-history-filter">
-        <header className="admin-history-filter__header">
-          <div>
-            <span className="admin-history-filter__eyebrow">
-              PRETRAGA I FILTRIRANJE
             </span>
 
-            <h2 className="admin-history-filter__title">
-              Pronađite porudžbine
-            </h2>
+            <span className="admin-categories-summary__label">MENI</span>
+          </header>
+
+          <div className="admin-categories-summary__value">
+            <strong>{categoryCounts.all}</strong>
+
+            <span>kategorija u sistemu</span>
           </div>
 
-          <span className="admin-history-filter__period">
-            {formatDateLabel(fromDate)} – {formatDateLabel(toDate)}
-          </span>
-        </header>
+          <footer className="admin-categories-summary__footer">
+            <div>
+              <span>Ukupno jela</span>
 
-        <div className="admin-history-filter__presets">
-          <button
-            type="button"
-            className={[
-              "admin-history-filter__preset",
-              isTodaySelected ? "admin-history-filter__preset--active" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            onClick={applyToday}
-          >
-            Danas
-          </button>
+              <strong>{categoryCounts.totalDishes}</strong>
+            </div>
 
-          <button
-            type="button"
-            className={[
-              "admin-history-filter__preset",
-              isWeekSelected ? "admin-history-filter__preset--active" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            onClick={applyThisWeek}
-          >
-            Ova nedelja
-          </button>
+            <div>
+              <span>Neaktivne</span>
 
-          <button
-            type="button"
-            className={[
-              "admin-history-filter__preset",
-              isMonthSelected ? "admin-history-filter__preset--active" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            onClick={applyThisMonth}
-          >
-            Ovaj mesec
-          </button>
+              <strong>{categoryCounts.inactive}</strong>
+            </div>
 
-          {hasAdditionalFilters && (
             <button
               type="button"
-              className="admin-history-filter__reset-button"
-              onClick={resetAdditionalFilters}
+              className="admin-categories-summary__new"
+              onClick={startNewCategory}
+              aria-label="Dodaj novu kategoriju"
             >
-              Poništi dodatne filtere
+              +
             </button>
-          )}
-        </div>
-
-        <div className="admin-history-filter__grid">
-          <label className="admin-history-filter__field">
-            <span className="admin-history-filter__label">Datum od</span>
-
-            <div className="admin-history-filter__control">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect
-                  x="3"
-                  y="5"
-                  width="18"
-                  height="16"
-                  rx="2"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                />
-
-                <path
-                  d="M8 3v4m8-4v4M3 10h18"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                />
-              </svg>
-
-              <input
-                type="date"
-                value={fromDate}
-                max={toDate || undefined}
-                onChange={(event) => {
-                  setFromDate(event.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-          </label>
-
-          <label className="admin-history-filter__field">
-            <span className="admin-history-filter__label">Datum do</span>
-
-            <div className="admin-history-filter__control">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect
-                  x="3"
-                  y="5"
-                  width="18"
-                  height="16"
-                  rx="2"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                />
-
-                <path
-                  d="M8 3v4m8-4v4M3 10h18"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                />
-              </svg>
-
-              <input
-                type="date"
-                value={toDate}
-                min={fromDate || undefined}
-                onChange={(event) => {
-                  setToDate(event.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-          </label>
-
-          <label className="admin-history-filter__field">
-            <span className="admin-history-filter__label">Status</span>
-
-            <div className="admin-history-filter__control">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M5 12 9 16 19 6"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-              <select
-                value={status}
-                onChange={(event) => {
-                  setStatus(
-                    event.target.value as "" | OrderHistoryStatusFilter,
-                  );
-                  setPage(1);
-                }}
-              >
-                <option value="">Sve završene</option>
-
-                <option value="Dostavljena">Dostavljene</option>
-
-                <option value="Odbijena">Odbijene</option>
-              </select>
-            </div>
-          </label>
-
-          <label className="admin-history-filter__field">
-            <span className="admin-history-filter__label">Broj porudžbine</span>
-
-            <div className="admin-history-filter__control">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle
-                  cx="10.5"
-                  cy="10.5"
-                  r="6.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                />
-
-                <path
-                  d="m15.5 15.5 4 4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                />
-              </svg>
-
-              <input
-                type="text"
-                value={orderNumber}
-                placeholder="Na primer: 260720"
-                onChange={(event) => {
-                  setOrderNumber(event.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-          </label>
-
-          <label className="admin-history-filter__field">
-            <span className="admin-history-filter__label">ID kurira</span>
-
-            <div className="admin-history-filter__control">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M3 16h11V6H3v10Zm11-6h4l3 3v3h-7v-6Z"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-
-                <circle
-                  cx="7"
-                  cy="18"
-                  r="2"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                />
-
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="2"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                />
-              </svg>
-
-              <input
-                type="number"
-                min={1}
-                value={courierId}
-                placeholder="ID"
-                onChange={(event) => {
-                  setCourierId(event.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-          </label>
-
-          <label className="admin-history-filter__field">
-            <span className="admin-history-filter__label">
-              Rezultata po strani
-            </span>
-
-            <div className="admin-history-filter__control">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M5 7h14M5 12h14M5 17h14"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                />
-              </svg>
-
-              <select
-                value={pageSize}
-                onChange={(event) => {
-                  setPageSize(Number(event.target.value));
-                  setPage(1);
-                }}
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-              </select>
-            </div>
-          </label>
-        </div>
-
-        <p className="admin-history-filter__hint">
-          Rezultati se automatski osvežavaju nakon promene filtera.
-        </p>
+          </footer>
+        </aside>
       </section>
 
-      {error && (
-        <div className="admin-history-alert" role="alert">
-          <span className="admin-history-alert__icon" aria-hidden="true">
-            !
+      <section className="admin-category-stats" aria-label="Pregled kategorija">
+        <article className="admin-category-stat">
+          <span className="admin-category-stat__label">Ukupno</span>
+
+          <strong className="admin-category-stat__value">
+            {categoryCounts.all}
+          </strong>
+
+          <span className="admin-category-stat__description">
+            Sve kategorije
           </span>
+        </article>
 
-          <div>
-            <strong>Istorija nije mogla da se učita</strong>
+        <article className="admin-category-stat admin-category-stat--active">
+          <span className="admin-category-stat__label">Aktivne</span>
 
-            <p>{error}</p>
-          </div>
-        </div>
-      )}
+          <strong className="admin-category-stat__value">
+            {categoryCounts.active}
+          </strong>
 
-      {loading ? (
-        <section className="admin-history-loading" aria-live="polite">
-          <span className="admin-history-loading__spinner" aria-hidden="true" />
+          <span className="admin-category-stat__description">
+            Vidljive kupcima
+          </span>
+        </article>
 
-          <div>
-            <strong>Učitavamo istoriju</strong>
+        <article className="admin-category-stat admin-category-stat--inactive">
+          <span className="admin-category-stat__label">Neaktivne</span>
 
-            <p>Sačekajte trenutak dok pronađemo porudžbine.</p>
-          </div>
-        </section>
-      ) : items.length === 0 ? (
-        <section className="admin-history-empty">
-          <div className="admin-history-empty__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M5 4h14v16H5V4Zm3 4h8M8 12h8M8 16h5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
+          <strong className="admin-category-stat__value">
+            {categoryCounts.inactive}
+          </strong>
 
-          <span className="admin-history-empty__eyebrow">NEMA REZULTATA</span>
+          <span className="admin-category-stat__description">
+            Trenutno skrivene
+          </span>
+        </article>
 
-          <h2 className="admin-history-empty__title">
-            Nema odgovarajućih porudžbina
-          </h2>
+        <article className="admin-category-stat admin-category-stat--dishes">
+          <span className="admin-category-stat__label">Aktivna jela</span>
 
-          <p className="admin-history-empty__description">
-            Promenite vremenski period ili uklonite neki od dodatnih filtera.
-          </p>
-        </section>
-      ) : (
-        <section className="admin-history-results">
-          <header className="admin-history-results__header">
+          <strong className="admin-category-stat__value">
+            {categoryCounts.activeDishes}
+          </strong>
+
+          <span className="admin-category-stat__description">
+            Trenutno u ponudi
+          </span>
+        </article>
+      </section>
+
+      <div className="admin-categories-page__messages" aria-live="polite">
+        {successMessage && (
+          <div className="admin-category-alert admin-category-alert--success">
+            <span className="admin-category-alert__icon" aria-hidden="true">
+              ✓
+            </span>
+
             <div>
-              <span className="admin-history-results__eyebrow">
-                REZULTATI PRETRAGE
+              <strong>Promena je sačuvana</strong>
+
+              <p>{successMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div
+            className="admin-category-alert admin-category-alert--error"
+            role="alert"
+          >
+            <span className="admin-category-alert__icon" aria-hidden="true">
+              !
+            </span>
+
+            <div>
+              <strong>Proverite podatke</strong>
+
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="admin-categories-layout">
+        <section
+          id="admin-category-editor"
+          className={[
+            "admin-category-editor",
+            isEditing ? "admin-category-editor--editing" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
+          <header className="admin-category-editor__header">
+            <div>
+              <span className="admin-category-editor__eyebrow">
+                {isEditing ? "IZMENA KATEGORIJE" : "NOVA KATEGORIJA"}
               </span>
 
-              <h2 className="admin-history-results__title">
-                Završene porudžbine
+              <h2 className="admin-category-editor__title">
+                {isEditing ? "Izmeni kategoriju" : "Dodaj kategoriju"}
               </h2>
+
+              <p>
+                {isEditing
+                  ? "Promenite podatke i pravila postojeće kategorije."
+                  : "Dodajte novu grupu jela u meni."}
+              </p>
             </div>
 
-            <div className="admin-history-results__summary">
-              <span>Ukupno rezultata</span>
+            <span
+              className={[
+                "admin-category-editor__mode",
+                isEditing ? "admin-category-editor__mode--editing" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {isEditing ? `ID ${editingCategoryId}` : "Kreiranje"}
+            </span>
+          </header>
 
-              <strong>{totalCount}</strong>
+          <form className="form admin-category-form" onSubmit={handleSubmit}>
+            <section className="admin-category-form-section">
+              <header className="admin-category-form-section__header">
+                <span>01</span>
+
+                <div>
+                  <strong>Osnovni podaci</strong>
+
+                  <p>Naziv, opis i redosled u meniju.</p>
+                </div>
+              </header>
+
+              <div className="form-field">
+                <label className="form-label" htmlFor="category-name">
+                  Naziv kategorije
+                  <span className="form-label__required">*</span>
+                </label>
+
+                <input
+                  id="category-name"
+                  className="form-control"
+                  type="text"
+                  value={form.name}
+                  placeholder="Na primer: Burgeri"
+                  autoComplete="off"
+                  disabled={saving}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="form-field">
+                <label className="form-label" htmlFor="category-description">
+                  Opis
+                  <span className="form-label__optional">opciono</span>
+                </label>
+
+                <textarea
+                  id="category-description"
+                  className="form-textarea"
+                  value={form.description}
+                  rows={4}
+                  disabled={saving}
+                  placeholder="Kratko opišite šta se nalazi u kategoriji..."
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      description: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="form-field">
+                <label className="form-label" htmlFor="category-sort-order">
+                  Redosled prikaza
+                </label>
+
+                <input
+                  id="category-sort-order"
+                  className="form-control"
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={form.sortOrder}
+                  disabled={saving}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      sortOrder: event.target.value,
+                    }))
+                  }
+                />
+
+                <p className="form-help">
+                  Manji broj znači višu poziciju u meniju.
+                </p>
+              </div>
+            </section>
+
+            <fieldset className="admin-category-permissions">
+              <legend>02 • Pravila za dodatke</legend>
+
+              <p className="admin-category-permissions__description">
+                Izaberite koje grupe dodataka kupac može da bira uz jela iz ove
+                kategorije.
+              </p>
+
+              <div className="admin-category-permissions__grid">
+                <label
+                  className={[
+                    "admin-category-permission",
+                    form.allowsSideDishes
+                      ? "admin-category-permission--selected"
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.allowsSideDishes}
+                    disabled={saving}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        allowsSideDishes: event.target.checked,
+                      }))
+                    }
+                  />
+
+                  <span className="admin-category-permission__control">✓</span>
+
+                  <span className="admin-category-permission__content">
+                    <strong>Prilozi</strong>
+
+                    <small>Pomfrit, salate i ostali prilozi</small>
+                  </span>
+                </label>
+
+                <label
+                  className={[
+                    "admin-category-permission",
+                    form.allowsSpices
+                      ? "admin-category-permission--selected"
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.allowsSpices}
+                    disabled={saving}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        allowsSpices: event.target.checked,
+                      }))
+                    }
+                  />
+
+                  <span className="admin-category-permission__control">✓</span>
+
+                  <span className="admin-category-permission__content">
+                    <strong>Začini</strong>
+
+                    <small>Začini i besplatne opcije</small>
+                  </span>
+                </label>
+
+                <label
+                  className={[
+                    "admin-category-permission",
+                    form.allowsSweetAdditions
+                      ? "admin-category-permission--selected"
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.allowsSweetAdditions}
+                    disabled={saving}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        allowsSweetAdditions: event.target.checked,
+                      }))
+                    }
+                  />
+
+                  <span className="admin-category-permission__control">✓</span>
+
+                  <span className="admin-category-permission__content">
+                    <strong>Slatki dodaci</strong>
+
+                    <small>Za slatke palačinke i deserte</small>
+                  </span>
+                </label>
+
+                <label
+                  className={[
+                    "admin-category-permission",
+                    form.allowsSavoryPancakeAdditions
+                      ? "admin-category-permission--selected"
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.allowsSavoryPancakeAdditions}
+                    disabled={saving}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        allowsSavoryPancakeAdditions: event.target.checked,
+                      }))
+                    }
+                  />
+
+                  <span className="admin-category-permission__control">✓</span>
+
+                  <span className="admin-category-permission__content">
+                    <strong>Slani dodaci</strong>
+
+                    <small>Za slane palačinke</small>
+                  </span>
+                </label>
+              </div>
+
+              <p className="admin-category-permissions__hint">
+                Na primer, za piće obično nije potrebno dozvoliti nijednu grupu
+                dodataka.
+              </p>
+            </fieldset>
+
+            <div className="admin-category-form__actions">
+              <button
+                type="submit"
+                className="admin-category-button admin-category-button--primary"
+                disabled={saving}
+              >
+                {saving && (
+                  <span
+                    className="admin-category-button__spinner"
+                    aria-hidden="true"
+                  />
+                )}
+
+                {saving
+                  ? "Čuvam..."
+                  : isEditing
+                    ? "Sačuvaj izmene"
+                    : "Dodaj kategoriju"}
+              </button>
+
+              {isEditing && (
+                <button
+                  type="button"
+                  className="admin-category-button admin-category-button--secondary"
+                  disabled={saving}
+                  onClick={resetForm}
+                >
+                  Odustani
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+
+        <section className="admin-category-catalog">
+          <header className="admin-category-catalog__header">
+            <div>
+              <span className="admin-category-catalog__eyebrow">
+                ORGANIZACIJA MENIJA
+              </span>
+
+              <h2 className="admin-category-catalog__title">Sve kategorije</h2>
+
+              <p>
+                Pregledajte redosled, dostupnost, broj jela i pravila za
+                dodatke.
+              </p>
+            </div>
+
+            <div className="admin-category-catalog__header-actions">
+              <div className="admin-category-catalog__result">
+                <strong>{visibleCategories.length}</strong>
+
+                <span>prikazano</span>
+              </div>
+
+              <button
+                type="button"
+                className="admin-category-catalog__refresh"
+                disabled={refreshing}
+                onClick={() => void loadCategories(false)}
+              >
+                {refreshing ? (
+                  <span className="admin-category-catalog__spinner" />
+                ) : (
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M20 7v5h-5M4 17v-5h5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+
+                    <path
+                      d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9m16 6-2.4 2.6A7 7 0 0 1 5.8 15"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+
+                {refreshing ? "Osvežavam..." : "Osveži"}
+              </button>
             </div>
           </header>
 
-          <div className="admin-history-table-wrapper">
-            <table className="admin-history-table">
-              <thead>
-                <tr>
-                  <th>Porudžbina</th>
-                  <th>Datum</th>
-                  <th>Status</th>
-                  <th>Adresa</th>
-                  <th>Kurir</th>
-                  <th>Stavke</th>
-                  <th>Ukupno</th>
-                </tr>
-              </thead>
+          <div className="admin-category-toolbar">
+            <div className="admin-category-search">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                />
 
-              <tbody>
-                {items.map((order) => (
-                  <tr key={order.id}>
-                    <td>
-                      <div className="admin-history-table__order">
-                        <span>PORUDŽBINA</span>
+                <path
+                  d="m16.2 16.2 4 4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                />
+              </svg>
 
-                        <strong>#{getOrderLabel(order)}</strong>
-                      </div>
-                    </td>
+              <input
+                type="search"
+                value={searchTerm}
+                placeholder="Pretraži kategorije..."
+                aria-label="Pretraži kategorije"
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
 
-                    <td>
-                      <span className="admin-history-table__date">
-                        {formatDateTime(order.createdAt)}
+            <div
+              className="admin-category-filters"
+              role="group"
+              aria-label="Filtriranje kategorija"
+            >
+              <button
+                type="button"
+                className={[
+                  "admin-category-filters__button",
+                  filter === "all"
+                    ? "admin-category-filters__button--active"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-pressed={filter === "all"}
+                onClick={() => setFilter("all")}
+              >
+                Sve
+                <span>{categoryCounts.all}</span>
+              </button>
+
+              <button
+                type="button"
+                className={[
+                  "admin-category-filters__button",
+                  filter === "active"
+                    ? "admin-category-filters__button--active"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-pressed={filter === "active"}
+                onClick={() => setFilter("active")}
+              >
+                Aktivne
+                <span>{categoryCounts.active}</span>
+              </button>
+
+              <button
+                type="button"
+                className={[
+                  "admin-category-filters__button",
+                  filter === "inactive"
+                    ? "admin-category-filters__button--active"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-pressed={filter === "inactive"}
+                onClick={() => setFilter("inactive")}
+              >
+                Neaktivne
+                <span>{categoryCounts.inactive}</span>
+              </button>
+            </div>
+
+            {hasFilters && (
+              <button
+                type="button"
+                className="admin-category-toolbar__clear"
+                onClick={clearFilters}
+              >
+                Poništi filtere
+              </button>
+            )}
+          </div>
+
+          {visibleCategories.length === 0 ? (
+            <div className="admin-category-empty">
+              <div className="admin-category-empty__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M4 5h7v6H4V5Zm9 0h7v6h-7V5ZM4 13h7v6H4v-6Zm9 0h7v6h-7v-6Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+
+              <span className="admin-category-empty__eyebrow">
+                NEMA REZULTATA
+              </span>
+
+              <h3 className="admin-category-empty__title">
+                Nema kategorija za prikaz
+              </h3>
+
+              <p className="admin-category-empty__description">
+                Promenite filter ili tekst pretrage.
+              </p>
+            </div>
+          ) : (
+            <div className="admin-category-cards">
+              {visibleCategories.map((category) => {
+                const isActionLoading = actionLoadingId === category.id;
+
+                const enabledOptions = getEnabledOptionsCount(category);
+
+                return (
+                  <article
+                    key={category.id}
+                    className={[
+                      "admin-category-card",
+                      !category.isActive ? "admin-category-card--inactive" : "",
+                      editingCategoryId === category.id
+                        ? "admin-category-card--editing"
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    <header className="admin-category-card__header">
+                      <span className="admin-category-card__order">
+                        {formatSortOrder(category.sortOrder)}
                       </span>
-                    </td>
 
-                    <td>
                       <span
-                        className={`admin-history-status admin-history-status--${getStatusModifier(
-                          order.status,
-                        )}`}
+                        className={[
+                          "admin-category-status",
+                          category.isActive
+                            ? "admin-category-status--active"
+                            : "admin-category-status--inactive",
+                        ].join(" ")}
                       >
                         <span
-                          className="admin-history-status__dot"
+                          className="admin-category-status__dot"
                           aria-hidden="true"
                         />
 
-                        {formatStatus(order.status)}
+                        {category.isActive ? "Aktivna" : "Neaktivna"}
                       </span>
-                    </td>
+                    </header>
 
-                    <td>
-                      <div className="admin-history-table__address">
-                        <strong>
-                          {order.deliveryAddress.street}{" "}
-                          {order.deliveryAddress.houseNumber}
-                        </strong>
+                    <div className="admin-category-card__content">
+                      <span className="admin-category-card__eyebrow">
+                        KATEGORIJA
+                      </span>
 
-                        <span>
-                          {order.deliveryAddress.postalCode}{" "}
-                          {order.deliveryAddress.city}
-                        </span>
+                      <h3 className="admin-category-card__title">
+                        {category.name}
+                      </h3>
+
+                      <p className="admin-category-card__description">
+                        {category.description ||
+                          "Za ovu kategoriju nije unet opis."}
+                      </p>
+                    </div>
+
+                    <div className="admin-category-card__metrics">
+                      <div className="admin-category-card__metric">
+                        <span>Ukupno jela</span>
+
+                        <strong>{category.dishCount}</strong>
                       </div>
-                    </td>
 
-                    <td>
-                      {order.courierId ? (
-                        <span className="admin-history-table__courier">
-                          #{order.courierId}
+                      <div className="admin-category-card__metric">
+                        <span>Aktivna jela</span>
+
+                        <strong>{category.activeDishCount}</strong>
+                      </div>
+
+                      <div className="admin-category-card__metric">
+                        <span>Dozvoljene grupe</span>
+
+                        <strong>{enabledOptions}/4</strong>
+                      </div>
+                    </div>
+
+                    <div className="admin-category-capabilities">
+                      <span
+                        className={[
+                          "admin-category-capability",
+                          category.allowsSideDishes
+                            ? "admin-category-capability--enabled"
+                            : "admin-category-capability--disabled",
+                        ].join(" ")}
+                      >
+                        <span aria-hidden="true">
+                          {category.allowsSideDishes ? "✓" : "×"}
                         </span>
+                        Prilozi
+                      </span>
+
+                      <span
+                        className={[
+                          "admin-category-capability",
+                          category.allowsSpices
+                            ? "admin-category-capability--enabled"
+                            : "admin-category-capability--disabled",
+                        ].join(" ")}
+                      >
+                        <span aria-hidden="true">
+                          {category.allowsSpices ? "✓" : "×"}
+                        </span>
+                        Začini
+                      </span>
+
+                      <span
+                        className={[
+                          "admin-category-capability",
+                          category.allowsSweetAdditions
+                            ? "admin-category-capability--enabled"
+                            : "admin-category-capability--disabled",
+                        ].join(" ")}
+                      >
+                        <span aria-hidden="true">
+                          {category.allowsSweetAdditions ? "✓" : "×"}
+                        </span>
+                        Slatki
+                      </span>
+
+                      <span
+                        className={[
+                          "admin-category-capability",
+                          category.allowsSavoryPancakeAdditions
+                            ? "admin-category-capability--enabled"
+                            : "admin-category-capability--disabled",
+                        ].join(" ")}
+                      >
+                        <span aria-hidden="true">
+                          {category.allowsSavoryPancakeAdditions ? "✓" : "×"}
+                        </span>
+                        Slani
+                      </span>
+                    </div>
+
+                    <footer className="admin-category-card__actions">
+                      <button
+                        type="button"
+                        className="admin-category-card__action admin-category-card__action--edit"
+                        disabled={isActionLoading || saving}
+                        onClick={() => startEdit(category)}
+                      >
+                        Izmeni
+                      </button>
+
+                      {category.isActive ? (
+                        <button
+                          type="button"
+                          className="admin-category-card__action admin-category-card__action--deactivate"
+                          disabled={isActionLoading || saving}
+                          onClick={() => void handleDeactivate(category)}
+                        >
+                          {isActionLoading ? "Obrađujem..." : "Deaktiviraj"}
+                        </button>
                       ) : (
-                        <span className="admin-history-table__empty-value">
-                          Nije dodeljen
-                        </span>
+                        <button
+                          type="button"
+                          className="admin-category-card__action admin-category-card__action--activate"
+                          disabled={isActionLoading || saving}
+                          onClick={() => void handleActivate(category)}
+                        >
+                          {isActionLoading ? "Obrađujem..." : "Aktiviraj"}
+                        </button>
                       )}
-                    </td>
 
-                    <td>
-                      <div className="admin-history-items">
-                        {order.items.map((item) => (
-                          <span
-                            key={item.id}
-                            className="admin-history-items__item"
-                          >
-                            <strong>{item.quantity}×</strong>
-
-                            {item.dishName}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-
-                    <td>
-                      <strong className="admin-history-table__price">
-                        {formatPrice(order.totalAmount)}
-                      </strong>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <footer className="admin-history-pagination">
-            <div className="admin-history-pagination__info">
-              <span>
-                Strana <strong>{currentPage}</strong> od{" "}
-                <strong>{totalPages}</strong>
-              </span>
-
-              <span>
-                Prikazano {items.length} od {totalCount}
-              </span>
+                      <button
+                        type="button"
+                        className="admin-category-card__action admin-category-card__action--delete"
+                        disabled={
+                          isActionLoading || saving || category.dishCount > 0
+                        }
+                        title={
+                          category.dishCount > 0
+                            ? "Kategorija ima povezana jela. Koristite deaktivaciju."
+                            : "Trajno obriši kategoriju."
+                        }
+                        onClick={() => void handleDelete(category)}
+                      >
+                        Obriši
+                      </button>
+                    </footer>
+                  </article>
+                );
+              })}
             </div>
-
-            <div className="admin-history-pagination__actions">
-              <button
-                type="button"
-                disabled={!result?.hasPreviousPage}
-                onClick={() =>
-                  setPage((currentPageValue) =>
-                    Math.max(1, currentPageValue - 1),
-                  )
-                }
-              >
-                <span aria-hidden="true">←</span>
-                Prethodna
-              </button>
-
-              <span className="admin-history-pagination__current">
-                {currentPage}
-              </span>
-
-              <button
-                type="button"
-                disabled={!result?.hasNextPage}
-                onClick={() =>
-                  setPage((currentPageValue) => currentPageValue + 1)
-                }
-              >
-                Sledeća
-                <span aria-hidden="true">→</span>
-              </button>
-            </div>
-          </footer>
+          )}
         </section>
-      )}
+      </div>
     </main>
   );
 }

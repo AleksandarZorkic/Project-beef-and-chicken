@@ -180,10 +180,6 @@ export default function DeliveryRushGame({
 
   const onFinishedRef = useRef(onFinished);
 
-  const [playerLane, setPlayerLane] = useState<number>(
-    deliveryRushGameRules.startingLane,
-  );
-
   const [secondsRemaining, setSecondsRemaining] = useState<number>(
     deliveryRushGameRules.durationSeconds,
   );
@@ -256,7 +252,6 @@ export default function DeliveryRushGame({
       });
 
       playerLaneRef.current = nextLane;
-      setPlayerLane(nextLane);
 
       triggerHapticFeedback(10);
       playSound("lane-whoosh", { pan: direction * 0.7 });
@@ -498,8 +493,6 @@ export default function DeliveryRushGame({
     warnedCarTicksRef.current.clear();
     finishedRef.current = false;
     startTimeRef.current = 0;
-
-    setPlayerLane(deliveryRushGameRules.startingLane);
 
     setSecondsRemaining(deliveryRushGameRules.durationSeconds);
 
@@ -804,7 +797,7 @@ export default function DeliveryRushGame({
 
         <div className="delivery-rush-game__stat delivery-rush-game__stat--score">
           <span>Poeni</span>
-          <strong>{liveStats.score}</strong>
+          <strong>{liveStats.score.toLocaleString("sr-RS")}</strong>
         </div>
 
         <div className="delivery-rush-game__stat">
@@ -840,43 +833,79 @@ export default function DeliveryRushGame({
       <div className="delivery-rush-game__controls">
         <button
           type="button"
-          className="btn btn--primary"
+          className="btn btn--primary delivery-rush-game__control-button"
           onClick={() => movePlayer(-1)}
           disabled={countdown !== null}
           aria-label="Pomeri vozilo u levu traku"
           aria-keyshortcuts="ArrowLeft A"
         >
-          ← Levo
+          <span className="delivery-rush-game__control-icon" aria-hidden="true">
+            ←
+          </span>
+
+          <span>Levo</span>
         </button>
 
         <button
           type="button"
-          className="btn btn--primary"
+          className={[
+            "btn",
+            "btn--primary",
+            "delivery-rush-game__control-button",
+            "delivery-rush-game__control-button--jump",
+            isJumpOnCooldown
+              ? "delivery-rush-game__control-button--cooldown"
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
           onClick={jumpPlayer}
           disabled={countdown !== null || isJumpOnCooldown}
           aria-label="Preskoči prepreku"
           aria-keyshortcuts="ArrowUp W Space"
         >
-          {isJumpOnCooldown ? "Skok se puni…" : "↑ Skok"}
+          <span className="delivery-rush-game__control-icon" aria-hidden="true">
+            ↑
+          </span>
+
+          <span>{isJumpOnCooldown ? "Skok se puni…" : "Skok"}</span>
         </button>
 
         <button
           type="button"
-          className="btn btn--primary"
+          className="btn btn--primary delivery-rush-game__control-button"
           onClick={() => movePlayer(1)}
           disabled={countdown !== null}
           aria-label="Pomeri vozilo u desnu traku"
           aria-keyshortcuts="ArrowRight D"
         >
-          Desno →
+          <span>Desno</span>
+
+          <span className="delivery-rush-game__control-icon" aria-hidden="true">
+            →
+          </span>
         </button>
       </div>
 
       <div className="delivery-rush-game__footer">
-        <p className="delivery-rush-game__instructions">
-          Automobil zaobiđi promenom trake. Rupu i radove možeš preskočiti.
-          Kontrole: strelice ili A/D, skok Space ili W.
-        </p>
+        <div
+          className="delivery-rush-game__instructions"
+          aria-label="Kontrole igre"
+        >
+          <span>
+            <kbd>A / D</kbd>
+            <span>promena trake</span>
+          </span>
+
+          <span>
+            <kbd>Space / W</kbd>
+            <span>skok</span>
+          </span>
+
+          <span className="delivery-rush-game__instructions-tip">
+            Auto zaobiđi • rupu i radove preskoči
+          </span>
+        </div>
 
         <button
           type="button"

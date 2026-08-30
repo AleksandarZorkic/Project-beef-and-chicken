@@ -69,6 +69,14 @@ export default function HomePage() {
               </Link>
             </div>
 
+            <Link to="/login" className="home-hero__login">
+              <span>Već imaš nalog?</span>
+
+              <strong>Prijavi se</strong>
+
+              <span aria-hidden="true">→</span>
+            </Link>
+
             <div className="home-hero__highlights">
               <span>Sveže pripremljeno</span>
               <span>Brzo poručivanje</span>
@@ -96,7 +104,7 @@ export default function HomePage() {
             </h2>
 
             <p className="home-section-heading__text">
-              Od izbora jela do potvrde porudžbine — sve je napravljeno tako da
+              Od izbora jela do potvrde porudžbine, sve je napravljeno tako da
               brzo dođeš do ukusa koji želiš.
             </p>
           </header>
@@ -120,16 +128,23 @@ export default function HomePage() {
       <section id="poruci" className="home-cta">
         <div className="home-cta__inner">
           <div className="home-cta__content">
-            <div className="home-cta__content">
-              <h2 className="home-cta__title">
-                Izaberi svoj savršeni obrok u samo nekoliko klikova.
-              </h2>
-            </div>
+            <span className="home-cta__eyebrow">VREME JE ZA DOBAR ZALOGAJ</span>
+
+            <h2 className="home-cta__title">
+              Izaberi svoj savršeni obrok u samo nekoliko klikova.
+            </h2>
+
+            <p className="home-cta__text">
+              Pregledaj meni, prilagodi obrok svom ukusu i prepusti nama da ga
+              pripremimo i dostavimo.
+            </p>
           </div>
 
           <div className="home-cta__actions">
             <Link to="/menu" className="btn btn--accent btn--lg">
-              Pogledaj meni
+              <span>Pogledaj meni</span>
+
+              <span aria-hidden="true">→</span>
             </Link>
           </div>
         </div>

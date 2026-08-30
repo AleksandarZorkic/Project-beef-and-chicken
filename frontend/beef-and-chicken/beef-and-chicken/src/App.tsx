@@ -42,6 +42,7 @@ import { OrderNotificationsProvider } from "./components/notifications/OrderNoti
 import FeedbackBubble from "./components/feedback/FeedbackBubble";
 import AdminFeedbackPage from "./pages/AdminFeedbackPage";
 import { AppDialogProvider } from "./components/dialogs/AppDialogContext";
+import ScrollToTop from "./components/routing/ScrollToTop";
 
 function HomeShell() {
   return (
@@ -65,6 +66,7 @@ function AppShell() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <CartProvider>
           <AppDialogProvider>
